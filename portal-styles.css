@@ -835,6 +835,47 @@ body > .modal.open {
 .project-filter-tabs .filter-btn:hover,
 .project-filter-tabs .filter-btn.active { background: #0f766e; color: #fff; border-color: #0f766e; }
 
+.stat-card-clickable { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.stat-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); }
+
+.portal-notifications-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.notification-item {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e5e9ed;
+    text-align: left;
+}
+.notification-item.notification-unread {
+    border-left: 4px solid var(--primary);
+    background: #f0fdfa;
+}
+.notification-title { font-weight: 600; color: var(--secondary); }
+.notification-meta { font-size: 0.8rem; color: var(--gray); margin: 4px 0; }
+.notification-body { font-size: 0.95rem; line-height: 1.45; color: #334155; }
+.modal-content-wide { max-width: 520px; width: 92vw; }
+
+.client-admin-updates {
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+}
+.small-meta { font-size: 0.85rem; color: #64748b; margin: 4px 0 0; }
+
+.admin-content-pro .card {
+    border: 1px solid #e5e9ed;
+    border-radius: 12px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .sidebar {

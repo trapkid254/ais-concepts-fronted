@@ -30,7 +30,6 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="../index.html" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Public website</a></li>
-                    <li><a href="../staff/login.html"><i class="fas fa-key"></i> Staff login</a></li>
                     <li><a href="#" data-section="admin-dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
                     <li><a href="#" data-section="admin-approvals"><i class="fas fa-user-check"></i> Pending approvals</a></li>
                     <li><a href="#" data-section="admin-users"><i class="fas fa-users"></i> User Management</a></li>
@@ -41,7 +40,7 @@
                     <li><a href="#" data-section="admin-analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                     <li><a href="#" data-section="admin-content"><i class="fas fa-database"></i> Content</a></li>
                     <li><a href="#" data-section="admin-security"><i class="fas fa-shield-alt"></i> Security</a></li>
-                    <li><a href="#" data-section="admin-messages"><i class="fas fa-envelope"></i> Messages</a></li>
+                    <li><a href="#" data-section="admin-notifications"><i class="fas fa-bell"></i> Notifications</a></li>
                     <li><a href="#" data-section="admin-profile"><i class="fas fa-user"></i> Profile</a></li>
                     <li><a href="#" data-section="admin-settings"><i class="fas fa-cog"></i> Settings</a></li>
                 </ul>
@@ -71,7 +70,7 @@
             
             <!-- Stats Cards -->
             <section id="admin-dashboard" class="portal-section stats-grid">
-                <div class="stat-card">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-users">
                     <div class="stat-info">
                         <h3>Total Users</h3>
                         <div class="stat-number" id="totalUsers">156</div>
@@ -81,7 +80,7 @@
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-projects" data-nav-filter="ongoing">
                     <div class="stat-info">
                         <h3>Active Projects</h3>
                         <div class="stat-number" id="activeProjects">23</div>
@@ -91,7 +90,7 @@
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-invoices">
                     <div class="stat-info">
                         <h3>Total Revenue</h3>
                         <div class="stat-number" id="totalRevenue">$2.4M</div>
@@ -101,10 +100,10 @@
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-approvals">
                     <div class="stat-info">
-                        <h3>Pending Tasks</h3>
-                        <div class="stat-number" id="pendingTasks">47</div>
+                        <h3>Pending Approvals</h3>
+                        <div class="stat-number" id="pendingTasks">0</div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-clock"></i>
@@ -159,10 +158,17 @@
             <!-- Projects Overview -->
             <section id="admin-projects" class="table-container portal-section" style="display: none;">
                 <div class="table-header">
-                    <h2>Active Projects</h2>
+                    <h2>Projects</h2>
                     <button class="btn btn-primary" id="adminNewProjectBtn">
                         <i class="fas fa-plus"></i> New Project
                     </button>
+                </div>
+                <p class="section-sub" style="margin-bottom:12px;">Filter by status. Use actions to assign staff, invoice clients, or broadcast progress updates.</p>
+                <div class="project-filter-tabs" id="adminProjectFilterTabs">
+                    <button type="button" class="filter-btn active" data-filter="all">All</button>
+                    <button type="button" class="filter-btn" data-filter="ongoing">Ongoing</button>
+                    <button type="button" class="filter-btn" data-filter="pending">Pending</button>
+                    <button type="button" class="filter-btn" data-filter="completed">Completed</button>
                 </div>
                 <table class="admin-projects">
                     <thead>
@@ -171,6 +177,7 @@
                             <th>Client</th>
                             <th>Budget</th>
                             <th>Progress</th>
+                            <th>Deadline</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -214,10 +221,12 @@
                     <div class="form-group">
                         <label for="assignProjectName">Project</label>
                         <select id="assignProjectName">
-                            <option value="Horizon Tower">Horizon Tower</option>
-                            <option value="Eco-Sphere Residence">Eco-Sphere Residence</option>
-                            <option value="Nexus Cultural Center">Nexus Cultural Center</option>
+                            <option value="">Loading projects…</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignClientEmail">Client email (for notifications)</label>
+                        <input type="email" id="assignClientEmail" placeholder="client@example.com">
                     </div>
                     <div class="form-group">
                         <label for="assignEmployeeEmail">Employee Email</label>
@@ -275,12 +284,12 @@
                 </table>
             </section>
 
-            <!-- Messages: professional layout -->
-            <section id="admin-messages" class="portal-section admin-messages-wrap" style="display: none;">
+            <!-- Notifications & messages (merged) -->
+            <section id="admin-notifications" class="portal-section admin-messages-wrap" style="display: none;">
                 <div class="table-container">
                     <div class="table-header">
-                        <h2>Messages</h2>
-                        <span class="section-sub">Communicate with clients and employees</span>
+                        <h2>Notifications &amp; messages</h2>
+                        <span class="section-sub">System alerts, client and employee messages</span>
                     </div>
                     <div class="messages-compose card profile-form-login-style">
                         <h3><i class="fas fa-pen"></i> New Message</h3>
@@ -415,42 +424,48 @@
                 </div>
             </section>
 
-            <section id="admin-content" class="table-container portal-section" style="display: none;">
+            <section id="admin-content" class="table-container portal-section admin-content-pro" style="display: none;">
                 <div class="table-header">
                     <h2>Content Management</h2>
-                    <span class="section-sub">Frontend website projects and services</span>
+                    <span class="section-sub">Website CMS: projects, services, and blog — including images you upload</span>
                 </div>
                 <p id="adminContentStats" style="margin-bottom: 24px;"></p>
 
-                <h3 style="margin-top: 24px;">Website Projects (Homepage & Projects Page)</h3>
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Website Projects (Homepage &amp; Projects Page)</h3>
                 <p class="section-sub">Add or delete projects shown on the frontend. Include category, image, and description.</p>
                 <button type="button" class="btn btn-primary" id="adminAddWebsiteProjectBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Project</button>
                 <table class="data-table">
                     <thead>
-                        <tr><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+                        <tr><th>Preview</th><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="adminWebsiteProjectsBody"></tbody>
                 </table>
+                </div>
 
-                <h3 style="margin-top: 32px;">Website Services (Homepage Services Section)</h3>
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Website Services (Homepage Services Section)</h3>
                 <p class="section-sub">Add or delete services shown on the frontend. Include category, image, and description.</p>
                 <button type="button" class="btn btn-primary" id="adminAddWebsiteServiceBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Service</button>
                 <table class="data-table">
                     <thead>
-                        <tr><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+                        <tr><th>Preview</th><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="adminWebsiteServicesBody"></tbody>
                 </table>
+                </div>
 
-                <h3 style="margin-top: 32px;">Blog Posts (Blog Page)</h3>
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Blog Posts (Blog Page)</h3>
                 <p class="section-sub">Add or delete blog posts shown on the frontend blog page.</p>
                 <button type="button" class="btn btn-primary" id="adminAddBlogPostBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Blog Post</button>
                 <table class="data-table">
                     <thead>
-                        <tr><th>Title</th><th>Date</th><th>Excerpt</th><th>Actions</th></tr>
+                        <tr><th>Cover</th><th>Title</th><th>Date</th><th>Excerpt</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="adminBlogPostsBody"></tbody>
                 </table>
+                </div>
 
                 <h3 style="margin-top: 32px;">Project Enquiries (From Homepage)</h3>
                 <p class="section-sub">Enquiries submitted on the homepage project enquiry form.</p>
@@ -558,8 +573,13 @@
                             <input type="text" id="adminProjectMoneyOwed" placeholder="e.g. $0">
                         </div>
                         <div class="form-group">
+                            <label>Deadline / est. completion</label>
+                            <input type="date" id="adminProjectDeadline">
+                        </div>
+                        <div class="form-group">
                             <label>Status</label>
                             <select id="adminProjectStatus">
+                                <option value="Pending">Pending</option>
                                 <option value="Active">Active</option>
                                 <option value="Review">Review</option>
                                 <option value="Completed">Completed</option>
@@ -764,15 +784,40 @@
 
             <!-- Notifications Modal -->
             <div class="modal" id="adminNotificationsModal">
-                <div class="modal-content">
-                    <span class="close-modal" id="closeAdminNotifications">&times;</span>
+                <div class="modal-content modal-content-wide">
+                    <span class="close-modal" data-close="adminNotificationsModal">&times;</span>
                     <h2>Notifications</h2>
-                    <p class="modal-subtitle">Recent activity across projects and users</p>
-                    <ul style="list-style:none; padding-left:0; display:flex; flex-direction:column; gap:12px;">
-                        <li><i class="fas fa-user-plus" style="color:#20c4b4;"></i> New client onboarded for Eco-Sphere Residence.</li>
-                        <li><i class="fas fa-file-invoice-dollar" style="color:#20c4b4;"></i> Invoice INV-2024-004 generated for Horizon Tower.</li>
-                        <li><i class="fas fa-tasks" style="color:#20c4b4;"></i> Employee progress update submitted for Nexus Cultural Center.</li>
-                    </ul>
+                    <p class="modal-subtitle">Recent alerts and activity</p>
+                    <div id="portalNotificationsList" class="portal-notifications-list"></div>
+                </div>
+            </div>
+
+            <!-- Broadcast progress to client -->
+            <div class="modal" id="adminBroadcastModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminBroadcastModal">&times;</span>
+                    <h2>Update progress for client</h2>
+                    <p class="modal-subtitle">Sends a notification to the client. Images are optional.</p>
+                    <form id="adminBroadcastForm">
+                        <input type="hidden" id="broadcastProjectId">
+                        <div class="form-group">
+                            <label>Project</label>
+                            <input type="text" id="broadcastProjectName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Client email</label>
+                            <input type="email" id="broadcastClientEmail" required placeholder="client@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="broadcastMessage" rows="4" required placeholder="Describe progress for the client…"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Images (optional)</label>
+                            <input type="file" id="broadcastImages" accept="image/*" multiple>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send to client</button>
+                    </form>
                 </div>
             </div>
         </main>

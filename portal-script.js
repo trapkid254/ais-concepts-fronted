@@ -27,6 +27,151 @@ function syncPortalKey(key, value) {
     }, 200);
 }
 
+async function refreshNotificationsBadge() {
+    var API_BASE = window.API_BASE || '';
+    var token = sessionStorage.getItem('authToken');
+    if (!token) return;
+    var path = window.location.pathname || '';
+    try {
+        var r = await fetch(API_BASE + '/api/notifications', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) return;
+        var data = await r.json();
+        var unread = data.unreadCount || 0;
+        if (path.indexOf('/admin/') !== -1) {
+            try {
+                var pr = await fetch(API_BASE + '/api/admin/pending-users', {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                if (pr.ok) {
+                    var pending = await pr.json();
+                    unread += (pending && pending.length) || 0;
+                }
+            } catch (e2) {}
+        }
+        var countEl =
+            path.indexOf('/client/') !== -1
+                ? document.getElementById('clientNotificationCount')
+                : path.indexOf('/employee/') !== -1
+                  ? document.getElementById('employeeNotificationCount')
+                  : document.getElementById('adminNotificationCount');
+        if (countEl) {
+            if (unread > 0) {
+                countEl.textContent = unread > 99 ? '99+' : String(unread);
+                countEl.style.display = 'inline-block';
+            } else {
+                countEl.style.display = 'none';
+            }
+        }
+    } catch (e) {}
+}
+
+async function openPortalNotificationsModal(modalId) {
+    var API_BASE = window.API_BASE || '';
+    var token = sessionStorage.getItem('authToken');
+    var modal = document.getElementById(modalId);
+    if (!modal) return;
+    var listEl = modal.querySelector('.portal-notifications-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<p class="empty-state">Loading…</p>';
+    try {
+        var r = await fetch(API_BASE + '/api/notifications', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) {
+            listEl.innerHTML = '<p class="empty-state">Could not load notifications.</p>';
+            return;
+        }
+        var data = await r.json();
+        var items = data.items || [];
+        if (!items.length) {
+            listEl.innerHTML = '<p class="empty-state">No notifications yet.</p>';
+        } else {
+            listEl.innerHTML = items
+                .map(function (n) {
+                    return (
+                        '<div class="notification-item' +
+                        (n.read ? '' : ' notification-unread') +
+                        '"><div class="notification-title">' +
+                        escapeHtml(n.title || '') +
+                        '</div><div class="notification-meta">' +
+                        (n.createdAt ? new Date(n.createdAt).toLocaleString() : '') +
+                        '</div><div class="notification-body">' +
+                        escapeHtml(n.message || '') +
+                        '</div></div>'
+                    );
+                })
+                .join('');
+        }
+        await fetch(API_BASE + '/api/notifications/mark-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ ids: items.map(function (x) { return x.id; }) })
+        });
+        await refreshNotificationsBadge();
+    } catch (e) {
+        listEl.innerHTML = '<p class="empty-state">Error loading notifications.</p>';
+    }
+    modal.classList.add('open');
+}
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function navigatePortalSection(sectionId, opts) {
+    var path = window.location.pathname || '';
+    var sidebarLink = document.querySelector('.sidebar-nav a[data-section="' + sectionId + '"]');
+    if (sidebarLink) {
+        sidebarLink.click();
+    } else {
+        document.querySelectorAll('.portal-section').forEach(function (sec) {
+            sec.style.display = sec.id === sectionId ? '' : 'none';
+        });
+        document.querySelectorAll('.sidebar-nav a[data-section]').forEach(function (a) {
+            a.classList.toggle('active', a.getAttribute('data-section') === sectionId);
+        });
+    }
+    if (opts && opts.filter) {
+        window._employeeProjectFilter = opts.filter;
+        var tab = document.querySelector('#employeeProjectFilterTabs .filter-btn[data-filter="' + opts.filter + '"]');
+        if (tab) {
+            document.querySelectorAll('#employeeProjectFilterTabs .filter-btn').forEach(function (b) {
+                b.classList.remove('active');
+            });
+            tab.classList.add('active');
+        }
+        var clientTab = document.querySelector('#clientProjectFilterTabs .filter-btn[data-filter="' + opts.filter + '"]');
+        if (clientTab) {
+            document.querySelectorAll('#clientProjectFilterTabs .filter-btn').forEach(function (b) {
+                b.classList.remove('active');
+            });
+            clientTab.classList.add('active');
+            window._clientProjectFilter = opts.filter;
+            if (typeof window.applyClientProjectFilter === 'function') window.applyClientProjectFilter();
+        }
+        var adminTab = document.querySelector('#adminProjectFilterTabs .filter-btn[data-filter="' + opts.filter + '"]');
+        if (adminTab) {
+            document.querySelectorAll('#adminProjectFilterTabs .filter-btn').forEach(function (b) {
+                b.classList.remove('active');
+            });
+            adminTab.classList.add('active');
+            window._adminProjectFilter = opts.filter;
+            if (typeof window.renderAdminProjectsTable === 'function') window.renderAdminProjectsTable();
+        }
+    }
+    if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     // Generic close modal: any .close-modal with data-close="modalId" closes that modal
     document.body.addEventListener('click', function(e) {
@@ -37,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     // Click outside to close modals
-    ['clientInvoiceViewModal', 'adminInvoiceViewModal', 'employeeTimeEditModal', 'adminInvoiceEditModal', 'clientProjectViewModal', 'clientUploadDocModal', 'employeeTaskUpdateModal', 'adminWebsiteProjectModal', 'adminWebsiteServiceModal'].forEach(function(id) {
+    ['clientInvoiceViewModal', 'adminInvoiceViewModal', 'employeeTimeEditModal', 'adminInvoiceEditModal', 'clientProjectViewModal', 'clientUploadDocModal', 'clientNotificationsModal', 'clientAddProjectModal', 'employeeTaskUpdateModal', 'employeeNotificationsModal', 'adminNotificationsModal', 'adminBroadcastModal', 'adminWebsiteProjectModal', 'adminWebsiteServiceModal', 'adminBlogPostModal'].forEach(function(id) {
         const m = document.getElementById(id);
         if (m) m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
     });
@@ -91,6 +236,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     } else if (path.includes('/admin/')) {
         await loadAdminDashboard();
     }
+
+    refreshNotificationsBadge();
+
+    document.body.addEventListener('click', function (e) {
+        var card = e.target.closest('.stat-card-clickable');
+        if (!card) return;
+        var section = card.getAttribute('data-nav-section');
+        if (!section) return;
+        var filter = card.getAttribute('data-nav-filter') || '';
+        e.preventDefault();
+        navigatePortalSection(section, filter ? { filter: filter } : {});
+    });
     
     // Logout functionality
     const logoutBtn = document.getElementById('logoutBtn');
@@ -165,84 +322,33 @@ document.addEventListener('DOMContentLoaded', async function() {
                 alert('Thank you. Your support request has been submitted. We will get back to you shortly.');
             });
         }
-        // Client notification badge: show count only if messages > 0, click -> Messages section
-        const clientNotificationBtn = document.getElementById('clientNotificationBtn');
-        const clientCountEl = document.getElementById('clientNotificationCount');
-        const clientMessages = getStored('portalMessages', []).filter(m => m.to === (currentUser && currentUser.email));
-        if (clientCountEl) {
-            if (clientMessages.length > 0) {
-                clientCountEl.textContent = clientMessages.length > 99 ? '99+' : clientMessages.length;
-                clientCountEl.style.display = 'inline-block';
-            } else {
-                clientCountEl.style.display = 'none';
-            }
-        }
+        var clientNotificationBtn = document.getElementById('clientNotificationBtn');
         if (clientNotificationBtn) {
-            clientNotificationBtn.addEventListener('click', function(e) {
+            clientNotificationBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
-                const messagesLink = document.querySelector('.sidebar-nav a[data-section="client-messages"]');
-                if (messagesLink) {
-                    messagesLink.classList.add('active');
-                    document.querySelectorAll('.portal-section').forEach(sec => {
-                        sec.style.display = sec.id === 'client-messages' ? '' : 'none';
-                    });
-                }
+                openPortalNotificationsModal('clientNotificationsModal');
             });
         }
         setupPortalProfile('client', currentUser);
     }
 
-    // Admin: notification click -> Messages section
     if (path.includes('/admin/')) {
-        const adminNotificationsBtn = document.getElementById('adminNotificationsBtn');
-        const adminCountEl = document.getElementById('adminNotificationCount');
-        const adminMessages = getStored('portalMessages', []);
-        const toMe = adminMessages.filter(m => m.to === (currentUser && currentUser.email));
-        if (adminCountEl) {
-            if (toMe.length > 0) {
-                adminCountEl.textContent = toMe.length > 99 ? '99+' : toMe.length;
-                adminCountEl.style.display = 'inline-block';
-            } else {
-                adminCountEl.style.display = 'none';
-            }
-        }
+        var adminNotificationsBtn = document.getElementById('adminNotificationsBtn');
         if (adminNotificationsBtn) {
-            adminNotificationsBtn.addEventListener('click', function(e) {
+            adminNotificationsBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
-                const link = document.querySelector('.sidebar-nav a[data-section="admin-messages"]');
-                if (link) {
-                    link.classList.add('active');
-                    document.querySelectorAll('.portal-section').forEach(sec => {
-                        sec.style.display = sec.id === 'admin-messages' ? '' : 'none';
-                    });
-                }
+                openPortalNotificationsModal('adminNotificationsModal');
             });
         }
         setupPortalProfile('admin', currentUser);
     }
 
-    // Employee: notification badge count, click -> modal or section
     if (path.includes('/employee/')) {
-        const empNotificationsBtn = document.getElementById('employeeNotificationsBtn');
-        const empCountEl = document.getElementById('employeeNotificationCount');
-        const empMessages = getStored('portalMessages', []).filter(m => m.to === (currentUser && currentUser.email));
-        const empAssignments = getStored('assignments', []).filter(a => a.employeeEmail === (currentUser && currentUser.email));
-        const empNotifCount = empMessages.length + empAssignments.length;
-        if (empCountEl) {
-            if (empNotifCount > 0) {
-                empCountEl.textContent = empNotifCount > 99 ? '99+' : empNotifCount;
-                empCountEl.style.display = 'inline-block';
-            } else {
-                empCountEl.style.display = 'none';
-            }
-        }
+        var empNotificationsBtn = document.getElementById('employeeNotificationsBtn');
         if (empNotificationsBtn) {
-            empNotificationsBtn.addEventListener('click', function(e) {
+            empNotificationsBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                const modal = document.getElementById('employeeNotificationsModal');
-                if (modal) modal.classList.add('open');
+                openPortalNotificationsModal('employeeNotificationsModal');
             });
         }
         setupPortalProfile('employee', currentUser);
@@ -324,9 +430,6 @@ function setupAdminInteractions(currentUser) {
     const assignForm = document.getElementById('assignProjectForm');
     const assignmentsBody = document.getElementById('assignmentsTableBody');
     const adminMessageForm = document.getElementById('adminMessageForm');
-    const notificationsBtn = document.getElementById('adminNotificationsBtn');
-    const notificationsModal = document.getElementById('adminNotificationsModal');
-    const closeNotifications = document.getElementById('closeAdminNotifications');
 
     const assignments = getStored('assignments', []);
     renderAssignments(assignmentsBody, assignments);
@@ -398,8 +501,10 @@ function setupAdminInteractions(currentUser) {
             const due = document.getElementById('assignDueDate').value;
             const notes = document.getElementById('assignNotes').value;
             const deadline = document.getElementById('assignDeadline') ? document.getElementById('assignDeadline').value : '';
+            const clientEmailEl = document.getElementById('assignClientEmail');
+            const clientEmail = clientEmailEl ? clientEmailEl.value.trim() : '';
             const updated = getStored('assignments', []);
-            updated.push({ project, employeeEmail, due, deadline, notes });
+            updated.push({ project, employeeEmail, due, deadline, notes, clientEmail: clientEmail || undefined });
             setStored('assignments', updated);
             renderAssignments(assignmentsBody, updated);
             assignForm.reset();
@@ -408,7 +513,8 @@ function setupAdminInteractions(currentUser) {
     }
 
     const messages = getStored('portalMessages', []);
-    renderMessagesAsCards(document.getElementById('adminMessagesListInner'), messages);
+    var adminNotifInner = document.getElementById('adminMessagesListInner');
+    if (adminNotifInner) renderMessagesAsCards(adminNotifInner, messages);
 
     if (adminMessageForm) {
         adminMessageForm.addEventListener('submit', function(e) {
@@ -416,20 +522,39 @@ function setupAdminInteractions(currentUser) {
             const to = document.getElementById('messageTo').value;
             const project = document.getElementById('messageProject').value;
             const bodyEl = document.getElementById('messageBody');
-            const body = bodyEl ? (bodyEl.tagName === 'TEXTAREA' ? bodyEl.value : bodyEl.value) : '';
-            const updated = getStored('portalMessages', []);
-            updated.push({ from: currentUser ? currentUser.email : 'admin@demo.com', to, project, body, timestamp: new Date().toISOString() });
-            setStored('portalMessages', updated);
-            renderMessagesAsCards(document.getElementById('adminMessagesListInner'), updated);
-            adminMessageForm.reset();
+            const body = bodyEl ? bodyEl.value : '';
+            var API_BASE = window.API_BASE || '';
+            var token = sessionStorage.getItem('authToken');
+            fetch(API_BASE + '/api/admin/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + token
+                },
+                body: JSON.stringify({ to: to, project: project, body: body })
+            })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('fail');
+                    return r.json();
+                })
+                .then(function () {
+                    const updated = getStored('portalMessages', []);
+                    updated.push({
+                        from: currentUser ? currentUser.email : 'admin',
+                        to: to,
+                        project: project,
+                        body: body,
+                        timestamp: new Date().toISOString()
+                    });
+                    setStored('portalMessages', updated);
+                    if (adminNotifInner) renderMessagesAsCards(adminNotifInner, updated);
+                    adminMessageForm.reset();
+                    refreshNotificationsBadge();
+                })
+                .catch(function () {
+                    alert('Could not send message.');
+                });
         });
-    }
-
-    if (notificationsBtn && notificationsModal) {
-        notificationsBtn.addEventListener('click', function() { notificationsModal.classList.add('open'); });
-    }
-    if (closeNotifications && notificationsModal) {
-        closeNotifications.addEventListener('click', function() { notificationsModal.classList.remove('open'); });
     }
 
     // Add User button & modal
@@ -455,6 +580,7 @@ function setupAdminInteractions(currentUser) {
             alert(
                 'Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals. This form is for reference only.'
             );
+
             userModal.classList.remove('open');
         });
     }
@@ -482,6 +608,75 @@ function setupAdminInteractions(currentUser) {
         el.addEventListener('click', function() { document.getElementById('adminProjectModal').classList.remove('open'); });
     });
     if (projectModal) projectModal.addEventListener('click', function(e) { if (e.target === projectModal) projectModal.classList.remove('open'); });
+    var broadcastModal = document.getElementById('adminBroadcastModal');
+    var broadcastForm = document.getElementById('adminBroadcastForm');
+    document.querySelectorAll('[data-close="adminBroadcastModal"]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            if (broadcastModal) broadcastModal.classList.remove('open');
+        });
+    });
+    if (broadcastModal) {
+        broadcastModal.addEventListener('click', function (e) {
+            if (e.target === broadcastModal) broadcastModal.classList.remove('open');
+        });
+    }
+    if (broadcastForm && broadcastModal) {
+        broadcastForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var pid = document.getElementById('broadcastProjectId').value;
+            var pname = document.getElementById('broadcastProjectName').value;
+            var cemail = document.getElementById('broadcastClientEmail').value;
+            var msg = document.getElementById('broadcastMessage').value;
+            var fileInput = document.getElementById('broadcastImages');
+            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            var token = sessionStorage.getItem('authToken');
+            var API_BASE = window.API_BASE || '';
+            function send(imgs) {
+                fetch(API_BASE + '/api/admin/client-progress-broadcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        projectId: pid,
+                        projectName: pname,
+                        clientEmail: cemail,
+                        message: msg,
+                        images: imgs || []
+                    })
+                })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error('fail');
+                        return r.json();
+                    })
+                    .then(function () {
+                        broadcastModal.classList.remove('open');
+                        broadcastForm.reset();
+                        refreshNotificationsBadge();
+                        alert('Update sent to client.');
+                    })
+                    .catch(function () {
+                        alert('Could not send. Ensure client email is set.');
+                    });
+            }
+            if (files.length) {
+                Promise.all(
+                    files.map(function (file) {
+                        return new Promise(function (resolve) {
+                            var r = new FileReader();
+                            r.onload = function () {
+                                resolve(r.result);
+                            };
+                            r.readAsDataURL(file);
+                        });
+                    })
+                ).then(send);
+            } else {
+                send([]);
+            }
+        });
+    }
     if (projectForm && projectModal && projectsList) {
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -497,14 +692,45 @@ function setupAdminInteractions(currentUser) {
             const moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
             const moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
             const moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
+            const deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
             if (id) {
                 const idx = projects.findIndex(p => String(p.id) === id);
-                if (idx >= 0) { projects[idx] = { ...projects[idx], name, client, budget, progress, status, category, moneyPaid, moneyUsed, moneyRemaining, moneyOwed }; }
+                if (idx >= 0) {
+                    projects[idx] = {
+                        ...projects[idx],
+                        name,
+                        client,
+                        budget,
+                        progress,
+                        status,
+                        category,
+                        moneyPaid,
+                        moneyUsed,
+                        moneyRemaining,
+                        moneyOwed,
+                        deadline: deadline || projects[idx].deadline,
+                        completionDate: deadline || projects[idx].completionDate
+                    };
+                }
             } else {
-                projects.push({ id: Date.now(), name, client, budget, progress, status, category, moneyPaid, moneyUsed, moneyRemaining, moneyOwed });
+                projects.push({
+                    id: Date.now(),
+                    name,
+                    client,
+                    budget,
+                    progress,
+                    status,
+                    category,
+                    moneyPaid,
+                    moneyUsed,
+                    moneyRemaining,
+                    moneyOwed,
+                    deadline: deadline || '',
+                    completionDate: deadline || ''
+                });
             }
             setStored('portalProjects', projects);
-            renderAdminProjects(projectsList, projects);
+            renderAdminProjectsTable();
             projectModal.classList.remove('open');
         });
     }
@@ -570,6 +796,8 @@ function setupAdminInteractions(currentUser) {
         if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
         if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
         document.getElementById('adminProjectModal').classList.add('open');
+        var dlEl = document.getElementById('adminProjectDeadline');
+        if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
     };
     window.viewProject = function(projectId) {
         const projects = getStored('portalProjects', []);
@@ -580,6 +808,7 @@ function setupAdminInteractions(currentUser) {
             <p><strong>Client:</strong> ${project.client}</p>
             <p><strong>Budget:</strong> ${project.budget}</p>
             <p><strong>Progress:</strong> ${project.progress}%</p>
+            <p><strong>Deadline:</strong> ${project.deadline || project.completionDate || '-'}</p>
             <p><strong>Status:</strong> ${project.status}</p>
             <p><strong>Money Paid:</strong> ${project.moneyPaid || '-'}</p>
             <p><strong>Money Used:</strong> ${project.moneyUsed || '-'}</p>
@@ -592,11 +821,6 @@ function setupAdminInteractions(currentUser) {
 
 function setupEmployeeInteractions(currentUser) {
     const assignmentsBody = document.getElementById('employeeAssignmentsBody');
-    const progressForm = document.getElementById('employeeProgressForm');
-    const progressList = document.getElementById('employeeProgressList');
-    const notificationsBtn = document.getElementById('employeeNotificationsBtn');
-    const notificationsModal = document.getElementById('employeeNotificationsModal');
-    const closeNotifications = document.getElementById('closeEmployeeNotifications');
 
     const allAssignments = getStored('assignments', []);
     const myAssignments = currentUser
@@ -613,76 +837,72 @@ function setupEmployeeInteractions(currentUser) {
         });
     });
 
-    const allProgress = getStored('employeeProgress', []);
-    const myProgress = currentUser
-        ? allProgress.filter(p => p.employee.toLowerCase() === currentUser.email.toLowerCase())
-        : allProgress;
-    if (progressList) renderEmployeeProgress(progressList, myProgress);
-
-    if (progressForm && progressList) {
-        progressForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const project = document.getElementById('progressProject').value;
-            const photoUrl = document.getElementById('progressPhotoUrl').value;
-            const description = document.getElementById('progressDescription').value;
-            const entry = { employee: currentUser ? currentUser.email : 'employee@demo.com', project, photoUrl, description, timestamp: new Date().toISOString() };
-            const updated = getStored('employeeProgress', []); updated.push(entry); setStored('employeeProgress', updated);
-            const myUpdated = currentUser ? updated.filter(p => p.employee.toLowerCase() === currentUser.email.toLowerCase()) : updated;
-            renderEmployeeProgress(progressList, myUpdated);
-            progressForm.reset();
-        });
-    }
-
-    if (notificationsBtn && notificationsModal) {
-        notificationsBtn.addEventListener('click', function() { notificationsModal.classList.add('open'); });
-    }
-    if (closeNotifications && notificationsModal) {
-        closeNotifications.addEventListener('click', function() { notificationsModal.classList.remove('open'); });
-    }
-
     // Update Task modal (image + description)
     const taskUpdateModal = document.getElementById('employeeTaskUpdateModal');
     const taskUpdateForm = document.getElementById('employeeTaskUpdateForm');
-    const tasksList = document.querySelector('.tasks-list');
     document.querySelectorAll('[data-close="employeeTaskUpdateModal"]').forEach(el => {
         el.addEventListener('click', function() { document.getElementById('employeeTaskUpdateModal').classList.remove('open'); });
     });
     if (taskUpdateModal) taskUpdateModal.addEventListener('click', function(e) { if (e.target === taskUpdateModal) taskUpdateModal.classList.remove('open'); });
-    if (taskUpdateForm && tasksList) {
-        taskUpdateForm.addEventListener('submit', function(e) {
+    if (taskUpdateForm) {
+        taskUpdateForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const taskId = document.getElementById('taskUpdateId').value;
-            const description = document.getElementById('taskUpdateDescription').value;
-            const fileInput = document.getElementById('taskUpdateImage');
-            const file = fileInput && fileInput.files[0];
-            let imageData = null;
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const updates = getStored('employeeTaskUpdates', []);
-                    updates.push({ taskId: taskId, description: description, imageData: reader.result, date: new Date().toISOString() });
-                    setStored('employeeTaskUpdates', updates);
-                    taskUpdateForm.reset();
-                    taskUpdateModal.classList.remove('open');
-                    renderEmployeeTasks(tasksList, getStored('employeeTasks', null));
-                };
-                reader.readAsDataURL(file);
+            var project = (document.getElementById('taskUpdateProjectName') && document.getElementById('taskUpdateProjectName').value) || '';
+            var description = document.getElementById('taskUpdateDescription').value;
+            var fileInput = document.getElementById('taskUpdateImages');
+            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            var token = sessionStorage.getItem('authToken');
+            var API_BASE = window.API_BASE || '';
+            function sendWithImages(imageArr) {
+                fetch(API_BASE + '/api/portal/employee-progress', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        project: project,
+                        description: description,
+                        images: imageArr || []
+                    })
+                })
+                    .then(function (r) {
+                        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'failed'); });
+                        return r.json();
+                    })
+                    .then(function () {
+                        taskUpdateForm.reset();
+                        if (taskUpdateModal) taskUpdateModal.classList.remove('open');
+                        return fetch(API_BASE + '/api/portal/bootstrap', {
+                            headers: { Authorization: 'Bearer ' + token }
+                        });
+                    })
+                    .then(function (r) {
+                        if (r && r.ok) return r.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.employeeTaskUpdates) __portalCache.employeeTaskUpdates = data.employeeTaskUpdates;
+                        refreshNotificationsBadge();
+                        alert('Progress submitted.');
+                    })
+                    .catch(function () {
+                        alert('Could not submit progress. Check assignment matches this project.');
+                    });
+            }
+            if (files.length) {
+                var readers = files.map(function (file) {
+                    return new Promise(function (resolve) {
+                        var r = new FileReader();
+                        r.onload = function () { resolve(r.result); };
+                        r.readAsDataURL(file);
+                    });
+                });
+                Promise.all(readers).then(sendWithImages);
             } else {
-                const updates = getStored('employeeTaskUpdates', []);
-                updates.push({ taskId: taskId, description: description, imageData: null, date: new Date().toISOString() });
-                setStored('employeeTaskUpdates', updates);
-                taskUpdateForm.reset();
-                taskUpdateModal.classList.remove('open');
-                renderEmployeeTasks(tasksList, getStored('employeeTasks', null));
+                sendWithImages([]);
             }
         });
     }
-    window.openTaskUpdateModal = function(taskId) {
-        document.getElementById('taskUpdateId').value = taskId;
-        document.getElementById('taskUpdateDescription').value = '';
-        document.getElementById('taskUpdateImage').value = '';
-        document.getElementById('employeeTaskUpdateModal').classList.add('open');
-    };
 
     // Add Time Entry modal
     const timeModal = document.getElementById('employeeTimeModal');
@@ -786,7 +1006,7 @@ function renderEmployeeAssignmentsTable(tbody, assignments) {
         var key = (a.project || '') + '|' + (a.employeeEmail || '');
         var st = statusMap[key] || 'not-started';
         if (filter === 'all') return true;
-        if (filter === 'not-started') return st === 'not-started';
+        if (filter === 'not-started' || filter === 'assigned') return st === 'not-started';
         if (filter === 'active') return st === 'active';
         if (filter === 'completed') return st === 'completed';
         return true;
@@ -797,12 +1017,28 @@ function renderEmployeeAssignmentsTable(tbody, assignments) {
         var due = a.due || '-';
         var deadline = a.deadline || a.due || '-';
         var timeline = timelineText(a.deadline || a.due);
-        var action = st === 'not-started' ? '<button type="button" class="btn btn-sm btn-primary" onclick="startAssignment(\'' + key.replace(/'/g, "\\'") + '\')">Start</button>' :
-            st === 'active' ? '<span class="status-badge status-pending">In progress</span> <button type="button" class="btn btn-sm btn-secondary" onclick="completeAssignment(\'' + key.replace(/'/g, "\\'") + '\')">Mark done</button>' :
+        var keyEsc = key.replace(/'/g, "\\'");
+        var projEsc = String(a.project || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        var action = st === 'not-started' ? '<button type="button" class="btn btn-sm btn-primary" onclick="startAssignment(\'' + keyEsc + '\')">Start</button>' :
+            st === 'active' ? '<span class="status-badge status-pending">In progress</span> <button type="button" class="btn btn-sm btn-secondary" onclick="completeAssignment(\'' + keyEsc + '\')">Mark done</button>' :
             '<span class="status-badge status-paid">Done</span>';
-        return '<tr><td>' + (a.project || '') + '</td><td>' + due + '</td><td>' + deadline + '</td><td>' + timeline + '</td><td>' + (a.notes || '-') + '</td><td>' + action + '</td></tr>';
+        var updBtn = ' <button type="button" class="btn btn-sm btn-secondary" onclick="openEmployeeProgressModal(\'' + projEsc + '\')"><i class="fas fa-upload"></i> Progress</button>';
+        if (st === 'completed') updBtn = '';
+        return '<tr><td>' + (a.project || '') + '</td><td>' + due + '</td><td>' + deadline + '</td><td>' + timeline + '</td><td>' + (a.notes || '-') + '</td><td>' + action + updBtn + '</td></tr>';
     }).join('');
 }
+window.openEmployeeProgressModal = function(projectName) {
+    var el = document.getElementById('taskUpdateProjectLabel');
+    if (el) el.textContent = projectName || '';
+    var hid = document.getElementById('taskUpdateProjectName');
+    if (hid) hid.value = projectName || '';
+    var ta = document.getElementById('taskUpdateDescription');
+    if (ta) ta.value = '';
+    var fi = document.getElementById('taskUpdateImages');
+    if (fi) fi.value = '';
+    var modal = document.getElementById('employeeTaskUpdateModal');
+    if (modal) modal.classList.add('open');
+};
 window.startAssignment = function(key) {
     var map = getEmployeeAssignmentStatus();
     map[key] = 'active';
@@ -811,6 +1047,8 @@ window.startAssignment = function(key) {
     if (path.includes('/employee/')) {
         var assignments = getStored('assignments', []).filter(function(a) { return (a.employeeEmail === (JSON.parse(sessionStorage.getItem('currentUser') || '{}').email)); });
         renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
+        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
+        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
     }
 };
 window.completeAssignment = function(key) {
@@ -821,6 +1059,8 @@ window.completeAssignment = function(key) {
     if (path.includes('/employee/')) {
         var assignments = getStored('assignments', []).filter(function(a) { return (a.employeeEmail === (JSON.parse(sessionStorage.getItem('currentUser') || '{}').email)); });
         renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
+        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
+        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
     }
 };
 
@@ -889,12 +1129,99 @@ function logout() {
 }
 
 // ===== CLIENT PORTAL FUNCTIONS =====
+function clientPortalProjectGroup(p) {
+    var s = (p.status || '').toLowerCase();
+    if (s.indexOf('complete') !== -1) return 'completed';
+    if (s === 'pending' || s === 'review') return 'pending';
+    return 'ongoing';
+}
+
+window.applyClientProjectFilter = function () {
+    var projectsContainer = document.getElementById('clientProjectsGrid');
+    if (!projectsContainer) return;
+    var f = window._clientProjectFilter || 'all';
+    var list = window._clientProjectsList || [];
+    var filtered =
+        f === 'all' ? list : list.filter(function (p) {
+              return clientPortalProjectGroup(p) === f;
+          });
+    var adminUpdates = getStored('adminClientProgressUpdates', []);
+    if (!filtered.length) {
+        projectsContainer.innerHTML = '<p class="empty-state">No projects in this view.</p>';
+        return;
+    }
+    projectsContainer.innerHTML = filtered
+        .map(function (project) {
+            var stClass = String(project.status || 'active')
+                .toLowerCase()
+                .replace(/\s+/g, '-');
+            var deadline = project.deadline || project.completionDate || '-';
+            var ups = adminUpdates.filter(function (u) {
+                return (
+                    String(u.projectId) === String(project.id) ||
+                    (u.projectName && u.projectName === project.name)
+                );
+            });
+            var upHtml = ups.length
+                ? '<div class="client-admin-updates"><strong>Updates from your team</strong>' +
+                  ups
+                      .slice()
+                      .reverse()
+                      .slice(0, 3)
+                      .map(function (u) {
+                          return (
+                              '<p class="small-meta">' +
+                              (u.at ? new Date(u.at).toLocaleString() : '') +
+                              ': ' +
+                              escapeHtml((u.message || '').slice(0, 160)) +
+                              '</p>'
+                          );
+                      })
+                      .join('') +
+                  '</div>'
+                : '';
+            return (
+                '<div class="project-card">' +
+                '<div class="project-image">' +
+                '<img src="' +
+                (project.image || '../images/project1.jpg') +
+                '" alt="' +
+                escapeHtml(project.name) +
+                '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Project\'">' +
+                '</div>' +
+                '<div class="project-details">' +
+                '<h3>' +
+                escapeHtml(project.name) +
+                '</h3>' +
+                '<p>Status: <span class="status-badge status-' +
+                stClass +
+                '">' +
+                escapeHtml(project.status || '') +
+                '</span></p>' +
+                '<p><strong>Deadline:</strong> ' +
+                escapeHtml(deadline) +
+                '</p>' +
+                '<div class="progress-bar"><div class="progress-fill" style="width: ' +
+                (project.progress || 0) +
+                '%"></div></div>' +
+                '<p>Progress: ' +
+                (project.progress || 0) +
+                '%</p>' +
+                '<p><strong>Next Milestone:</strong> ' +
+                escapeHtml(project.nextMilestone || '-') +
+                '</p>' +
+                upHtml +
+                '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(' +
+                project.id +
+                ')">View Details</button>' +
+                '</div></div>'
+            );
+        })
+        .join('');
+};
+
 function loadClientDashboard() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    const defaultProjects = [
-        { id: 1, name: 'Horizon Tower', image: '../images/project1.jpg', progress: 75, status: 'In Progress', nextMilestone: 'Foundation Complete', completionDate: 'Dec 2024', description: '45-story landmark with dynamic facade.', moneyPaid: '', moneyUsed: '', moneyRemaining: '', moneyOwed: '' },
-        { id: 2, name: 'Eco-Sphere Residence', image: '../images/project2.jpg', progress: 30, status: 'Design Phase', nextMilestone: 'Permit Approval', completionDate: 'Mar 2025', description: 'Net-zero carbon home with living walls.', moneyPaid: '', moneyUsed: '', moneyRemaining: '', moneyOwed: '' }
-    ];
     var portalProjects = getStored('portalProjects', []);
     var clientEmail = currentUser && (currentUser.email || '').toLowerCase();
     var clientName = (currentUser && currentUser.name) || '';
@@ -913,6 +1240,7 @@ function loadClientDashboard() {
                 status: p.status || 'Active',
                 nextMilestone: p.nextMilestone || '-',
                 completionDate: p.completionDate || '-',
+                deadline: p.deadline || p.completionDate || '',
                 description: p.description || '',
                 moneyPaid: p.moneyPaid || '-',
                 moneyUsed: p.moneyUsed || '-',
@@ -922,30 +1250,97 @@ function loadClientDashboard() {
         });
         setStored('clientProjects', projects);
     } else {
-        projects = getStored('clientProjects', null);
-        if (!projects || !projects.length) {
-            setStored('clientProjects', defaultProjects);
-            projects = defaultProjects;
-        }
+        projects = getStored('clientProjects', []) || [];
     }
-    const projectsContainer = document.getElementById('clientProjectsGrid');
-    if (projectsContainer) {
-        projectsContainer.innerHTML = projects.map(project => `
-            <div class="project-card">
-                <div class="project-image">
-                    <img src="${project.image}" alt="${project.name}" onerror="this.src='https://via.placeholder.com/400x300?text=${project.name.replace(/ /g, '+')}'">
-                </div>
-                <div class="project-details">
-                    <h3>${project.name}</h3>
-                    <p>Status: <span class="status-badge status-${project.status.toLowerCase().replace(' ', '-')}">${project.status}</span></p>
-                    <div class="progress-bar"><div class="progress-fill" style="width: ${project.progress}%"></div></div>
-                    <p>Progress: ${project.progress}%</p>
-                    <p><strong>Next Milestone:</strong> ${project.nextMilestone}</p>
-                    <p><strong>Est. Completion:</strong> ${project.completionDate}</p>
-                    <button class="btn btn-primary" onclick="viewProjectDetails(${project.id})">View Details</button>
-                </div>
-            </div>
-        `).join('');
+    window._clientProjectsList = projects;
+    window._clientProjectFilter = window._clientProjectFilter || 'all';
+    window.applyClientProjectFilter();
+    var clientProjTabs = document.querySelectorAll('#clientProjectFilterTabs .filter-btn');
+    if (clientProjTabs.length && !window._clientProjectsFilterBound) {
+        window._clientProjectsFilterBound = true;
+        clientProjTabs.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                clientProjTabs.forEach(function (b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+                window._clientProjectFilter = btn.getAttribute('data-filter') || 'all';
+                window.applyClientProjectFilter();
+            });
+        });
+    }
+    var pendingInv = (getStored('clientInvoices', []) || []).filter(function (i) {
+        return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
+    }).length;
+    var docCount = (getStored('clientDocuments', []) || []).length;
+    var ongoing = projects.filter(function (p) {
+        return clientPortalProjectGroup(p) !== 'completed';
+    }).length;
+    var elP = document.getElementById('clientStatProjects');
+    var elD = document.getElementById('clientStatDocs');
+    var elI = document.getElementById('clientStatInvoices');
+    var elM = document.getElementById('clientStatMilestones');
+    if (elP) elP.textContent = String(projects.length);
+    if (elD) elD.textContent = String(docCount);
+    if (elI) elI.textContent = String(pendingInv);
+    if (elM) elM.textContent = String(ongoing);
+
+    var addBtn = document.getElementById('clientAddProjectBtn');
+    var addModal = document.getElementById('clientAddProjectModal');
+    var addForm = document.getElementById('clientAddProjectForm');
+    if (addBtn && addModal && !window._clientAddProjectBound) {
+        window._clientAddProjectBound = true;
+        addBtn.addEventListener('click', function () {
+            addModal.classList.add('open');
+        });
+        document.querySelectorAll('[data-close="clientAddProjectModal"]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                addModal.classList.remove('open');
+            });
+        });
+        addModal.addEventListener('click', function (e) {
+            if (e.target === addModal) addModal.classList.remove('open');
+        });
+        if (addForm) {
+            addForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var nm = document.getElementById('clientNewProjectName').value;
+                var ds = document.getElementById('clientNewProjectDesc').value;
+                var dl = document.getElementById('clientNewProjectDeadline').value;
+                var token = sessionStorage.getItem('authToken');
+                fetch((window.API_BASE || '') + '/api/portal/client-project', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ name: nm, description: ds, deadline: dl })
+                })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error('fail');
+                        return r.json();
+                    })
+                    .then(function () {
+                        addModal.classList.remove('open');
+                        addForm.reset();
+                        return fetch((window.API_BASE || '') + '/api/portal/bootstrap', {
+                            headers: { Authorization: 'Bearer ' + token }
+                        });
+                    })
+                    .then(function (r) {
+                        if (r && r.ok) return r.json();
+                    })
+                    .then(function (data) {
+                        if (data && data.portalProjects) __portalCache.portalProjects = data.portalProjects;
+                        loadClientDashboard();
+                        refreshNotificationsBadge();
+                        alert('Project submitted for review.');
+                    })
+                    .catch(function () {
+                        alert('Could not add project.');
+                    });
+            });
+        }
     }
 
     const defaultDocs = [
@@ -1128,15 +1523,87 @@ function renderEmployeeTimeEntries(tbody, entries) {
 }
 
 // ===== EMPLOYEE PORTAL FUNCTIONS =====
-function loadEmployeeDashboard() {
-    const tasks = getStored('employeeTasks', null);
-    renderEmployeeTasks(document.querySelector('.tasks-list'), tasks);
+function renderEmployeeOngoingForUpdate() {
+    var container = document.getElementById('employeeOngoingProgressList');
+    if (!container) return;
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var assignments = (getStored('assignments', [])).filter(function (a) {
+        return (
+            a.employeeEmail &&
+            currentUser &&
+            a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase()
+        );
+    });
+    var statusMap = getEmployeeAssignmentStatus();
+    var ongoing = assignments.filter(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        var st = statusMap[key] || 'not-started';
+        return st !== 'completed';
+    });
+    container.innerHTML = ongoing.length
+        ? ongoing
+              .map(function (a) {
+                  var key = (a.project || '') + '|' + (a.employeeEmail || '');
+                  var st = statusMap[key] || 'not-started';
+                  var projEsc = String(a.project || '')
+                      .replace(/\\/g, '\\\\')
+                      .replace(/'/g, "\\'");
+                  var dl = a.deadline || a.due || '-';
+                  return (
+                      '<div class="deadline-item" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;"><div><strong>' +
+                      (a.project || '') +
+                      '</strong><p style="margin:4px 0 0;">Deadline: ' +
+                      dl +
+                      ' &middot; Status: ' +
+                      st +
+                      '</p></div><button type="button" class="btn btn-primary btn-sm" onclick="openEmployeeProgressModal(\'' +
+                      projEsc +
+                      '\')">Update progress</button></div>'
+                  );
+              })
+              .join('')
+        : '<p class="empty-state">No ongoing projects need updates.</p>';
+}
 
+function loadEmployeeDashboard() {
     const timeEntries = getStored('employeeTimeEntries', null);
     renderEmployeeTimeEntries(document.querySelector('.time-entries tbody'), timeEntries);
 
     var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
     var myAssignments = (getStored('assignments', [])).filter(function(a) { return a.employeeEmail && currentUser && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase(); });
+    var statusMap = getEmployeeAssignmentStatus();
+    var activeCount = myAssignments.filter(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        return (statusMap[key] || 'not-started') === 'active';
+    }).length;
+    var completedCount = myAssignments.filter(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        return (statusMap[key] || 'not-started') === 'completed';
+    }).length;
+    var assignedCount = myAssignments.length;
+    var now = new Date();
+    var mon = new Date(now);
+    mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    var weekStart = mon.toISOString().slice(0, 10);
+    var weekEnd = new Date(mon);
+    weekEnd.setDate(mon.getDate() + 6);
+    var weekEndStr = weekEnd.toISOString().slice(0, 10);
+    var entries = getStored('employeeTimeEntries', []);
+    var weekHours = entries
+        .filter(function (e) {
+            return e.date >= weekStart && e.date <= weekEndStr;
+        })
+        .reduce(function (sum, e) {
+            return sum + (parseFloat(e.hours) || 0);
+        }, 0);
+    var statActive = document.getElementById('employeeStatActive');
+    var statHours = document.getElementById('employeeStatHours');
+    var statAssigned = document.getElementById('employeeStatAssigned');
+    var statDone = document.getElementById('employeeStatCompleted');
+    if (statActive) statActive.textContent = String(activeCount);
+    if (statHours) statHours.textContent = weekHours.toFixed(1);
+    if (statAssigned) statAssigned.textContent = String(assignedCount);
+    if (statDone) statDone.textContent = String(completedCount);
     var deadlinesList = document.getElementById('employeeScheduleDeadlines');
     if (deadlinesList) {
         if (myAssignments.length) {
@@ -1172,6 +1639,7 @@ function loadEmployeeDashboard() {
             if (sec) sec.style.display = 'block';
         });
     });
+    renderEmployeeOngoingForUpdate();
 }
 
 function renderAdminUsers(tbody, users) {
@@ -1213,28 +1681,138 @@ function renderAdminUsers(tbody, users) {
         : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</td></tr>';
 }
 
+function adminPortalProjectGroup(p) {
+    var s = (p.status || '').toLowerCase();
+    if (s.indexOf('complete') !== -1) return 'completed';
+    if (s === 'pending' || s === 'review') return 'pending';
+    return 'ongoing';
+}
+
 function renderAdminProjects(tbody, projects) {
     if (!tbody) return;
-    const list = projects && projects.length ? projects : [];
+    __portalCache.portalProjects = projects && projects.length ? projects : getStored('portalProjects', []);
+    window.renderAdminProjectsTable();
+}
+
+window.renderAdminProjectsTable = function () {
+    var tbody = document.querySelector('.admin-projects tbody');
+    if (!tbody) return;
+    var list = getStored('portalProjects', []) || [];
+    var f = window._adminProjectFilter || 'all';
+    var filtered =
+        f === 'all'
+            ? list
+            : list.filter(function (p) {
+                  return adminPortalProjectGroup(p) === f;
+              });
     if (!list.length) {
         tbody.innerHTML =
-            '<tr><td colspan="6">No portal projects yet. Add one with <strong>New Project</strong> or they will sync from saved data.</td></tr>';
+            '<tr><td colspan="7">No portal projects yet. Add one with <strong>New Project</strong> or they will sync from saved data.</td></tr>';
         return;
     }
-    tbody.innerHTML = list.map(project => `
-        <tr>
-            <td>${project.name}</td>
-            <td>${project.client}</td>
-            <td>${project.budget || '-'}</td>
-            <td><div style="width: 100px;"><div class="progress-bar"><div class="progress-fill" style="width: ${project.progress || 0}%"></div></div></div></td>
-            <td><span class="status-badge status-${(project.status || 'Active').toLowerCase()}">${project.status || 'Active'}</span></td>
-            <td>
-                <button class="btn-icon" onclick="editProject(${project.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon" onclick="viewProject(${project.id})"><i class="fas fa-eye"></i></button>
-            </td>
-        </tr>
-    `).join('');
-}
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = filtered
+        .map(function (project) {
+            var st = (project.status || 'Active').toLowerCase().replace(/\s+/g, '-');
+            var dl = project.deadline || project.completionDate || '-';
+            var clientEsc = String(project.client || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            var nameEsc = String(project.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            var idStr = project.id;
+            return (
+                '<tr>' +
+                '<td>' +
+                (project.name || '') +
+                '</td>' +
+                '<td>' +
+                (project.client || '') +
+                '</td>' +
+                '<td>' +
+                (project.budget || '-') +
+                '</td>' +
+                '<td><div style="width: 100px;"><div class="progress-bar"><div class="progress-fill" style="width: ' +
+                (project.progress || 0) +
+                '%"></div></div></div></td>' +
+                '<td>' +
+                (adminPortalProjectGroup(project) === 'completed' ? '-' : escapeHtml(dl)) +
+                '</td>' +
+                '<td><span class="status-badge status-' +
+                st +
+                '">' +
+                (project.status || 'Active') +
+                '</span></td>' +
+                '<td>' +
+                '<button type="button" class="btn-icon" title="Assign" onclick="adminAssignProjectPrefill(\'' +
+                nameEsc +
+                '\',\'' +
+                clientEsc +
+                '\')"><i class="fas fa-user-plus"></i></button> ' +
+                '<button type="button" class="btn-icon" title="Invoice" onclick="adminInvoicePrefill(\'' +
+                clientEsc +
+                '\',\'' +
+                nameEsc +
+                '\')"><i class="fas fa-file-invoice"></i></button> ' +
+                '<button type="button" class="btn-icon" title="Update client" onclick="openAdminBroadcastModal(' +
+                idStr +
+                ')"><i class="fas fa-bullhorn"></i></button> ' +
+                '<button class="btn-icon" onclick="editProject(' +
+                idStr +
+                ')"><i class="fas fa-edit"></i></button> ' +
+                '<button class="btn-icon" onclick="viewProject(' +
+                idStr +
+                ')"><i class="fas fa-eye"></i></button>' +
+                '</td>' +
+                '</tr>'
+            );
+        })
+        .join('');
+};
+
+window.adminAssignProjectPrefill = function (projectName, clientEmail) {
+    navigatePortalSection('admin-assignments', {});
+    var sel = document.getElementById('assignProjectName');
+    if (sel && projectName) {
+        var opt = Array.prototype.slice.call(sel.options).find(function (o) { return o.value === projectName; });
+        if (!opt) {
+            var o = document.createElement('option');
+            o.value = projectName;
+            o.textContent = projectName;
+            sel.appendChild(o);
+        }
+        sel.value = projectName;
+    }
+    var ce = document.getElementById('assignClientEmail');
+    if (ce && clientEmail) ce.value = clientEmail;
+};
+
+window.adminInvoicePrefill = function (client, projectName) {
+    var modal = document.getElementById('adminInvoiceModal');
+    var invClient = document.getElementById('invClient');
+    var invProject = document.getElementById('invProject');
+    if (invClient) invClient.value = client || '';
+    if (invProject) invProject.value = projectName || '';
+    if (modal) modal.classList.add('open');
+};
+
+window.openAdminBroadcastModal = function (projectId) {
+    var projects = getStored('portalProjects', []);
+    var p = projects.find(function (x) { return String(x.id) === String(projectId); });
+    if (!p) return;
+    var modal = document.getElementById('adminBroadcastModal');
+    if (!modal) return;
+    document.getElementById('broadcastProjectId').value = p.id;
+    document.getElementById('broadcastProjectName').value = p.name || '';
+    var clientEmailEl = document.getElementById('broadcastClientEmail');
+    if (clientEmailEl) {
+        clientEmailEl.value = (p.client && p.client.indexOf('@') !== -1) ? p.client : '';
+    }
+    document.getElementById('broadcastMessage').value = '';
+    var imgs = document.getElementById('broadcastImages');
+    if (imgs) imgs.value = '';
+    modal.classList.add('open');
+};
 
 function renderAdminInvoices(tbody) {
     if (!tbody) return;
@@ -1315,8 +1893,11 @@ function renderAdminWebsiteProjects() {
     var list = getWebsiteProjects();
     tbody.innerHTML = list.length ? list.map(function(p) {
         var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
-        return '<tr><td>' + (p.title || '') + '</td><td>' + (p.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="4">No website projects. Add one above.</td></tr>';
+        var img = p.image
+            ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
+            : '—';
+        return '<tr><td>' + img + '</td><td>' + (p.title || '') + '</td><td>' + (p.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
 }
 function renderAdminWebsiteServices() {
     var tbody = document.getElementById('adminWebsiteServicesBody');
@@ -1324,8 +1905,11 @@ function renderAdminWebsiteServices() {
     var list = getWebsiteServices();
     tbody.innerHTML = list.length ? list.map(function(s) {
         var desc = (s.description || '').slice(0, 50) + ((s.description || '').length > 50 ? '...' : '');
-        return '<tr><td>' + (s.title || '') + '</td><td>' + (s.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="4">No website services. Add one above.</td></tr>';
+        var img = s.image
+            ? '<img src="' + String(s.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
+            : '—';
+        return '<tr><td>' + img + '</td><td>' + (s.title || '') + '</td><td>' + (s.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan="5">No website services. Add one above.</td></tr>';
 }
 window.deleteWebsiteProject = function(id) {
     if (typeof getWebsiteProjects !== 'function' || typeof setWebsiteProjects !== 'function') return;
@@ -1354,8 +1938,11 @@ function renderAdminBlogPosts() {
     var posts = getWebsiteBlogPosts();
     tbody.innerHTML = posts.length ? posts.map(function(p) {
         var ex = (p.excerpt || '').slice(0, 50) + ((p.excerpt || '').length > 50 ? '...' : '');
-        return '<tr><td>' + (p.title || '') + '</td><td>' + (p.date || '') + '</td><td>' + ex + '</td><td><button type=\"button\" class=\"btn-icon\" onclick=\"deleteBlogPost(' + p.id + ')\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan=\"4\">No blog posts. Add one above.</td></tr>';
+        var img = p.image
+            ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
+            : '—';
+        return '<tr><td>' + img + '</td><td>' + (p.title || '') + '</td><td>' + (p.date || '') + '</td><td>' + ex + '</td><td><button type=\"button\" class=\"btn-icon\" onclick=\"deleteBlogPost(' + p.id + ')\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan=\"5\">No blog posts. Add one above.</td></tr>';
 }
 window.deleteBlogPost = function(id) {
     if (typeof getWebsiteBlogPosts !== 'function' || typeof setWebsiteBlogPosts !== 'function') return;
@@ -1428,6 +2015,7 @@ async function renderPendingApprovals() {
                 });
                 if (r2.ok) {
                     await renderPendingApprovals();
+                    if (typeof refreshNotificationsBadge === 'function') refreshNotificationsBadge();
                     try {
                         var ur = await fetch(API_BASE + '/api/admin/users', {
                             headers: { Authorization: 'Bearer ' + token }
@@ -1474,7 +2062,37 @@ async function loadAdminDashboard() {
     __portalCache.portalUsers = directoryUsers;
     renderAdminUsers(document.querySelector('.users-list tbody'), directoryUsers);
     const projects = getStored('portalProjects', null);
-    renderAdminProjects(document.querySelector('.admin-projects tbody'), projects);
+    window._adminProjectFilter = 'all';
+    renderAdminProjectsTable();
+    var adminProjTabs = document.querySelectorAll('#adminProjectFilterTabs .filter-btn');
+    adminProjTabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            adminProjTabs.forEach(function (b) {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            window._adminProjectFilter = btn.getAttribute('data-filter') || 'all';
+            renderAdminProjectsTable();
+        });
+    });
+    var assignSel = document.getElementById('assignProjectName');
+    if (assignSel) {
+        var pl = getStored('portalProjects', []);
+        assignSel.innerHTML = pl.length
+            ? pl
+                  .map(function (p) {
+                      var n = String(p.name || '');
+                      return (
+                          '<option value="' +
+                          n.replace(/&/g, '&amp;').replace(/"/g, '&quot;') +
+                          '">' +
+                          escapeHtml(n) +
+                          '</option>'
+                      );
+                  })
+                  .join('')
+            : '<option value="">Add portal projects first</option>';
+    }
     renderAdminInvoices(document.getElementById('adminInvoicesBody'));
     const careersBody = document.getElementById('adminCareersBody');
     if (careersBody) {
@@ -1498,7 +2116,17 @@ async function loadAdminDashboard() {
     const totalRevenue = document.getElementById('totalRevenue');
     const pendingTasks = document.getElementById('pendingTasks');
     if (totalRevenue) totalRevenue.textContent = '$2.4M';
-    if (pendingTasks) pendingTasks.textContent = '47';
+    var pendingCount = 0;
+    try {
+        var pr = await fetch((window.API_BASE || '') + '/api/admin/pending-users', {
+            headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
+        });
+        if (pr.ok) {
+            var plist = await pr.json();
+            pendingCount = (plist && plist.length) || 0;
+        }
+    } catch (e) {}
+    if (pendingTasks) pendingTasks.textContent = String(pendingCount);
     var contentStatsEl = document.getElementById('adminContentStats');
     if (contentStatsEl) contentStatsEl.innerHTML = 'Portal projects: ' + (projects && projects.length ? projects.length : 0) + ' &middot; Invoices: ' + (getStored('portalInvoices', []).length) + ' &middot; Career applications: ' + (getStored('careerApplications', []).length);
     if (typeof getWebsiteProjects === 'function') renderAdminWebsiteProjects();
@@ -1663,12 +2291,8 @@ async function loadAdminDashboard() {
 
 // ===== HELPER FUNCTIONS =====
 function viewProjectDetails(projectId) {
-    var defaultProjects = [
-        { id: 1, name: 'Horizon Tower', image: '../images/project1.jpg', progress: 75, status: 'In Progress', nextMilestone: 'Foundation Complete', completionDate: 'Dec 2024', description: '45-story landmark with dynamic facade.' },
-        { id: 2, name: 'Eco-Sphere Residence', image: '../images/project2.jpg', progress: 30, status: 'Design Phase', nextMilestone: 'Permit Approval', completionDate: 'Mar 2025', description: 'Net-zero carbon home with living walls.' }
-    ];
-    var raw = getStored('clientProjects', defaultProjects);
-    var projects = Array.isArray(raw) ? raw : defaultProjects;
+    var raw = getStored('clientProjects', []);
+    var projects = Array.isArray(raw) ? raw : [];
     var p = projects.find(function(proj) { return proj.id === projectId || String(proj.id) === String(projectId); });
     var modal = document.getElementById('clientProjectViewModal');
     var content = document.getElementById('clientProjectViewContent');
@@ -1676,17 +2300,61 @@ function viewProjectDetails(projectId) {
     if (!p) {
         content.innerHTML = '<p>Project not found.</p>';
     } else {
-        content.innerHTML = '<table class="invoice-view-table">' +
-            '<tr><th>Project</th><td>' + (p.name || '') + '</td></tr>' +
-            '<tr><th>Status</th><td><span class="status-badge status-' + (p.status || '').toLowerCase().replace(/\s/g, '-') + '">' + (p.status || '') + '</span></td></tr>' +
-            '<tr><th>Progress</th><td>' + (p.progress || 0) + '%</td></tr>' +
-            '<tr><th>Next Milestone</th><td>' + (p.nextMilestone || '-') + '</td></tr>' +
-            '<tr><th>Est. Completion</th><td>' + (p.completionDate || '-') + '</td></tr>' +
-            '<tr><th>Money Paid</th><td>' + (p.moneyPaid !== undefined && p.moneyPaid !== null && p.moneyPaid !== '' ? p.moneyPaid : '-') + '</td></tr>' +
-            '<tr><th>Money Used</th><td>' + (p.moneyUsed !== undefined && p.moneyUsed !== null && p.moneyUsed !== '' ? p.moneyUsed : '-') + '</td></tr>' +
-            '<tr><th>Money Remaining</th><td>' + (p.moneyRemaining !== undefined && p.moneyRemaining !== null && p.moneyRemaining !== '' ? p.moneyRemaining : '-') + '</td></tr>' +
-            '<tr><th>Money Owed</th><td>' + (p.moneyOwed !== undefined && p.moneyOwed !== null && p.moneyOwed !== '' ? p.moneyOwed : '-') + '</td></tr>' +
-            (p.description ? '<tr><th>Description</th><td>' + p.description + '</td></tr>' : '') +
+        var dl = p.deadline || p.completionDate || '-';
+        var ups = (getStored('adminClientProgressUpdates', []) || []).filter(function (u) {
+            return String(u.projectId) === String(projectId) || (u.projectName && u.projectName === p.name);
+        });
+        var upRows = ups.length
+            ? ups
+                  .slice()
+                  .reverse()
+                  .map(function (u) {
+                      return (
+                          '<tr><td colspan="2">' +
+                          escapeHtml((u.at ? new Date(u.at).toLocaleString() + ': ' : '') + (u.message || '')) +
+                          '</td></tr>'
+                      );
+                  })
+                  .join('')
+            : '';
+        content.innerHTML =
+            '<table class="invoice-view-table">' +
+            '<tr><th>Project</th><td>' +
+            escapeHtml(p.name || '') +
+            '</td></tr>' +
+            '<tr><th>Status</th><td><span class="status-badge status-' +
+            String(p.status || '')
+                .toLowerCase()
+                .replace(/\s/g, '-') +
+            '">' +
+            escapeHtml(p.status || '') +
+            '</span></td></tr>' +
+            '<tr><th>Progress</th><td>' +
+            (p.progress || 0) +
+            '%</td></tr>' +
+            '<tr><th>Deadline</th><td>' +
+            escapeHtml(dl) +
+            '</td></tr>' +
+            '<tr><th>Next Milestone</th><td>' +
+            escapeHtml(p.nextMilestone || '-') +
+            '</td></tr>' +
+            '<tr><th>Est. Completion</th><td>' +
+            escapeHtml(p.completionDate || '-') +
+            '</td></tr>' +
+            '<tr><th>Money Paid</th><td>' +
+            escapeHtml(p.moneyPaid !== undefined && p.moneyPaid !== null && p.moneyPaid !== '' ? p.moneyPaid : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Used</th><td>' +
+            escapeHtml(p.moneyUsed !== undefined && p.moneyUsed !== null && p.moneyUsed !== '' ? p.moneyUsed : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Remaining</th><td>' +
+            escapeHtml(p.moneyRemaining !== undefined && p.moneyRemaining !== null && p.moneyRemaining !== '' ? p.moneyRemaining : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Owed</th><td>' +
+            escapeHtml(p.moneyOwed !== undefined && p.moneyOwed !== null && p.moneyOwed !== '' ? p.moneyOwed : '-') +
+            '</td></tr>' +
+            (p.description ? '<tr><th>Description</th><td>' + escapeHtml(p.description) + '</td></tr>' : '') +
+            (upRows ? '<tr><th colspan="2">Team updates</th></tr>' + upRows : '') +
             '</table>';
     }
     modal.classList.add('open');
