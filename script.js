@@ -50,38 +50,31 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(tick);
     })();
 
-    /* ===== HERO VIDEO AUTOPLAY + SCROLL FADE (fixed compact media) ===== */
+    /* ===== HERO VIDEO (smooth playback — no per-frame opacity that causes jank) ===== */
     const heroVideo = document.querySelector('.hero-video');
-    const heroMediaWrap = document.querySelector('.hero-media-wrap');
-    if (heroVideo) {
-        heroVideo.muted = true;
-        const playPromise = heroVideo.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {});
-        }
-    }
     const hero = document.querySelector('.hero');
     const navbar = document.getElementById('navbar');
     const navToggle = document.getElementById('navToggle');
-
-    function updateHeroFade() {
-        if (!hero || !heroVideo) return;
-        const h = hero.offsetHeight || 1;
-        const scroll = window.scrollY || window.pageYOffset;
-        const t = Math.min(1, Math.max(0, scroll / (h * 0.75)));
-        heroVideo.style.opacity = String(1 - t);
-        if (heroMediaWrap) {
-            const overlay = heroMediaWrap.querySelector('.hero-overlay');
-            if (overlay) overlay.style.opacity = String(0.28 + t * 0.45);
-        }
-        if (navbar) {
-            if (scroll > h * 0.35) navbar.classList.add('scrolled');
-            else navbar.classList.remove('scrolled');
+    if (heroVideo) {
+        heroVideo.muted = true;
+        heroVideo.playsInline = true;
+        heroVideo.setAttribute('playsinline', '');
+        var playPromise = heroVideo.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(function () {});
         }
     }
-    if (hero && heroVideo) {
-        updateHeroFade();
-        window.addEventListener('scroll', updateHeroFade, { passive: true });
+
+    function updateNavbarOnScroll() {
+        if (!hero || !navbar) return;
+        var scroll = window.scrollY || window.pageYOffset;
+        var h = hero.offsetHeight || 1;
+        if (scroll > h * 0.35) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    }
+    if (hero && navbar) {
+        updateNavbarOnScroll();
+        window.addEventListener('scroll', updateNavbarOnScroll, { passive: true });
     } else if (navbar) {
         navbar.classList.add('scrolled');
     }
@@ -93,22 +86,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /* ===== LOGIN MODAL SYSTEM ===== */
-    const loginBtn = document.getElementById('loginBtn');
+    /* ===== MODALS (careers, etc. — login uses dedicated pages) ===== */
     const loginModal = document.getElementById('loginModal');
     const closeModal = document.querySelector('.close-modal');
     const portalTabs = document.querySelectorAll('.portal-tab');
     const portalSelect = document.getElementById('portalType');
     const loginForm = document.getElementById('loginForm');
-
-    // Open modal
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            loginModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        });
-    }
 
     // Close modal (any .close-modal closes its parent .modal)
     document.querySelectorAll('.close-modal').forEach(function(btn) {
@@ -129,75 +112,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Register / Login toggle
-    const registerModal = document.getElementById('registerModal');
-    const showRegisterBtn = document.getElementById('showRegisterBtn');
-    const showLoginBtn = document.getElementById('showLoginBtn');
-    if (showRegisterBtn && registerModal && loginModal) {
-        showRegisterBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            loginModal.style.display = 'none';
-            registerModal.style.display = 'block';
-        });
-    }
-    if (showLoginBtn && registerModal && loginModal) {
-        showLoginBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            registerModal.style.display = 'none';
-            loginModal.style.display = 'block';
-        });
-    }
-
     const API_BASE = window.API_BASE || '';
-    // Register form
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var name = document.getElementById('regName').value.trim();
-            var email = document.getElementById('regEmail').value.trim();
-            var password = document.getElementById('regPassword').value;
-            var confirmPass = document.getElementById('regPasswordConfirm').value;
-            if (password !== confirmPass) {
-                alert('Passwords do not match.');
-                return;
-            }
-            fetch(API_BASE + '/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name, email: email, password: password })
-            })
-                .then(function (r) {
-                    return r.json().then(function (data) {
-                        if (!r.ok) throw new Error(data.error || 'Registration failed');
-                        return data;
-                    });
-                })
-                .then(function (data) {
-                    sessionStorage.setItem('authToken', data.token);
-                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-                    registerModal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    window.location.href = 'index.html';
-                })
-                .catch(function (err) {
-                    alert(err.message || 'Could not register.');
-                });
-        });
-    }
 
-    // Portal tabs functionality
-    portalTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            portalTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            const portal = this.getAttribute('data-portal');
-            portalSelect.value = portal;
+    // Portal tabs (legacy modals on pages that still include them)
+    if (portalSelect && portalTabs.length) {
+        portalTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                portalTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const portal = this.getAttribute('data-portal');
+                portalSelect.value = portal;
+            });
         });
-    });
-
-    // Sync select with tabs
-    if (portalSelect) {
         portalSelect.addEventListener('change', function() {
             const value = this.value;
             portalTabs.forEach(tab => {
@@ -206,51 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     tab.classList.add('active');
                 }
             });
-        });
-    }
-
-    /* ===== LOGIN (MongoDB via API) ===== */
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const portalType = document.getElementById('portalType').value;
-            fetch(API_BASE + '/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, password: password, portalType: portalType })
-            })
-                .then(function (r) {
-                    return r.json().then(function (data) {
-                        if (!r.ok) throw new Error(data.error || 'Login failed');
-                        return data;
-                    });
-                })
-                .then(function (data) {
-                    sessionStorage.setItem('authToken', data.token);
-                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-                    if (portalType === 'client') {
-                        if (loginModal) loginModal.style.display = 'none';
-                        document.body.style.overflow = 'auto';
-                        window.location.hash = '#home';
-                        window.location.reload();
-                    } else {
-                        let dashboardUrl = '';
-                        switch (portalType) {
-                            case 'employee':
-                                dashboardUrl = 'employee/dashboard.html';
-                                break;
-                            case 'admin':
-                                dashboardUrl = 'admin/dashboard.html';
-                                break;
-                        }
-                        window.location.href = dashboardUrl;
-                    }
-                })
-                .catch(function () {
-                    alert('Invalid credentials. Use demo accounts with matching passwords (e.g. client@demo.com / client).');
-                });
         });
     }
 
@@ -419,12 +300,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     window.addEventListener('scroll', updateActiveNavLink);
 
-    /* ===== CHECK FOR HASH IN URL (for login modal) ===== */
+    /* Legacy #login hash → client login page */
     if (window.location.hash === '#login') {
-        if (loginModal) {
-            loginModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
+        window.location.replace('client/login.html');
     }
 
     console.log('AIS Concepts website initialized');

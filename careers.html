@@ -46,7 +46,7 @@
             </li>
             <li><a href="index.html#contact">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
-            <li><a href="#" id="loginBtn">Login</a></li>
+            <li><a href="client/login.html" id="loginBtn">Client login</a></li>
             <li><a href="careers.html" class="hiring-btn active">We're Hiring</a></li>
         </ul>
     </nav>
@@ -175,40 +175,6 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>Secure Portal Access</h2>
-            <p class="modal-subtitle">Select your portal and sign in</p>
-            <div class="portal-tabs">
-                <button class="portal-tab active" data-portal="client">Client Portal</button>
-                <button class="portal-tab" data-portal="employee">Employee Portal</button>
-                <button class="portal-tab" data-portal="admin">Admin Portal</button>
-            </div>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter your password">
-                </div>
-                <div class="form-group">
-                    <label for="portalType">Portal Type</label>
-                    <select id="portalType" required>
-                        <option value="client">Client Portal</option>
-                        <option value="employee">Employee Portal</option>
-                        <option value="admin">Admin Portal</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-login">Access Portal</button>
-            </form>
-            <p class="demo-credentials">Demo: client@demo.com / client | employee@demo.com / employee | admin@demo.com / admin</p>
-        </div>
-    </div>
-
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -247,6 +213,7 @@
         </div>
     </footer>
 
+    <script src="api-config.js"></script>
     <script src="api-client.js"></script>
     <script src="script.js"></script>
     <script src="careers-script.js"></script>

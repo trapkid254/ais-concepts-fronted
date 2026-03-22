@@ -62,7 +62,7 @@
             <li><a href="#contact">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
             <li class="nav-auth-wrap">
-                <a href="#" id="loginBtn" class="nav-login-link">Login</a>
+                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
                 <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
                     <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
                     <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -76,7 +76,7 @@
     <!-- Hero: compact fixed video fades on scroll -->
     <section id="home" class="hero">
         <div class="hero-media-wrap" aria-hidden="true">
-            <video class="hero-video" autoplay muted loop playsinline>
+            <video class="hero-video" autoplay muted loop playsinline preload="auto" webkit-playsinline>
                 <source src="videos/hero-background.mp4" type="video/mp4">
             </video>
             <div class="hero-overlay"></div>
@@ -208,76 +208,6 @@
         </div>
     </section>
 
-    <!-- Login Modal (Portal System) -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content auth-modal-content">
-            <div class="auth-modal-watermark" role="presentation" aria-hidden="true"></div>
-            <span class="close-modal" data-close="loginModal">&times;</span>
-            <h2>Secure Portal Access</h2>
-            <p class="modal-subtitle">Select your portal and sign in</p>
-            
-            <div class="portal-tabs">
-                <button class="portal-tab active" data-portal="client">Client Portal</button>
-                <button class="portal-tab" data-portal="employee">Employee Portal</button>
-                <button class="portal-tab" data-portal="admin">Admin Portal</button>
-            </div>
-
-            <form id="loginForm" class="auth-form">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter your password">
-                </div>
-                <div class="form-group">
-                    <label for="portalType">Portal Type</label>
-                    <select id="portalType" required>
-                        <option value="client">Client Portal</option>
-                        <option value="employee">Employee Portal</option>
-                        <option value="admin">Admin Portal</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-login">Access Portal</button>
-                <p class="auth-switch">New client? <a href="#" id="showRegisterBtn">Register here</a></p>
-            </form>
-
-            <p class="demo-credentials">Demo: client@demo.com / client | employee@demo.com / employee | admin@demo.com / admin</p>
-        </div>
-    </div>
-
-    <!-- Register Modal (Client only) -->
-    <div class="modal" id="registerModal">
-        <div class="modal-content auth-modal-content">
-            <div class="auth-modal-watermark" role="presentation" aria-hidden="true"></div>
-            <span class="close-modal" data-close="registerModal">&times;</span>
-            <h2>Client Registration</h2>
-            <p class="modal-subtitle">Create your client account</p>
-
-            <form id="registerForm" class="auth-form">
-                <div class="form-group">
-                    <label for="regName">Full Name</label>
-                    <input type="text" id="regName" required placeholder="Your full name">
-                </div>
-                <div class="form-group">
-                    <label for="regEmail">Email</label>
-                    <input type="email" id="regEmail" required placeholder="you@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="regPassword">Password</label>
-                    <input type="password" id="regPassword" required placeholder="Choose a password" minlength="4">
-                </div>
-                <div class="form-group">
-                    <label for="regPasswordConfirm">Confirm Password</label>
-                    <input type="password" id="regPasswordConfirm" required placeholder="Confirm password" minlength="4">
-                </div>
-                <button type="submit" class="btn-login">Create Account</button>
-                <p class="auth-switch">Already have an account? <a href="#" id="showLoginBtn">Log in</a></p>
-            </form>
-        </div>
-    </div>
-
     <!-- Contact Section -->
     <section id="contact" class="contact" style="padding: 100px 0; background: #ffffff;">
         <div class="container">
@@ -386,6 +316,7 @@
         </div>
     </footer>
 
+    <script src="api-config.js"></script>
     <script src="api-client.js"></script>
     <script src="projects-data.js"></script>
     <script src="services-data.js"></script>

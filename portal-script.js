@@ -42,10 +42,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (m) m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
     });
 
+    const path = window.location.pathname;
     const token = sessionStorage.getItem('authToken');
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
     if (!token || !currentUser) {
-        window.location.href = '../index.html#login';
+        var loginPage = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
+        window.location.href = loginPage;
         return;
     }
     try {
@@ -55,7 +57,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (r.status === 401) {
             sessionStorage.removeItem('authToken');
             sessionStorage.removeItem('currentUser');
-            window.location.href = '../index.html#login';
+            var loginPage401 = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
+            window.location.href = loginPage401;
+            return;
+        }
+        if (r.status === 403) {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('currentUser');
+            var loginPage403 = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
+            window.location.href = loginPage403 + '?pending=1';
             return;
         }
         const data = await r.json();
@@ -74,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     displayUserInfo(currentUser);
     
     // Determine which portal we're in and load appropriate data
-    const path = window.location.pathname;
     if (path.includes('/client/')) {
         loadClientDashboard();
     } else if (path.includes('/employee/')) {
@@ -1371,6 +1380,60 @@ async function renderAdminEnquiries() {
 }
 
 // ===== ADMIN PORTAL FUNCTIONS =====
+async function renderPendingApprovals() {
+    var tbody = document.getElementById('adminPendingApprovalsBody');
+    if (!tbody) return;
+    var API_BASE = window.API_BASE || '';
+    var token = sessionStorage.getItem('authToken');
+    try {
+        var r = await fetch(API_BASE + '/api/admin/pending-users', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) {
+            tbody.innerHTML = '<tr><td colspan="5">Could not load pending accounts.</td></tr>';
+            return;
+        }
+        var list = await r.json();
+        tbody.innerHTML = list.length
+            ? list
+                  .map(function (u) {
+                      return (
+                          '<tr><td>' +
+                          (u.name || '') +
+                          '</td><td>' +
+                          (u.email || '') +
+                          '</td><td>' +
+                          (u.role || '') +
+                          '</td><td>' +
+                          (u.createdAt ? new Date(u.createdAt).toLocaleString() : '') +
+                          '</td><td><button type="button" class="btn btn-primary" data-approve-id="' +
+                          u.id +
+                          '">Approve</button></td></tr>'
+                      );
+                  })
+                  .join('')
+            : '<tr><td colspan="5">No pending accounts.</td></tr>';
+        tbody.querySelectorAll('[data-approve-id]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var id = btn.getAttribute('data-approve-id');
+                var r2 = await fetch(API_BASE + '/api/admin/users/' + id + '/approve', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                if (r2.ok) {
+                    await renderPendingApprovals();
+                    alert('Account approved.');
+                } else {
+                    alert('Could not approve.');
+                }
+            });
+        });
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Error loading list.</td></tr>';
+    }
+}
+
 async function loadAdminDashboard() {
     try {
         if (typeof loadWebsiteProjects === 'function') await loadWebsiteProjects();
@@ -1413,6 +1476,7 @@ async function loadAdminDashboard() {
     if (typeof getWebsiteServices === 'function') renderAdminWebsiteServices();
     if (typeof getWebsiteBlogPosts === 'function') renderAdminBlogPosts();
     await renderAdminEnquiries();
+    await renderPendingApprovals();
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');
     var addWebServBtn = document.getElementById('adminAddWebsiteServiceBtn');
     var webProjModal = document.getElementById('adminWebsiteProjectModal');
