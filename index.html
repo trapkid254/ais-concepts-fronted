@@ -73,7 +73,8 @@
         </ul>
     </nav>
 
-    <!-- Hero: compact fixed video fades on scroll -->
+    <!-- Hero: fixed layer — fades & lifts as you scroll (SOM-style); spacer below drives scroll distance -->
+    <div class="hero-fixed-wrap" id="heroFixedWrap">
     <section id="home" class="hero">
         <div class="hero-media-wrap" aria-hidden="true">
             <video class="hero-video" autoplay muted loop playsinline preload="auto" webkit-playsinline>
@@ -89,6 +90,8 @@
         </div>
         </div>
     </section>
+    </div>
+    <div class="hero-scroll-spacer" id="heroScrollSpacer" aria-hidden="true"></div>
 
     <!-- Stats section -->
     <section class="stats-section" id="stats">

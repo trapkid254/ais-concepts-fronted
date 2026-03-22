@@ -50,8 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(tick);
     })();
 
-    /* ===== HERO VIDEO (smooth playback — no per-frame opacity that causes jank) ===== */
+    /* ===== HERO VIDEO + SOM-style scroll (fixed layer fades & lifts; content slides over) ===== */
     const heroVideo = document.querySelector('.hero-video');
+    const heroFixedWrap = document.getElementById('heroFixedWrap');
+    const heroScrollSpacer = document.getElementById('heroScrollSpacer');
     const hero = document.querySelector('.hero');
     const navbar = document.getElementById('navbar');
     const navToggle = document.getElementById('navToggle');
@@ -65,18 +67,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function updateHeroSOM() {
+        if (!heroFixedWrap || !heroScrollSpacer) return;
+        var max = heroScrollSpacer.offsetHeight || 1;
+        var y = window.scrollY || window.pageYOffset;
+        var p = Math.min(1, y / max);
+        var opacity = Math.max(0, 1 - p * 1.12);
+        var ty = -p * 22;
+        var sc = 1 - p * 0.06;
+        heroFixedWrap.style.opacity = String(opacity);
+        heroFixedWrap.style.transform = 'translateY(' + ty + '%) scale(' + sc + ')';
+        heroFixedWrap.style.visibility = p >= 0.97 ? 'hidden' : 'visible';
+    }
+
     function updateNavbarOnScroll() {
-        if (!hero || !navbar) return;
+        if (!navbar) return;
         var scroll = window.scrollY || window.pageYOffset;
-        var h = hero.offsetHeight || 1;
+        var h = heroScrollSpacer ? heroScrollSpacer.offsetHeight : (hero ? hero.offsetHeight : 0) || 1;
         if (scroll > h * 0.35) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     }
-    if (hero && navbar) {
+
+    function onScroll() {
+        updateHeroSOM();
+        updateNavbarOnScroll();
+    }
+
+    if (heroFixedWrap && heroScrollSpacer) {
+        updateHeroSOM();
+        window.addEventListener('scroll', onScroll, { passive: true });
+    } else if (navbar) {
         updateNavbarOnScroll();
         window.addEventListener('scroll', updateNavbarOnScroll, { passive: true });
-    } else if (navbar) {
-        navbar.classList.add('scrolled');
     }
 
     /* ===== MOBILE NAV TOGGLE ===== */

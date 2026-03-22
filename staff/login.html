@@ -8,25 +8,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .auth-page { min-height: 100vh; padding: 100px 20px 40px; background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 50%, #fff 100%); }
+        .auth-page { min-height: 100vh; padding: 100px 16px 40px; background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 50%, #fff 100%); }
         .auth-wrap { max-width: 460px; margin: 0 auto; }
-        .auth-card { background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08); border: 1px solid rgba(51, 65, 85, 0.12); }
-        .auth-card h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
-        .auth-card .sub { color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
-        .portal-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .auth-card { position: relative; background: #fff; border-radius: 16px; padding: 32px 28px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08); border: 1px solid rgba(51, 65, 85, 0.12); overflow: hidden; }
+        .auth-card-watermark {
+            position: absolute; inset: 0; pointer-events: none; opacity: 0.06;
+            background: url('../images/logo.png') center center / min(280px, 70%) no-repeat;
+        }
+        .auth-card h1 { position: relative; font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+        .auth-card .sub { position: relative; color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
+        .portal-tabs { display: flex; gap: 8px; margin-bottom: 20px; position: relative; }
         .portal-tabs button { flex: 1; padding: 10px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; cursor: pointer; font-weight: 500; color: #475569; font-size: 0.9rem; }
         .portal-tabs button.active { background: #0f172a; color: #fff; border-color: #0f172a; }
-        .form-group { margin-bottom: 14px; text-align: left; }
+        .form-group { margin-bottom: 14px; text-align: left; position: relative; }
         .form-group label { display: block; font-size: 0.85rem; color: #334155; margin-bottom: 6px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+        .pw-input-wrap { position: relative; display: flex; align-items: center; }
+        .pw-input-wrap input { flex: 1; padding: 12px 44px 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+        .pw-toggle { position: absolute; right: 0; top: 0; bottom: 0; width: 44px; border: none; background: transparent; cursor: pointer; color: #64748b; }
+        .form-group input:not(.pw-input-wrap input) { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
         .btn-auth { width: 100%; padding: 14px; background: #0f172a; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; }
         .btn-auth:hover { background: #1e293b; }
-        .auth-links { margin-top: 18px; font-size: 0.9rem; color: #64748b; text-align: center; }
+        .auth-links { margin-top: 18px; font-size: 0.9rem; color: #64748b; text-align: center; position: relative; }
         .auth-links a { color: #0f766e; font-weight: 500; }
         .back-home { display: inline-block; margin-bottom: 20px; color: #0f766e; text-decoration: none; font-size: 0.95rem; }
-        .divider { margin: 28px 0 16px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+        .divider { margin: 28px 0 16px; padding-top: 20px; border-top: 1px solid #e2e8f0; position: relative; }
         .divider h2 { font-size: 1.05rem; color: #0f172a; margin-bottom: 8px; }
         .hint { font-size: 0.85rem; color: #64748b; margin-bottom: 14px; }
+        .pw-meter { margin-top: 8px; font-size: 0.75rem; color: #64748b; }
+        .pw-meter div { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+        .pw-meter [data-rule] { opacity: 0.45; }
+        .pw-meter [data-rule].met { opacity: 1; color: #0f766e; }
     </style>
 </head>
 <body>
@@ -34,8 +45,9 @@
         <div class="auth-wrap">
             <a class="back-home" href="../index.html"><i class="fas fa-arrow-left"></i> Back to home</a>
             <div class="auth-card">
+                <div class="auth-card-watermark" aria-hidden="true"></div>
                 <h1>Staff portal</h1>
-                <p class="sub">Administrator and employee sign-in. Use your <strong>email</strong> or, for the main admin account, username <code>aisconcepts</code>.</p>
+                <p class="sub">Use <strong>email</strong> or username <code>aisconcepts</code> for the main admin account.</p>
                 <div class="portal-tabs" id="staffPortalTabs">
                     <button type="button" class="active" data-portal="admin">Admin</button>
                     <button type="button" data-portal="employee">Employee</button>
@@ -48,13 +60,16 @@
                     </div>
                     <div class="form-group">
                         <label for="sPassword">Password</label>
-                        <input type="password" id="sPassword" required autocomplete="current-password">
+                        <div class="pw-input-wrap">
+                            <input type="password" id="sPassword" required autocomplete="current-password">
+                            <button type="button" class="pw-toggle" id="sPwToggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
                     </div>
                     <button type="submit" class="btn-auth">Sign in</button>
                 </form>
                 <div class="divider">
                     <h2>Employee registration</h2>
-                    <p class="hint">New employees register here first. An admin must approve your account before you can sign in.</p>
+                    <p class="hint">Register here first — an admin must approve before sign-in.</p>
                     <form id="employeeRegisterForm">
                         <div class="form-group">
                             <label for="eName">Full name</label>
@@ -66,11 +81,24 @@
                         </div>
                         <div class="form-group">
                             <label for="ePassword">Password</label>
-                            <input type="password" id="ePassword" required minlength="6">
+                            <div class="pw-input-wrap">
+                                <input type="password" id="ePassword" required maxlength="16" autocomplete="new-password">
+                                <button type="button" class="pw-toggle" id="ePwToggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                            </div>
+                            <div class="pw-meter" id="ePwMeter">
+                                <div data-rule="len"><i class="fas fa-circle"></i> 8–16 characters</div>
+                                <div data-rule="lower"><i class="fas fa-circle"></i> Lowercase letter</div>
+                                <div data-rule="upper"><i class="fas fa-circle"></i> Uppercase letter</div>
+                                <div data-rule="digit"><i class="fas fa-circle"></i> Number</div>
+                                <div data-rule="special"><i class="fas fa-circle"></i> Special character</div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ePassword2">Confirm password</label>
-                            <input type="password" id="ePassword2" required minlength="6">
+                            <div class="pw-input-wrap">
+                                <input type="password" id="ePassword2" required maxlength="16" autocomplete="new-password">
+                                <button type="button" class="pw-toggle" id="ePw2Toggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                            </div>
                         </div>
                         <button type="submit" class="btn-auth" style="background:#0f766e;">Request employee access</button>
                     </form>
@@ -83,9 +111,18 @@
     </div>
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
+    <script src="../auth-password.js"></script>
     <script>
     (function () {
         var API_BASE = window.API_BASE || '';
+        AisPassword.bindToggle(document.getElementById('sPwToggle'), document.getElementById('sPassword'));
+        AisPassword.bindToggle(document.getElementById('ePwToggle'), document.getElementById('ePassword'));
+        AisPassword.bindToggle(document.getElementById('ePw2Toggle'), document.getElementById('ePassword2'));
+        var ePw = document.getElementById('ePassword');
+        document.getElementById('ePwMeter') && ePw.addEventListener('input', function () {
+            AisPassword.updateMeter(document.getElementById('ePwMeter'), ePw.value);
+        });
+
         var portalInput = document.getElementById('portalType');
         document.querySelectorAll('#staffPortalTabs button').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -132,6 +169,10 @@
             var p1 = document.getElementById('ePassword').value;
             if (p1 !== document.getElementById('ePassword2').value) {
                 alert('Passwords do not match.');
+                return;
+            }
+            if (!AisPassword.allMet(p1)) {
+                alert('Password must meet all requirements (8–16 characters, upper, lower, number, special).');
                 return;
             }
             fetch(API_BASE + '/api/auth/register-employee', {

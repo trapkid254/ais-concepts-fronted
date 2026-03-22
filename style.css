@@ -310,12 +310,44 @@ section {
     color: #0f766e !important;
 }
 
-/* ===== Hero (full-viewport video, scrolls with page — no fixed strip / black gap) ===== */
+/* ===== Hero (SOM-style: fixed layer + spacer — video fades & lifts on scroll) ===== */
+.hero-fixed-wrap {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    width: 100%;
+    height: calc(100dvh - 72px);
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+    will-change: transform, opacity;
+    transform-origin: center top;
+}
+
+.hero-fixed-wrap .hero-inner,
+.hero-fixed-wrap .hero-content,
+.hero-fixed-wrap .hero-content a {
+    pointer-events: auto;
+}
+
+.hero-scroll-spacer {
+    height: calc(100dvh - 72px);
+    width: 100%;
+    pointer-events: none;
+}
+
+.hero-scroll-spacer ~ section,
+.hero-scroll-spacer ~ footer {
+    position: relative;
+    z-index: 4;
+}
+
 .hero {
     position: relative;
     width: 100%;
+    height: 100%;
     min-height: calc(100vh - 72px);
-    margin-top: 72px;
+    margin-top: 0;
     padding: 0;
     display: block;
     text-align: center;
@@ -363,6 +395,7 @@ section {
     position: relative;
     z-index: 2;
     min-height: calc(100vh - 72px);
+    height: 100%;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -1296,7 +1329,7 @@ section {
 /* ===== Stats section ===== */
 .stats-section {
     position: relative;
-    z-index: 2;
+    z-index: 5;
     background: #f9fafb;
     color: #111827;
     padding: 70px 0;
@@ -1537,10 +1570,12 @@ section {
 
 @media (max-width: 768px) {
     .navbar {
-        padding: 10px 16px;
+        padding: 8px 12px;
         flex-direction: row;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        z-index: 200;
+        flex-wrap: wrap;
     }
 
     .nav-links {
@@ -1551,14 +1586,42 @@ section {
         background: #ffffff;
         flex-direction: column;
         align-items: flex-start;
-        padding: 12px 20px 16px;
-        gap: 12px;
+        padding: 10px 14px 20px;
+        gap: 6px;
         border-bottom: 1px solid rgba(209, 213, 219, 0.8);
         display: none;
+        max-height: min(78vh, 520px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
     }
 
     .navbar.open .nav-links {
         display: flex;
+    }
+
+    .nav-links li {
+        width: 100%;
+    }
+
+    .nav-links a {
+        font-size: 0.68rem;
+        letter-spacing: 0.45px;
+        padding: 6px 0 4px;
+        line-height: 1.35;
+    }
+
+    .nav-links .hiring-btn {
+        font-size: 0.65rem !important;
+        padding: 6px 10px !important;
+    }
+
+    .hero-fixed-wrap {
+        height: calc(100dvh - 72px);
+    }
+
+    .hero-scroll-spacer {
+        height: calc(100dvh - 72px);
     }
 
     .nav-dropdown {
@@ -1578,7 +1641,7 @@ section {
     }
 
     .has-dropdown.open .nav-dropdown {
-        max-height: 300px;
+        max-height: min(60vh, 420px);
     }
 
     .nav-dropdown a {
@@ -1642,6 +1705,23 @@ section {
 }
 
 @media (max-width: 480px) {
+    .splash-logo {
+        padding: 14px 22px;
+        margin-bottom: 28px;
+    }
+    .splash-logo img {
+        height: 100px;
+        max-height: 22vh;
+    }
+    .splash-loading-wrap {
+        width: 220px;
+        height: 5px;
+    }
+    .splash-loading-pct {
+        font-size: 0.75rem;
+        top: 14px;
+    }
+
     .nav-links {
         flex-wrap: wrap;
         gap: 15px;
