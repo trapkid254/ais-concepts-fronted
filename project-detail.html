@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project | AIS Concepts</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Architecture • Interior Design • Urban Planning • Sustainable Concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="index.html#home">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li class="has-dropdown">
+                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="projects.html">All Projects</a></li>
+                    <li><a href="projects.html?filter=residential">Residential</a></li>
+                    <li><a href="projects.html?filter=commercial">Commercial</a></li>
+                    <li><a href="projects.html?filter=urban">Urban</a></li>
+                    <li><a href="projects.html?filter=interior">Interior</a></li>
+                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
+                </ul>
+            </li>
+            <li><a href="index.html#services">Services</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
+        </ul>
+    </nav>
+
+    <main class="project-detail-main">
+        <div class="container" id="projectDetailRoot">
+            <p id="projectDetailLoading">Loading project…</p>
+            <div id="projectDetailContent" style="display:none;"></div>
+            <p id="projectDetailError" style="display:none;"><a href="projects.html">← Back to projects</a></p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p><a href="projects.html">← All projects</a> · <a href="index.html">Home</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var slug = params.get('slug');
+        var root = document.getElementById('projectDetailContent');
+        var loading = document.getElementById('projectDetailLoading');
+        var err = document.getElementById('projectDetailError');
+        if (!slug) {
+            if (loading) loading.style.display = 'none';
+            if (err) err.style.display = 'block';
+            return;
+        }
+        function section(title, imgs) {
+            if (!imgs || !imgs.length) return '';
+            var h = '<section class="project-detail-section"><h2>' + title + '</h2><div class="project-gallery-grid">';
+            imgs.forEach(function(src) {
+                h += '<img src="' + src + '" alt="" loading="lazy" onerror="this.style.opacity=0.3">';
+            });
+            h += '</div></section>';
+            return h;
+        }
+        fetch((window.API_BASE || '') + '/api/projects/detail/' + encodeURIComponent(slug))
+            .then(function(r) {
+                if (!r.ok) throw new Error();
+                return r.json();
+            })
+            .then(function(p) {
+                if (loading) loading.style.display = 'none';
+                root.style.display = 'block';
+                document.title = (p.title || 'Project') + ' | AIS Concepts';
+                var hero = p.heroImage || p.image || '';
+                var m = p.metrics || {};
+                var metricsHtml = '<div class="project-metrics">' +
+                    '<div class="metric-card"><span>' + (m.costEfficiency != null ? m.costEfficiency + '%' : '—') + '</span><label>Cost efficiency</label></div>' +
+                    '<div class="metric-card"><span>' + (m.sustainability != null ? m.sustainability + '%' : '—') + '</span><label>Sustainability</label></div>' +
+                    '<div class="metric-card"><span>' + (m.innovation != null ? m.innovation + '%' : '—') + '</span><label>Innovation</label></div>' +
+                    '</div>';
+                var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
+                root.innerHTML =
+                    '<h1 class="section-title" style="margin-bottom:8px;">' + (p.title || '') + '</h1>' +
+                    '<p class="section-subtitle" style="margin-bottom:24px;">' + cat + '</p>' +
+                    (hero ? '<img class="project-hero-img" src="' + hero + '" alt="">' : '') +
+                    '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:#374151;">' + (p.description || '') + '</p>' +
+                    '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' +
+                    section('Concept sketches', p.conceptSketches) +
+                    section('Site analysis', p.siteAnalysis) +
+                    section('Floor plans & sections', p.floorPlans) +
+                    section('Renderings', p.renderings) +
+                    section('Construction photos', p.constructionPhotos) +
+                    section('Completed photos', p.completedPhotos) +
+                    '<p style="text-align:center;margin-top:40px;"><a href="projects.html" class="btn-primary">Back to portfolio</a></p>';
+            })
+            .catch(function() {
+                if (loading) loading.style.display = 'none';
+                if (err) err.style.display = 'block';
+            });
+    })();
+    </script>
+</body>
+</html>

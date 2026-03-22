@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS Concepts | Projects & Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Architecture • Interior Design • Urban Planning • Sustainable Concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="index.html#home">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li class="has-dropdown">
+                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="projects.html">All Projects</a></li>
+                    <li><a href="projects.html?filter=residential">Residential</a></li>
+                    <li><a href="projects.html?filter=commercial">Commercial</a></li>
+                    <li><a href="projects.html?filter=urban">Urban</a></li>
+                    <li><a href="projects.html?filter=interior">Interior</a></li>
+                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
+                </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="index.html#services">Services <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="index.html#services">All Services</a></li>
+                    <li><a href="index.html#services">Architectural Design</a></li>
+                    <li><a href="index.html#services">Interior Architecture</a></li>
+                    <li><a href="index.html#services">Urban Planning</a></li>
+                    <li><a href="index.html#services">Sustainable Design</a></li>
+                </ul>
+            </li>
+            <li><a href="index.html#contact">Contact Us</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="#" id="loginBtn">Login</a></li>
+            <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
+        </ul>
+    </nav>
+
+    <main class="projects-page-main" style="padding: 120px 0 80px;">
+        <div class="container">
+            <h1 class="section-title">Our Projects</h1>
+            <p class="section-subtitle">Filter by category to explore our work</p>
+
+            <div class="portfolio-filters portfolio-filters--wrap" id="portfolioFilters">
+                <button type="button" class="filter-btn active" data-filter="all">All</button>
+                <button type="button" class="filter-btn" data-filter="residential">Residential</button>
+                <button type="button" class="filter-btn" data-filter="commercial">Commercial</button>
+                <button type="button" class="filter-btn" data-filter="urban">Urban</button>
+                <button type="button" class="filter-btn" data-filter="interior">Interior</button>
+                <button type="button" class="filter-btn" data-filter="conceptual">Conceptual</button>
+            </div>
+
+            <div id="portfolioEmptyMessage" class="portfolio-empty-message" style="display: none;">
+                <p>No projects in this category at the moment.</p>
+                <p>Please check our other project categories.</p>
+            </div>
+
+            <div class="portfolio-grid" id="projectsPageGrid"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">AIS<span> Concepts</span></div>
+                    <p class="footer-about">Creating iconic architecture that balances innovation, sustainability, and human experience.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Our Studio</h4>
+                    <address>Spur Mall, Kiambu, Kenya</address>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 AIS Concepts. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="api-client.js"></script>
+    <script src="projects-data.js"></script>
+    <script src="script.js"></script>
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var initialFilter = (params.get('filter') || 'all').toLowerCase().replace(/\s/g, '-');
+
+        var grid = document.getElementById('projectsPageGrid');
+        var emptyMsg = document.getElementById('portfolioEmptyMessage');
+        var filterBtns = document.querySelectorAll('#portfolioFilters .filter-btn');
+
+        function render(filterKey, projects) {
+            var filter = filterKey === 'all' ? '' : filterKey;
+            var toShow = filterProjectsByCategory(projects, filter);
+            grid.innerHTML = '';
+            emptyMsg.style.display = 'none';
+
+            if (toShow.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            toShow.forEach(function(p) {
+                var catText = p.categorySecondary ? p.category + ' / ' + p.categorySecondary : p.category;
+                var imgSrc = p.image || 'https://via.placeholder.com/600x400?text=' + encodeURIComponent(p.title);
+                var slug = p.slug || '';
+                var detailHref = slug ? ('project-detail.html?slug=' + encodeURIComponent(slug)) : 'index.html#portfolio';
+                var el = document.createElement('div');
+                el.className = 'portfolio-item';
+                el.innerHTML = '<div class="portfolio-card-inner">' +
+                    '<div class="portfolio-front"><div class="portfolio-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/600x400?text=Project\'"></div></div>' +
+                    '<div class="portfolio-back">' +
+                    '<h3>' + (p.title || '') + '</h3>' +
+                    '<p class="portfolio-category">' + catText + '</p>' +
+                    '<p class="portfolio-description">' + (p.description || '') + '</p>' +
+                    '<a href="' + detailHref + '" class="btn-primary" style="margin-top:12px;display:inline-block;">View project</a>' +
+                    '</div></div>';
+                grid.appendChild(el);
+            });
+        }
+
+        loadWebsiteProjects().then(function(projects) {
+            filterBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    filterBtns.forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    var filter = btn.getAttribute('data-filter') || 'all';
+                    render(filter, projects);
+                    history.replaceState({}, '', '?filter=' + (filter === 'all' ? '' : filter));
+                });
+            });
+
+            if (initialFilter && initialFilter !== 'all') {
+                filterBtns.forEach(function(b) {
+                    b.classList.remove('active');
+                    if ((b.getAttribute('data-filter') || '') === initialFilter) b.classList.add('active');
+                });
+            }
+            render(initialFilter, projects);
+        });
+    })();
+    </script>
+</body>
+</html>

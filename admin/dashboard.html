@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS Concepts - Admin Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../portal-styles.css">
+</head>
+<body>
+    <div class="portal-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../index.html" class="logo">
+                    <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img src="" alt="User Avatar">
+                </div>
+                <div class="user-name">Loading...</div>
+                <div class="user-email">Loading...</div>
+                <span class="user-role">Admin</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" data-section="admin-dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="#" data-section="admin-users"><i class="fas fa-users"></i> User Management</a></li>
+                    <li><a href="#" data-section="admin-projects"><i class="fas fa-building"></i> Projects</a></li>
+                    <li><a href="#" data-section="admin-invoices"><i class="fas fa-file-invoice"></i> Invoices</a></li>
+                    <li><a href="#" data-section="admin-assignments"><i class="fas fa-tasks"></i> Assignments</a></li>
+                    <li><a href="#" data-section="admin-careers"><i class="fas fa-briefcase"></i> Careers</a></li>
+                    <li><a href="#" data-section="admin-analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                    <li><a href="#" data-section="admin-content"><i class="fas fa-database"></i> Content</a></li>
+                    <li><a href="#" data-section="admin-security"><i class="fas fa-shield-alt"></i> Security</a></li>
+                    <li><a href="#" data-section="admin-messages"><i class="fas fa-envelope"></i> Messages</a></li>
+                    <li><a href="#" data-section="admin-profile"><i class="fas fa-user"></i> Profile</a></li>
+                    <li><a href="#" data-section="admin-settings"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </nav>
+            
+            <div class="logout-btn">
+                <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Admin Portal</h1>
+                    <p>Manage users, projects, and system settings</p>
+                </div>
+                <div class="top-bar-actions">
+                    <a href="#" class="notification-badge" id="adminNotificationsBtn" title="View messages">
+                        <i class="far fa-bell"></i>
+                        <span class="badge" id="adminNotificationCount" style="display: none;">0</span>
+                    </a>
+                    <button id="menuToggle" class="btn-icon"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <section id="admin-dashboard" class="portal-section stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>Total Users</h3>
+                        <div class="stat-number" id="totalUsers">156</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>Active Projects</h3>
+                        <div class="stat-number" id="activeProjects">23</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>Total Revenue</h3>
+                        <div class="stat-number" id="totalRevenue">$2.4M</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>Pending Tasks</h3>
+                        <div class="stat-number" id="pendingTasks">47</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- User Management Table -->
+            <section id="admin-users" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>User Management</h2>
+                    <button class="btn btn-primary" id="adminAddUserBtn">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+                <table class="users-list">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Users will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Projects Overview -->
+            <section id="admin-projects" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Active Projects</h2>
+                    <button class="btn btn-primary" id="adminNewProjectBtn">
+                        <i class="fas fa-plus"></i> New Project
+                    </button>
+                </div>
+                <table class="admin-projects">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Client</th>
+                            <th>Budget</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Projects will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Invoices only -->
+            <section id="admin-invoices" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Invoices</h2>
+                    <button class="btn btn-primary" id="adminNewInvoiceBtn"><i class="fas fa-plus"></i> New Invoice</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Client</th>
+                            <th>Project</th>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminInvoicesBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Assignments only -->
+            <section id="admin-assignments" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Assign Projects to Employees</h2>
+                    <span class="section-sub">Assign projects with due date and deadline</span>
+                </div>
+                <div class="card profile-form-login-style" style="margin-bottom: 24px;">
+                    <form id="assignProjectForm" class="portal-form-grid">
+                    <div class="form-group">
+                        <label for="assignProjectName">Project</label>
+                        <select id="assignProjectName">
+                            <option value="Horizon Tower">Horizon Tower</option>
+                            <option value="Eco-Sphere Residence">Eco-Sphere Residence</option>
+                            <option value="Nexus Cultural Center">Nexus Cultural Center</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignEmployeeEmail">Employee Email</label>
+                        <input type="email" id="assignEmployeeEmail" placeholder="employee@demo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignDueDate">Due Date</label>
+                        <input type="date" id="assignDueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignNotes">Notes</label>
+                        <input type="text" id="assignNotes" placeholder="Short brief">
+                    </div>
+                    <div class="form-group">
+                        <label for="assignDeadline">Deadline</label>
+                        <input type="date" id="assignDeadline" placeholder="Project deadline">
+                    </div>
+                    <div class="form-group form-group-action">
+                        <button type="submit" class="btn btn-primary">Assign Project</button>
+                    </div>
+                    </form>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Employee</th>
+                            <th>Due</th>
+                            <th>Deadline</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignmentsTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Careers: applications from website -->
+            <section id="admin-careers" class="portal-section table-container" style="display: none;">
+                <div class="table-header">
+                    <h2>Career Applications</h2>
+                    <span class="section-sub">Applications from the Careers page (attachments, internships, etc.)</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Type</th>
+                            <th>Campus</th>
+                            <th>Year of Study</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminCareersBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Messages: professional layout -->
+            <section id="admin-messages" class="portal-section admin-messages-wrap" style="display: none;">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Messages</h2>
+                        <span class="section-sub">Communicate with clients and employees</span>
+                    </div>
+                    <div class="messages-compose card profile-form-login-style">
+                        <h3><i class="fas fa-pen"></i> New Message</h3>
+                        <form id="adminMessageForm" class="portal-form-grid">
+                            <div class="form-group">
+                                <label for="messageTo">To (email)</label>
+                                <input type="email" id="messageTo" placeholder="client@demo.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="messageProject">Project</label>
+                                <input type="text" id="messageProject" placeholder="Project name (optional)">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="messageBody">Message</label>
+                                <textarea id="messageBody" rows="3" placeholder="Type your message" required></textarea>
+                            </div>
+                            <div class="form-group form-group-action">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="messages-list">
+                        <h3><i class="fas fa-inbox"></i> Conversation History</h3>
+                        <div class="messages-list-inner" id="adminMessagesListInner"></div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Analytics: charts and system health -->
+            <section id="admin-analytics" class="portal-section admin-analytics-wrap" style="display: none;">
+                <div class="table-header" style="margin-bottom: 16px;">
+                    <h2>Analytics</h2>
+                    <span class="section-sub">Filter by client, project, or metric</span>
+                </div>
+                <div class="analytics-filters profile-form-login-style" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>View by</label>
+                        <select id="analyticsFilterBy">
+                            <option value="all">All</option>
+                            <option value="client">Client</option>
+                            <option value="project">Project</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Metric</label>
+                        <select id="analyticsMetric">
+                            <option value="revenue">Revenue</option>
+                            <option value="profit">Profit / Loss</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="analytics-grid">
+                    <div class="table-container card">
+                        <h2>Revenue (Line)</h2>
+                        <div class="chart-container"><canvas id="chartLine"></canvas></div>
+                    </div>
+                    <div class="table-container card">
+                        <h2>Projects by Status (Pie)</h2>
+                        <div class="chart-container"><canvas id="chartPie"></canvas></div>
+                    </div>
+                    <div class="table-container card">
+                        <h2>Users & Projects (Bar)</h2>
+                        <div class="chart-container"><canvas id="chartBar"></canvas></div>
+                    </div>
+                    <div class="table-container card">
+                        <h2>System Health</h2>
+                        <ul class="system-health-list">
+                            <li><span class="dot success"></span> Server: Online</li>
+                            <li><span class="dot success"></span> Database: Connected</li>
+                            <li><span class="dot"></span> Storage: 45% (230GB / 500GB)</li>
+                            <li><span class="dot success"></span> Last Backup: Today 03:00</li>
+                        </ul>
+                    </div>
+                    <div class="table-container card full-width">
+                        <h2>Recent Activity</h2>
+                        <div class="activity-list" id="adminActivityList">
+                            <div class="activity-item"><i class="fas fa-user-plus"></i> New user: Emma Watson</div>
+                            <div class="activity-item"><i class="fas fa-file-invoice"></i> Invoice INV-2024-003 paid</div>
+                            <div class="activity-item"><i class="fas fa-project-diagram"></i> Project updated: Horizon Tower</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Profile -->
+            <section id="admin-profile" class="portal-section table-container" style="display: none;">
+                <div class="profile-edit-wrap">
+                    <h2>Profile</h2>
+                    <p class="section-desc">Manage your account and security.</p>
+                    <div class="profile-card card profile-form-login-style">
+                        <div class="profile-photo-section">
+                            <div class="profile-avatar-wrap">
+                                <img id="adminProfilePhoto" src="" alt="Profile" class="profile-avatar-img">
+                                <label class="profile-photo-upload btn btn-secondary">
+                                    <input type="file" id="adminProfilePhotoInput" accept="image/*" style="display:none"> Change Photo
+                                </label>
+                            </div>
+                        </div>
+                        <form id="adminProfileForm" class="portal-form-grid">
+                            <div class="form-group"><label>Full Name</label><input type="text" id="adminProfileName" required></div>
+                            <div class="form-group"><label>Email</label><input type="email" id="adminProfileEmail" required></div>
+                            <div class="form-group"><label>Phone</label><input type="tel" id="adminProfilePhone" placeholder="+254 ..."></div>
+                            <div class="form-group full-width"><label>Change Password</label><input type="password" id="adminProfileNewPassword" placeholder="New password (leave blank to keep)"></div>
+                            <div class="form-group form-group-action full-width"><button type="submit" class="btn btn-primary">Save Profile</button></div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings -->
+            <section id="admin-settings" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Settings</h2>
+                    <span class="section-sub">Portal and notification preferences</span>
+                </div>
+                <div class="card profile-form-login-style" style="max-width: 560px;">
+                    <form id="adminSettingsForm" class="portal-form-grid">
+                        <div class="form-group full-width">
+                            <label><input type="checkbox" id="settingEmailNotifications" checked> Email notifications for new applications</label>
+                        </div>
+                        <div class="form-group full-width">
+                            <label><input type="checkbox" id="settingInvoiceReminders"> Send invoice reminders to clients</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Default invoice due (days)</label>
+                            <input type="number" id="settingInvoiceDueDays" value="30" min="7" max="90">
+                        </div>
+                        <div class="form-group form-group-action">
+                            <button type="button" class="btn btn-primary" id="adminSettingsSave">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="admin-content" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Content Management</h2>
+                    <span class="section-sub">Frontend website projects and services</span>
+                </div>
+                <p id="adminContentStats" style="margin-bottom: 24px;"></p>
+
+                <h3 style="margin-top: 24px;">Website Projects (Homepage & Projects Page)</h3>
+                <p class="section-sub">Add or delete projects shown on the frontend. Include category, image, and description.</p>
+                <button type="button" class="btn btn-primary" id="adminAddWebsiteProjectBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Project</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminWebsiteProjectsBody"></tbody>
+                </table>
+
+                <h3 style="margin-top: 32px;">Website Services (Homepage Services Section)</h3>
+                <p class="section-sub">Add or delete services shown on the frontend. Include category, image, and description.</p>
+                <button type="button" class="btn btn-primary" id="adminAddWebsiteServiceBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Service</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminWebsiteServicesBody"></tbody>
+                </table>
+
+                <h3 style="margin-top: 32px;">Blog Posts (Blog Page)</h3>
+                <p class="section-sub">Add or delete blog posts shown on the frontend blog page.</p>
+                <button type="button" class="btn btn-primary" id="adminAddBlogPostBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Blog Post</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Title</th><th>Date</th><th>Excerpt</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminBlogPostsBody"></tbody>
+                </table>
+
+                <h3 style="margin-top: 32px;">Project Enquiries (From Homepage)</h3>
+                <p class="section-sub">Enquiries submitted on the homepage project enquiry form.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Name</th><th>Contact</th><th>Type</th><th>Location</th><th>Timeline</th><th>Budget</th><th>Date</th></tr>
+                    </thead>
+                    <tbody id="adminEnquiriesBody"></tbody>
+                </table>
+            </section>
+
+            <section id="admin-security" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Security</h2>
+                    <span class="section-sub">Sessions and access</span>
+                </div>
+                <ul class="system-health-list" style="margin-top: 16px;">
+                    <li><span class="dot success"></span> Session timeout: 24 hours</li>
+                    <li><span class="dot success"></span> Passwords stored hashed</li>
+                    <li><span class="dot"></span> Last admin login: <span id="adminLastLogin">—</span></li>
+                </ul>
+            </section>
+
+            <!-- Add/Edit User Modal -->
+            <div class="modal" id="adminUserModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminUserModal">&times;</span>
+                    <h2 id="adminUserModalTitle">Add User</h2>
+                    <form id="adminUserForm">
+                        <input type="hidden" id="adminUserId">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" id="adminUserName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="adminUserEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select id="adminUserRole">
+                                <option value="Client">Client</option>
+                                <option value="Employee">Employee</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="adminUserStatus">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save User</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add/Edit Project Modal (centered) -->
+            <div class="modal modal-center" id="adminProjectModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="adminProjectModal">&times;</span>
+                    <h2 id="adminProjectModalTitle">New Project</h2>
+                    <form id="adminProjectForm">
+                        <input type="hidden" id="adminProjectId">
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="adminProjectName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Client</label>
+                            <input type="text" id="adminProjectClient" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Budget</label>
+                            <input type="text" id="adminProjectBudget" placeholder="$0.0M">
+                        </div>
+                        <div class="form-group">
+                            <label>Progress %</label>
+                            <input type="number" id="adminProjectProgress" min="0" max="100" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="adminProjectCategory">
+                                <option value="Commercial">Commercial</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Cultural & Public">Cultural & Public</option>
+                                <option value="Mixed-Use">Mixed-Use</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Money Paid (client view)</label>
+                            <input type="text" id="adminProjectMoneyPaid" placeholder="e.g. $10,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Money Used</label>
+                            <input type="text" id="adminProjectMoneyUsed" placeholder="e.g. $8,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Money Remaining</label>
+                            <input type="text" id="adminProjectMoneyRemaining" placeholder="e.g. $2,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Money Owed</label>
+                            <input type="text" id="adminProjectMoneyOwed" placeholder="e.g. $0">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="adminProjectStatus">
+                                <option value="Active">Active</option>
+                                <option value="Review">Review</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="adminProjectExitBtn">Exit</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- View Project Modal (read-only) -->
+            <div class="modal" id="adminViewProjectModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminViewProjectModal">&times;</span>
+                    <h2>Project Details</h2>
+                    <div id="adminViewProjectContent"></div>
+                </div>
+            </div>
+
+            <!-- View Invoice Modal -->
+            <div class="modal" id="adminInvoiceViewModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminInvoiceViewModal">&times;</span>
+                    <h2>Invoice Details</h2>
+                    <div id="adminInvoiceViewContent" class="invoice-view-body"></div>
+                </div>
+            </div>
+
+            <!-- New Invoice Modal -->
+            <div class="modal" id="adminInvoiceModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminInvoiceModal">&times;</span>
+                    <h2>New Invoice</h2>
+                    <form id="adminInvoiceForm">
+                        <div class="form-group">
+                            <label>Invoice #</label>
+                            <input type="text" id="invNumber" required placeholder="INV-2024-004">
+                        </div>
+                        <div class="form-group">
+                            <label>Client</label>
+                            <input type="text" id="invClient" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <input type="text" id="invProject" placeholder="Project name">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="text" id="invAmount" required placeholder="$0">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="invDueDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="invStatus">
+                                <option value="Pending">Pending</option>
+                                <option value="Due">Due</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Invoice</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Edit Invoice Modal -->
+            <div class="modal" id="adminInvoiceEditModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminInvoiceEditModal">&times;</span>
+                    <h2>Edit Invoice</h2>
+                    <form id="adminInvoiceEditForm">
+                        <input type="hidden" id="invEditNumber">
+                        <div class="form-group">
+                            <label>Invoice #</label>
+                            <input type="text" id="invEditNumberDisplay" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Client</label>
+                            <input type="text" id="invEditClient" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <input type="text" id="invEditProject" placeholder="Project name">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="text" id="invEditAmount" required placeholder="$0">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="invEditDueDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="invEditStatus">
+                                <option value="Pending">Pending</option>
+                                <option value="Due">Due</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Website Project Modal (frontend) -->
+            <div class="modal" id="adminWebsiteProjectModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminWebsiteProjectModal">&times;</span>
+                    <h2>Add Website Project</h2>
+                    <form id="adminWebsiteProjectForm">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="webProjectTitle" required placeholder="Project name">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="webProjectCategory">
+                                <option value="Residential">Residential</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Urban">Urban</option>
+                                <option value="Interior">Interior</option>
+                                <option value="Conceptual">Conceptual</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="webProjectDescription" rows="3" required placeholder="Short description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="webProjectImage" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Project</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Website Service Modal (frontend) -->
+            <div class="modal" id="adminWebsiteServiceModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminWebsiteServiceModal">&times;</span>
+                    <h2>Add Website Service</h2>
+                    <form id="adminWebsiteServiceForm">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="webServiceTitle" required placeholder="Service name">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="webServiceCategory">
+                                <option value="Architectural Design">Architectural Design</option>
+                                <option value="Interior Architecture">Interior Architecture</option>
+                                <option value="Urban Planning">Urban Planning</option>
+                                <option value="Sustainable Design">Sustainable Design</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="webServiceDescription" rows="3" required placeholder="Short description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="webServiceImage" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Service</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Blog Post Modal (frontend blog) -->
+            <div class="modal" id="adminBlogPostModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminBlogPostModal">&times;</span>
+                    <h2>Add Blog Post</h2>
+                    <form id="adminBlogPostForm">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="blogPostTitle" required placeholder="Post title">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="blogPostDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Excerpt</label>
+                            <textarea id="blogPostExcerpt" rows="3" required placeholder="Short summary"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Cover Image</label>
+                            <input type="file" id="blogPostImage" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Post</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Notifications Modal -->
+            <div class="modal" id="adminNotificationsModal">
+                <div class="modal-content">
+                    <span class="close-modal" id="closeAdminNotifications">&times;</span>
+                    <h2>Notifications</h2>
+                    <p class="modal-subtitle">Recent activity across projects and users</p>
+                    <ul style="list-style:none; padding-left:0; display:flex; flex-direction:column; gap:12px;">
+                        <li><i class="fas fa-user-plus" style="color:#20c4b4;"></i> New client onboarded for Eco-Sphere Residence.</li>
+                        <li><i class="fas fa-file-invoice-dollar" style="color:#20c4b4;"></i> Invoice INV-2024-004 generated for Horizon Tower.</li>
+                        <li><i class="fas fa-tasks" style="color:#20c4b4;"></i> Employee progress update submitted for Nexus Cultural Center.</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../api-client.js"></script>
+    <script src="../projects-data.js"></script>
+    <script src="../services-data.js"></script>
+    <script src="../blog-data.js"></script>
+    <script src="../portal-script.js"></script>
+</body>
+</html>

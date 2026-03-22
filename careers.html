@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS Concepts | We're Hiring</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Architecture • Interior Design • Urban Planning • Sustainable Concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="index.html#home">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li class="has-dropdown">
+                <a href="index.html#portfolio">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="index.html#portfolio">All Projects</a></li>
+                    <li><a href="index.html#portfolio">Commercial</a></li>
+                    <li><a href="index.html#portfolio">Residential</a></li>
+                    <li><a href="index.html#portfolio">Cultural & Public</a></li>
+                    <li><a href="index.html#portfolio">Mixed-Use</a></li>
+                </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="index.html#services">Services <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="index.html#services">All Services</a></li>
+                    <li><a href="index.html#services">Architectural Design</a></li>
+                    <li><a href="index.html#services">Interior Architecture</a></li>
+                    <li><a href="index.html#services">Urban Planning</a></li>
+                    <li><a href="index.html#services">Sustainable Design</a></li>
+                </ul>
+            </li>
+            <li><a href="index.html#contact">Contact Us</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="#" id="loginBtn">Login</a></li>
+            <li><a href="careers.html" class="hiring-btn active">We're Hiring</a></li>
+        </ul>
+    </nav>
+
+    <main class="careers-page-main">
+        <section class="careers-hero">
+            <div class="container">
+                <h1 class="section-title typewriter-title" data-typewriter="We're Hiring">We're Hiring</h1>
+                <h2 class="careers-vacancies typewriter-sub" data-typewriter="Vacancies">Vacancies</h2>
+            </div>
+        </section>
+
+        <section class="careers-open-positions">
+            <div class="container">
+                <h2 class="section-title typewriter-title" data-typewriter="Open positions">Open positions</h2>
+
+                <div class="careers-cards">
+                    <!-- Attachments -->
+                    <div class="career-card">
+                        <h3 class="career-card-title">Attachments</h3>
+                        <p class="career-card-desc">Join our dynamic team and gain hands-on experience in the exciting world of architecture and construction.</p>
+                        <button type="button" class="btn-apply career-apply-btn" data-role="Attachments">Apply Now</button>
+                    </div>
+
+                    <!-- Internships -->
+                    <div class="career-card">
+                        <h3 class="career-card-title">Internships</h3>
+                        <p class="career-card-desc">Help us build world-class projects while diversifying your design and construction skills.</p>
+                        <button type="button" class="btn-apply career-apply-btn" data-role="Internships">Apply Now</button>
+                    </div>
+
+                    <!-- Part-Time -->
+                    <div class="career-card">
+                        <h3 class="career-card-title">Part-Time Positions</h3>
+                        <p class="career-card-desc">We're a team who care deeply about each other. Apply for a part-time position.</p>
+                        <button type="button" class="btn-apply career-apply-btn" data-role="Part-Time Positions">Apply Now</button>
+                    </div>
+
+                    <!-- Full-Time -->
+                    <div class="career-card">
+                        <h3 class="career-card-title">Full-Time Positions</h3>
+                        <p class="career-card-desc">We value our work and are here for the long run. Want to join us for a full-time position?</p>
+                        <button type="button" class="btn-apply career-apply-btn" data-role="Full-Time Positions">Apply Now</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="150">0</span><span class="stat-suffix">+</span>
+                        <p class="stat-label">Projects Done</p>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="80">0</span><span class="stat-suffix">+</span>
+                        <p class="stat-label">Happy Clients</p>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="15">0</span><span class="stat-suffix">+</span>
+                        <p class="stat-label">Years Experience</p>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-count="25">0</span><span class="stat-suffix">+</span>
+                        <p class="stat-label">Team Members</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Career Application Modal -->
+    <div class="modal" id="careerApplicationModal">
+        <div class="modal-content">
+            <span class="close-modal" data-close="careerApplicationModal">&times;</span>
+            <h2>Apply for <span id="careerRoleDisplay"></span></h2>
+            <p class="modal-subtitle">Tell us how you'd like to join AIS Concepts</p>
+            <form id="careerApplicationForm">
+                <div class="form-group">
+                    <label for="careerName">Full Name</label>
+                    <input type="text" id="careerName" required placeholder="Your full name">
+                </div>
+                <div class="form-group">
+                    <label for="careerEmail">Email</label>
+                    <input type="email" id="careerEmail" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="careerPhone">Phone</label>
+                    <input type="tel" id="careerPhone" placeholder="+254 7XX XXX XXX">
+                </div>
+                <div class="form-group">
+                    <label for="careerType">Application Type</label>
+                    <select id="careerType" required>
+                        <option value="">Select type</option>
+                        <option value="attachment">Attachment</option>
+                        <option value="internship">Internship</option>
+                        <option value="part-time">Part-Time</option>
+                        <option value="full-time">Full-Time</option>
+                    </select>
+                </div>
+                <div class="form-group career-extra-fields" id="careerCampusWrap" style="display: none;">
+                    <label for="careerCampus">Campus Name</label>
+                    <input type="text" id="careerCampus" placeholder="e.g. University of Nairobi">
+                </div>
+                <div class="form-group career-extra-fields" id="careerYearWrap" style="display: none;">
+                    <label for="careerYear">Year of Study</label>
+                    <input type="text" id="careerYear" placeholder="e.g. 3rd Year">
+                </div>
+                <div class="form-group career-cert-wrap" id="careerCertWrap" style="display: none;">
+                    <label for="careerCertificate">Certificates <span class="required">*</span></label>
+                    <input type="file" id="careerCertificate" accept=".pdf,.doc,.docx,image/*" multiple>
+                    <small>Required for Full-Time and Part-Time. Upload your certificates.</small>
+                </div>
+                <div class="form-group">
+                    <label for="careerCV">CV / Resume (optional)</label>
+                    <input type="file" id="careerCV" accept=".pdf,.doc,.docx">
+                </div>
+                <div class="form-group">
+                    <label for="careerMessage">Short Motivation</label>
+                    <textarea id="careerMessage" rows="4" placeholder="Tell us why you're a great fit"></textarea>
+                </div>
+                <button type="submit" class="btn-login">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Secure Portal Access</h2>
+            <p class="modal-subtitle">Select your portal and sign in</p>
+            <div class="portal-tabs">
+                <button class="portal-tab active" data-portal="client">Client Portal</button>
+                <button class="portal-tab" data-portal="employee">Employee Portal</button>
+                <button class="portal-tab" data-portal="admin">Admin Portal</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                <div class="form-group">
+                    <label for="portalType">Portal Type</label>
+                    <select id="portalType" required>
+                        <option value="client">Client Portal</option>
+                        <option value="employee">Employee Portal</option>
+                        <option value="admin">Admin Portal</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-login">Access Portal</button>
+            </form>
+            <p class="demo-credentials">Demo: client@demo.com / client | employee@demo.com / employee | admin@demo.com / admin</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="footer-logo">AIS<span> Concepts</span></div>
+                    <p class="footer-about">Creating iconic architecture that balances innovation, sustainability, and human experience.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                        <a href="#"><i class="fab fa-x"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Our Studio</h4>
+                    <address>
+                        Spur Mall<br>Kiambu, Kenya<br>
+                        <i class="fas fa-phone-alt"></i> +254 719548773<br>
+                        <i class="fas fa-envelope"></i> studio@aisconcepts.com
+                    </address>
+                </div>
+                <div class="footer-col">
+                    <h4>Newsletter</h4>
+                    <p>Subscribe to receive our latest projects and insights.</p>
+                    <form class="newsletter-form" id="newsletterForm">
+                        <input type="email" placeholder="Your email address" required>
+                        <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 AIS Concepts. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script src="careers-script.js"></script>
+</body>
+</html>
