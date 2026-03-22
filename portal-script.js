@@ -452,25 +452,9 @@ function setupAdminInteractions(currentUser) {
     if (userForm && userModal && usersList) {
         userForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const id = document.getElementById('adminUserId').value;
-            const users = getStored('portalUsers', [
-                { id: 1, name: 'John Client', email: 'john@client.com', role: 'Client', status: 'Active', lastLogin: '2024-03-18' },
-                { id: 2, name: 'Sarah Employee', email: 'sarah@employee.com', role: 'Employee', status: 'Active', lastLogin: '2024-03-19' },
-                { id: 3, name: 'Mike Admin', email: 'mike@admin.com', role: 'Admin', status: 'Active', lastLogin: '2024-03-19' },
-                { id: 4, name: 'Emma Client', email: 'emma@client.com', role: 'Client', status: 'Inactive', lastLogin: '2024-03-10' }
-            ]);
-            const name = document.getElementById('adminUserName').value;
-            const email = document.getElementById('adminUserEmail').value;
-            const role = document.getElementById('adminUserRole').value;
-            const status = document.getElementById('adminUserStatus').value;
-            if (id) {
-                const idx = users.findIndex(u => String(u.id) === id);
-                if (idx >= 0) { users[idx] = { ...users[idx], name, email, role, status }; }
-            } else {
-                users.push({ id: Date.now(), name, email, role, status, lastLogin: '-' });
-            }
-            setStored('portalUsers', users);
-            renderAdminUsers(usersList, users);
+            alert(
+                'Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals. This form is for reference only.'
+            );
             userModal.classList.remove('open');
         });
     }
@@ -502,11 +486,7 @@ function setupAdminInteractions(currentUser) {
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('adminProjectId').value;
-            const projects = getStored('portalProjects', [
-                { id: 1, name: 'Horizon Tower', client: 'ABC Corp', progress: 75, status: 'Active', budget: '$2.5M' },
-                { id: 2, name: 'Eco-Sphere', client: 'Green Living', progress: 30, status: 'Active', budget: '$1.8M' },
-                { id: 3, name: 'Nexus Center', client: 'City Council', progress: 90, status: 'Review', budget: '$4.2M' }
-            ]);
+            const projects = getStored('portalProjects', []);
             const name = document.getElementById('adminProjectName').value;
             const client = document.getElementById('adminProjectClient').value;
             const budget = document.getElementById('adminProjectBudget').value || '$0';
@@ -535,10 +515,10 @@ function setupAdminInteractions(currentUser) {
     if (viewProjectModal) viewProjectModal.addEventListener('click', function(e) { if (e.target === viewProjectModal) viewProjectModal.classList.remove('open'); });
 
     window.editUser = function(userId) {
-        const users = getStored('portalUsers', []);
-        const user = users.find(u => u.id === userId);
+        const users = __portalCache.portalUsers || [];
+        const user = users.find(function (u) { return String(u.id) === String(userId); });
         if (!user) return;
-        document.getElementById('adminUserModalTitle').textContent = 'Edit User';
+        document.getElementById('adminUserModalTitle').textContent = 'View user (read-only)';
         document.getElementById('adminUserId').value = user.id;
         document.getElementById('adminUserName').value = user.name;
         document.getElementById('adminUserEmail').value = user.email;
@@ -546,11 +526,27 @@ function setupAdminInteractions(currentUser) {
         document.getElementById('adminUserStatus').value = user.status || 'Active';
         document.getElementById('adminUserModal').classList.add('open');
     };
-    window.deleteUser = function(userId) {
-        if (!confirm('Are you sure you want to delete this user?')) return;
-        const users = getStored('portalUsers', []).filter(u => u.id !== userId);
-        setStored('portalUsers', users);
-        renderAdminUsers(document.querySelector('.users-list tbody'), users);
+    window.deleteUser = async function(userId) {
+        if (!confirm('Permanently delete this user from the database?')) return;
+        var API_BASE = window.API_BASE || '';
+        var token = sessionStorage.getItem('authToken');
+        try {
+            var r = await fetch(API_BASE + '/api/admin/users/' + encodeURIComponent(userId), {
+                method: 'DELETE',
+                headers: { Authorization: 'Bearer ' + token }
+            });
+            if (!r.ok) {
+                var err = await r.json().catch(function () { return {}; });
+                alert(err.error || 'Could not delete user.');
+                return;
+            }
+            __portalCache.portalUsers = (__portalCache.portalUsers || []).filter(function (u) {
+                return String(u.id) !== String(userId);
+            });
+            renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
+        } catch (e) {
+            alert('Could not delete user.');
+        }
     };
     window.editProject = function(projectId) {
         const projects = getStored('portalProjects', []);
@@ -1180,37 +1176,52 @@ function loadEmployeeDashboard() {
 
 function renderAdminUsers(tbody, users) {
     if (!tbody) return;
-    const list = users && users.length ? users : [
-        { id: 1, name: 'John Client', email: 'john@client.com', role: 'Client', status: 'Active', lastLogin: '2024-03-18' },
-        { id: 2, name: 'Sarah Employee', email: 'sarah@employee.com', role: 'Employee', status: 'Active', lastLogin: '2024-03-19' },
-        { id: 3, name: 'Mike Admin', email: 'mike@admin.com', role: 'Admin', status: 'Active', lastLogin: '2024-03-19' },
-        { id: 4, name: 'Emma Client', email: 'emma@client.com', role: 'Client', status: 'Inactive', lastLogin: '2024-03-10' }
-    ];
-    if (!users || !users.length) setStored('portalUsers', list);
-    tbody.innerHTML = (users && users.length ? users : list).map(user => `
-        <tr>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td><span class="user-role role-${(user.role || '').toLowerCase()}">${user.role}</span></td>
-            <td><span class="status-badge status-${(user.status || 'Active').toLowerCase()}">${user.status || 'Active'}</span></td>
-            <td>${user.lastLogin || '-'}</td>
-            <td>
-                <button class="btn-icon" onclick="editUser(${user.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>
-    `).join('');
+    const list = users && users.length ? users : [];
+    tbody.innerHTML = list.length
+        ? list.map(function (user) {
+              var rid = String(user.id).replace(/'/g, "\\'");
+              return (
+                  '<tr>' +
+                  '<td>' +
+                  (user.name || '') +
+                  '</td><td>' +
+                  (user.email || '') +
+                  '</td><td><span class="user-role role-' +
+                  String(user.role || '')
+                      .toLowerCase()
+                      .replace(/\s+/g, '') +
+                  '">' +
+                  (user.role || '') +
+                  '</span></td><td><span class="status-badge status-' +
+                  String(user.status || 'Active')
+                      .toLowerCase()
+                      .replace(/\s+/g, '') +
+                  '">' +
+                  (user.status || 'Active') +
+                  '</span></td><td>' +
+                  (user.lastLogin && user.lastLogin !== '-' ? new Date(user.lastLogin).toLocaleString() : user.lastLogin || '-') +
+                  '</td><td>' +
+                  '<button type="button" class="btn-icon" onclick="editUser(\'' +
+                  rid +
+                  '\')"><i class="fas fa-edit"></i></button> ' +
+                  '<button type="button" class="btn-icon" onclick="deleteUser(\'' +
+                  rid +
+                  '\')"><i class="fas fa-trash"></i></button>' +
+                  '</td></tr>'
+              );
+          }).join('')
+        : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</td></tr>';
 }
 
 function renderAdminProjects(tbody, projects) {
     if (!tbody) return;
-    const list = projects && projects.length ? projects : [
-        { id: 1, name: 'Horizon Tower', client: 'ABC Corp', progress: 75, status: 'Active', budget: '$2.5M' },
-        { id: 2, name: 'Eco-Sphere', client: 'Green Living', progress: 30, status: 'Active', budget: '$1.8M' },
-        { id: 3, name: 'Nexus Center', client: 'City Council', progress: 90, status: 'Review', budget: '$4.2M' }
-    ];
-    if (!projects || !projects.length) setStored('portalProjects', list);
-    tbody.innerHTML = (projects && projects.length ? projects : list).map(project => `
+    const list = projects && projects.length ? projects : [];
+    if (!list.length) {
+        tbody.innerHTML =
+            '<tr><td colspan="6">No portal projects yet. Add one with <strong>New Project</strong> or they will sync from saved data.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = list.map(project => `
         <tr>
             <td>${project.name}</td>
             <td>${project.client}</td>
@@ -1227,15 +1238,10 @@ function renderAdminProjects(tbody, projects) {
 
 function renderAdminInvoices(tbody) {
     if (!tbody) return;
-    const defaultInvoices = [
-        { id: 1, number: 'INV-2024-001', client: 'ABC Corp', project: 'Horizon Tower', amount: '$25,000', dueDate: '2024-02-01', status: 'Paid' },
-        { id: 2, number: 'INV-2024-002', client: 'Green Living', project: 'Eco-Sphere', amount: '$15,000', dueDate: '2024-03-01', status: 'Pending' },
-        { id: 3, number: 'INV-2024-003', client: 'City Council', project: 'Nexus Center', amount: '$30,000', dueDate: '2024-04-01', status: 'Due' }
-    ];
     let invoices = getStored('portalInvoices', null);
     if (!invoices || !invoices.length) {
-        setStored('portalInvoices', defaultInvoices);
-        invoices = defaultInvoices;
+        tbody.innerHTML = '<tr><td colspan="7">No invoices yet. Create them from the Invoices section.</td></tr>';
+        return;
     }
     tbody.innerHTML = invoices.map(inv => `
         <tr>
@@ -1422,6 +1428,20 @@ async function renderPendingApprovals() {
                 });
                 if (r2.ok) {
                     await renderPendingApprovals();
+                    try {
+                        var ur = await fetch(API_BASE + '/api/admin/users', {
+                            headers: { Authorization: 'Bearer ' + token }
+                        });
+                        if (ur.ok) {
+                            __portalCache.portalUsers = await ur.json();
+                            renderAdminUsers(
+                                document.querySelector('.users-list tbody'),
+                                __portalCache.portalUsers
+                            );
+                            var tu = document.getElementById('totalUsers');
+                            if (tu) tu.textContent = String(__portalCache.portalUsers.length);
+                        }
+                    } catch (e2) {}
                     alert('Account approved.');
                 } else {
                     alert('Could not approve.');
@@ -1442,9 +1462,18 @@ async function loadAdminDashboard() {
     } catch (e) {
         console.warn(e);
     }
-    const users = getStored('portalUsers', null);
+    var directoryUsers = [];
+    try {
+        var ur = await fetch((window.API_BASE || '') + '/api/admin/users', {
+            headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
+        });
+        if (ur.ok) directoryUsers = await ur.json();
+    } catch (e) {
+        console.warn(e);
+    }
+    __portalCache.portalUsers = directoryUsers;
+    renderAdminUsers(document.querySelector('.users-list tbody'), directoryUsers);
     const projects = getStored('portalProjects', null);
-    renderAdminUsers(document.querySelector('.users-list tbody'), users);
     renderAdminProjects(document.querySelector('.admin-projects tbody'), projects);
     renderAdminInvoices(document.getElementById('adminInvoicesBody'));
     const careersBody = document.getElementById('adminCareersBody');
@@ -1464,8 +1493,8 @@ async function loadAdminDashboard() {
     }
     const totalUsersEl = document.getElementById('totalUsers');
     const activeProjectsEl = document.getElementById('activeProjects');
-    if (totalUsersEl) totalUsersEl.textContent = (users && users.length) ? users.length : 156;
-    if (activeProjectsEl) activeProjectsEl.textContent = (projects && projects.length) ? projects.length : 23;
+    if (totalUsersEl) totalUsersEl.textContent = String(directoryUsers.length);
+    if (activeProjectsEl) activeProjectsEl.textContent = (projects && projects.length) ? String(projects.length) : '0';
     const totalRevenue = document.getElementById('totalRevenue');
     const pendingTasks = document.getElementById('pendingTasks');
     if (totalRevenue) totalRevenue.textContent = '$2.4M';

@@ -1095,9 +1095,9 @@ section {
 
 /* ===== Footer ===== */
 .footer {
-    background: #ffffff;
+    background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
     padding: 80px 0 30px;
-    border-top: 1px solid rgba(32, 196, 180, 0.2);
+    border-top: 1px solid rgba(15, 118, 110, 0.35);
 }
 
 .footer-content {
@@ -1221,8 +1221,8 @@ section {
 .footer-bottom {
     text-align: center;
     padding-top: 30px;
-    border-top: 1px solid #e5e7eb;
-    color: #6b7280;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
     font-size: 0.9rem;
 }
 
