@@ -16,6 +16,7 @@
         <div class="splash-logo">
             <img src="images/logo.png" alt="AIS Concepts logo">
         </div>
+        <div class="splash-tagline">Creating iconic architecture that balances innovation, sustainability, and human experience</div>
         <div class="splash-loading-wrap">
             <div class="splash-loading-bar" id="splashLoadingBar"></div>
             <div class="splash-loading-pct" id="splashLoadingPct">0%</div>
@@ -59,8 +60,9 @@
                     <li><a href="#services">Sustainable Design</a></li>
                 </ul>
             </li>
-            <li><a href="#contact">Contact Us</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
+            <li><a href="faq.html">FAQ</a></li>
             <li class="nav-auth-wrap">
                 <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
                 <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
@@ -69,9 +71,33 @@
                 </div>
                 <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
             </li>
+            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
             <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
         </ul>
+        <!-- Social Media Icons on the Right -->
+        <div class="navbar-social-icons">
+            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
     </nav>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content search-modal-content">
+            <span class="close-modal" id="searchClose">&times;</span>
+            <h2>Search AIS Concepts</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <input type="text" id="searchInput" placeholder="Search projects, services, or anything..." class="form-control" required>
+                </div>
+                <button type="submit" class="btn-primary">Search</button>
+            </form>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
 
     <!-- Hero: fixed layer — fades & lifts as you scroll (SOM-style); spacer below drives scroll distance -->
     <div class="hero-fixed-wrap" id="heroFixedWrap">
@@ -86,6 +112,29 @@
         <div class="hero-content">
             <h1 class="hero-title"><span class="typewriter-title" data-typewriter="Shaping the Future of Architecture">Shaping the Future of Architecture</span></h1>
             <p class="hero-subtitle"><span class="typewriter-text" data-typewriter="Innovative design solutions for a sustainable tomorrow">Innovative design solutions for a sustainable tomorrow</span></p>
+            
+            <!-- Stats Section in Hero -->
+            <div class="hero-stats">
+                <div class="hero-stats-grid">
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-number" data-count="150">0</span><span class="hero-stat-suffix">+</span>
+                        <p class="hero-stat-label">Projects Done</p>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-number" data-count="80">0</span><span class="hero-stat-suffix">+</span>
+                        <p class="hero-stat-label">Happy Clients</p>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-number" data-count="15">0</span><span class="hero-stat-suffix">+</span>
+                        <p class="hero-stat-label">Years Experience</p>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-number" data-count="25">0</span><span class="hero-stat-suffix">+</span>
+                        <p class="hero-stat-label">Team Members</p>
+                    </div>
+                </div>
+            </div>
+            
             <a href="#portfolio" class="btn-primary">View Our Work</a>
         </div>
         </div>
@@ -93,35 +142,12 @@
     </div>
     <div class="hero-scroll-spacer" id="heroScrollSpacer" aria-hidden="true"></div>
 
-    <!-- Stats section -->
-    <section class="stats-section" id="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number" data-count="150">0</span><span class="stat-suffix">+</span>
-                    <p class="stat-label">Projects Done</p>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" data-count="80">0</span><span class="stat-suffix">+</span>
-                    <p class="stat-label">Happy Clients</p>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" data-count="15">0</span><span class="stat-suffix">+</span>
-                    <p class="stat-label">Years Experience</p>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" data-count="25">0</span><span class="stat-suffix">+</span>
-                    <p class="stat-label">Team Members</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Portfolio Section (filter + 4 featured + See more) -->
+    <!-- Featured Projects Section -->
     <section id="portfolio" class="portfolio">
         <div class="container">
             <h2 class="section-title typewriter-title" data-typewriter="Featured Projects">Featured Projects</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Where vision meets precision">Where vision meets precision</p>
+            <p class="section-subtitle typewriter-text" data-typewriter="Showcasing our best work">Showcasing our best work</p>
+            
             <div class="portfolio-filters portfolio-filters--wrap" id="homePortfolioFilters">
                 <button type="button" class="filter-btn active" data-filter="all">All</button>
                 <button type="button" class="filter-btn" data-filter="residential">Residential</button>
@@ -135,6 +161,11 @@
                 <p>Please check our other project categories.</p>
             </div>
             <div class="portfolio-grid" id="homePortfolioGrid"></div>
+            
+            <!-- See More Button -->
+            <div class="section-cta">
+                <a href="projects.html" class="btn-primary">View All Projects</a>
+            </div>
         </div>
     </section>
 
@@ -144,157 +175,21 @@
             <h2 class="section-title typewriter-title" data-typewriter="Our Expertise">Our Expertise</h2>
             <p class="section-subtitle typewriter-text" data-typewriter="Comprehensive architectural solutions">Comprehensive architectural solutions</p>
             <div class="services-grid" id="homeServicesGrid"></div>
-        </div>
-    </section>
-
-    <!-- Careers Section (teaser – full page at careers.html) -->
-    <section id="careers" class="careers">
-        <div class="container">
-            <h2 class="section-title typewriter-title" data-typewriter="Join Our Team">Join Our Team</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Shape the future with us">Shape the future with us</p>
             
-            <div class="careers-content">
-                <div class="careers-intro">
-                    <h3>We're always looking for talented individuals</h3>
-                    <p>At AIS Concepts, we believe great architecture comes from diverse perspectives. We offer attachments, internships, part-time and full-time positions.</p>
-                </div>
-                <p style="text-align: center; margin-top: 20px;">
-                    <a href="careers.html" class="btn-primary">View Open Positions & Apply</a>
-                </p>
+            <!-- See More Button -->
+            <div class="section-cta">
+                <a href="#services" class="btn-primary">View All Services</a>
             </div>
         </div>
     </section>
 
-    <!-- Partnerships -->
-    <section id="partnerships" class="partnerships-section">
-        <div class="container">
-            <h2 class="section-title typewriter-title" data-typewriter="Partnerships & Collaborators">Partnerships & Collaborators</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Engineers, surveyors, contractors, and development partners we work with">Engineers, surveyors, contractors, and development partners we work with</p>
-            <div class="partners-grid" id="homePartnersGrid"></div>
-        </div>
-    </section>
-
-    <!-- Testimonials (flip cards + structured story) -->
-    <section id="testimonials" class="portfolio" style="background:#fff;">
-        <div class="container">
-            <h2 class="section-title typewriter-title" data-typewriter="Testimonials">Testimonials</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Client outcomes: problem, design, finance, and experience">Client outcomes: problem, design, finance, and experience</p>
-            <div class="portfolio-grid testimonial-grid-wide" id="homeTestimonialsGrid"></div>
-        </div>
-    </section>
-
-    <!-- Project Enquiry -->
-    <section id="enquiry" class="contact" style="padding: 90px 0; background: #f9fafb;">
-        <div class="container">
-            <h2 class="section-title typewriter-title" data-typewriter="Project Enquiry">Project Enquiry</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Send your details and we will get back to you">Send your details and we will get back to you</p>
-            <div class="contact-grid" style="grid-template-columns: 1.2fr 0.8fr;">
-                <div class="contact-form-wrap">
-                    <form id="projectEnquiryForm">
-                        <div class="form-group"><input type="text" id="enqName" placeholder="Your Name" class="form-control" required></div>
-                        <div class="form-group"><input type="text" id="enqType" placeholder="Type of project / service needed" class="form-control" required></div>
-                        <div class="form-group"><input type="text" id="enqContact" placeholder="Contact (phone or email)" class="form-control" required></div>
-                        <div class="form-group"><input type="text" id="enqLocation" placeholder="Location" class="form-control" required></div>
-                        <div class="form-group"><input type="text" id="enqTimeline" placeholder="Timeline (e.g. 3 months)" class="form-control"></div>
-                        <div class="form-group"><input type="text" id="enqBudget" placeholder="Budget (optional)" class="form-control"></div>
-                        <div class="form-group"><input type="file" id="enqFile" class="form-control" style="padding: 10px;" accept=".pdf,.doc,.docx,image/*"></div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">Send Enquiry</button>
-                    </form>
-                </div>
-                <div class="contact-info">
-                    <h3 class="typewriter-title" data-typewriter="What happens next?">What happens next?</h3>
-                    <p class="typewriter-text" data-typewriter="Our admin team will review your enquiry and contact you using the details you provide.">Our admin team will review your enquiry and contact you using the details you provide.</p>
-                    <div class="contact-detail"><i class="fas fa-envelope"></i><span>studio@aisconcepts.com</span></div>
-                    <div class="contact-detail"><i class="fas fa-phone"></i><span>+254 719548773</span></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact" style="padding: 100px 0; background: #ffffff;">
-        <div class="container">
-            <h2 class="section-title typewriter-title" data-typewriter="Contact Us">Contact Us</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Let's discuss your next project">Let's discuss your next project</p>
-            
-            <div class="contact-grid">
-                <div class="contact-info">
-                    <h3 class="typewriter-title" data-typewriter="Get in Touch">Get in Touch</h3>
-                    <p class="typewriter-text" data-typewriter="Have a project in mind? We'd love to hear about it. Reach out to our team and let's create something extraordinary together.">Have a project in mind? We'd love to hear about it. Reach out to our team and let's create something extraordinary together.</p>
-                    
-                    <div class="contact-detail">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Spur Mall, Kiambu, Kenya</span>
-                    </div>
-                    <div class="contact-detail">
-                        <i class="fas fa-phone"></i>
-                        <span>+254 719548773</span>
-                    </div>
-                    <div class="contact-detail">
-                        <i class="fas fa-envelope"></i>
-                        <span>studio@aisconcepts.com</span>
-                    </div>
-
-                    <div class="contact-social">
-                        <span class="contact-social-label typewriter-text" data-typewriter="Follow us">Follow us</span>
-                        <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-                        <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
-                        <a href="#" aria-label="X"><i class="fab fa-x"></i></a>
-                        <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                
-                <div class="contact-form-wrap">
-                    <form id="contactForm">
-                        <div class="form-group">
-                            <input type="text" placeholder="Your Name" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" placeholder="Your Email" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <textarea placeholder="Your Message" rows="5" class="form-control" required></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="contact-map-wrap">
-                <h3 class="typewriter-title" data-typewriter="Our Location">Our Location</h3>
-                <div class="contact-map">
-                    <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=36.9682942%2C-1.1383865%2C36.9722942%2C-1.1343865&layer=mapnik&marker=-1.1363865%2C36.9702942" title="AIS Concepts location" width="100%" height="350" style="border:0; border-radius: 8px;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer (Best-in-Class) -->
+    <!-- Footer (Simplified) -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <!-- Logo & About -->
+                <!-- Contact -->
                 <div class="footer-col">
-                    <div class="footer-logo">AIS<span> Concepts</span></div>
-                    <p class="footer-about typewriter-text" data-typewriter="Creating iconic architecture that balances innovation, sustainability, and human experience.">Creating iconic architecture that balances innovation, sustainability, and human experience.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-pinterest"></i></a>
-                        <a href="#"><i class="fab fa-x"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                        <a href="#"><i class="fab fa-whatsapp"></i></a>
-                    </div>
-                </div>
-
-                <!-- Office Address -->
-                <div class="footer-col">
-                    <h4 class="typewriter-title" data-typewriter="Our Studio">Our Studio</h4>
+                    <h4>Contact Us</h4>
                     <address>
                         Spur Mall<br>
                         Kiambu, Kenya<br>
@@ -303,19 +198,32 @@
                     </address>
                 </div>
 
-                <!-- Newsletter -->
+                <!-- Latest Projects -->
                 <div class="footer-col">
-                    <h4 class="typewriter-title" data-typewriter="Newsletter">Newsletter</h4>
-                    <p class="typewriter-text" data-typewriter="Subscribe to receive our latest projects and insights.">Subscribe to receive our latest projects and insights.</p>
-                    <form class="newsletter-form" id="newsletterForm">
-                        <input type="email" placeholder="Your email address" required>
-                        <button type="submit"><i class="fas fa-arrow-right"></i></button>
-                    </form>
+                    <h4>Latest Projects</h4>
+                    <ul class="footer-links">
+                        <li><a href="projects.html">Modern Residence Design</a></li>
+                        <li><a href="projects.html">Commercial Complex</a></li>
+                        <li><a href="projects.html">Urban Planning Project</a></li>
+                        <li><a href="projects.html">Interior Design Studio</a></li>
+                    </ul>
+                </div>
+
+                <!-- Social Media -->
+                <div class="footer-col">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
                 </div>
             </div>
 
             <div class="footer-bottom">
-                <p class="typewriter-text" data-typewriter="© 2026 AIS Concepts. All rights reserved. Designed with precision.">© 2026 AIS Concepts. All rights reserved. Designed with precision.</p>
+                <p>© 2026 AIS Concepts. All rights reserved. Designed with precision.</p>
             </div>
         </div>
     </footer>
@@ -331,9 +239,11 @@
         var sg = document.getElementById('homeServicesGrid');
         if (!sg || typeof loadWebsiteServices !== 'function') return;
         loadWebsiteServices().then(function(services) {
-            sg.innerHTML = services.map(function(s) {
+            // Limit to 3 services for homepage
+            var limitedServices = services.slice(0, 3);
+            sg.innerHTML = limitedServices.map(function(s) {
                 var imgSrc = s.image || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(s.title || '');
-                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (s.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="projects.html" class="btn-primary see-more-btn">See more</a></div></div></div>';
+                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (s.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="#services" class="btn-primary see-more-btn">See more</a></div></div></div>';
             }).join('');
         });
         var currentUser = null;
@@ -357,6 +267,108 @@
             sessionStorage.removeItem('currentUser');
             window.location.reload();
         });
+
+        // Search functionality
+        const searchToggle = document.getElementById('searchToggle');
+        const searchModal = document.getElementById('searchModal');
+        const searchClose = document.getElementById('searchClose');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        if (searchToggle && searchModal) {
+            searchToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                searchModal.style.display = 'block';
+                searchInput.focus();
+            });
+        }
+
+        if (searchClose && searchModal) {
+            searchClose.addEventListener('click', function() {
+                searchModal.style.display = 'none';
+                searchInput.value = '';
+                searchResults.innerHTML = '';
+            });
+        }
+
+        if (searchModal) {
+            searchModal.addEventListener('click', function(e) {
+                if (e.target === searchModal) {
+                    searchModal.style.display = 'none';
+                    searchInput.value = '';
+                    searchResults.innerHTML = '';
+                }
+            });
+        }
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) {
+                    performSearch(query);
+                }
+            });
+        }
+
+        function performSearch(query) {
+            // Comprehensive search across all website content
+            const allContent = [
+                // Pages
+                { title: 'Home', description: 'Main landing page with hero section and overview', url: 'index.html' },
+                { title: 'About Us', description: 'Learn about AIS Concepts architecture firm', url: 'about.html' },
+                { title: 'Contact Us', description: 'Get in touch with our team', url: 'contact.html' },
+                { title: 'Careers', description: 'Join our team - view open positions', url: 'careers.html' },
+                { title: 'FAQ', description: 'Frequently asked questions about our services', url: 'faq.html' },
+                { title: 'Blog', description: 'Latest news and insights from our team', url: 'blog.html' },
+                
+                // Services
+                { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: '#services' },
+                { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: '#services' },
+                { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: '#services' },
+                { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: '#services' },
+                
+                // Portfolio Categories
+                { title: 'Residential Projects', description: 'Modern home designs and residential architecture', url: 'projects.html?filter=residential' },
+                { title: 'Commercial Projects', description: 'Office buildings and commercial spaces', url: 'projects.html?filter=commercial' },
+                { title: 'Urban Projects', description: 'City planning and urban development projects', url: 'projects.html?filter=urban' },
+                { title: 'Interior Projects', description: 'Interior design and space transformations', url: 'projects.html?filter=interior' },
+                { title: 'Conceptual Projects', description: 'Innovative conceptual designs and proposals', url: 'projects.html?filter=conceptual' },
+                
+                // Specific Projects (sample data)
+                { title: 'Modern Residence Design', description: 'Contemporary home with sustainable materials and energy-efficient features', url: 'projects.html' },
+                { title: 'Commercial Complex Design', description: 'Innovative commercial space with modern amenities and green building features', url: 'projects.html' },
+                { title: 'Urban Planning Project', description: 'Sustainable city development with mixed-use spaces', url: 'projects.html' },
+                { title: 'Interior Design Studio', description: 'Complete interior redesign for creative workspace', url: 'projects.html' },
+                
+                // Client Portal
+                { title: 'Client Login', description: 'Access your project portal and track progress', url: 'client/login.html' },
+                { title: 'Client Dashboard', description: 'View your projects, documents, and financial information', url: 'client/dashboard.html' },
+                
+                // Company Info
+                { title: 'Our Studio', description: 'Located at Spur Mall, Kiambu, Kenya - +254 719548773', url: 'about.html' },
+                { title: 'Contact Information', description: 'Email: studio@aisconcepts.com, Phone: +254 719548773', url: 'contact.html' },
+                { title: 'Social Media', description: 'Follow us on Instagram, Facebook, TikTok, YouTube, and WhatsApp', url: 'contact.html' }
+            ];
+
+            const filteredResults = allContent.filter(item => {
+                const searchLower = query.toLowerCase();
+                return item.title.toLowerCase().includes(searchLower) || 
+                       item.description.toLowerCase().includes(searchLower);
+            });
+
+            if (filteredResults.length > 0) {
+                searchResults.innerHTML = filteredResults.map(result => `
+                    <div class="search-result-item" onclick="window.location.href='${result.url}'">
+                        <div class="search-result-title">${result.title}</div>
+                        <div class="search-result-description">${result.description}</div>
+                    </div>
+                `).join('');
+            } else {
+                searchResults.innerHTML = '<p>No results found for "' + query + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>';
+            }
+        }
     })();
 
     (function() {
@@ -390,7 +402,7 @@
         var filterBtns = document.querySelectorAll('#homePortfolioFilters .filter-btn');
         if (!grid || typeof loadWebsiteProjects !== 'function') return;
         function render(filter, projects) {
-            var toShow = filterProjectsByCategory(projects, filter || 'all').slice(0, 4);
+            var toShow = filterProjectsByCategory(projects, filter || 'all').slice(0, 3);
             grid.innerHTML = '';
             if (emptyMsg) emptyMsg.style.display = 'none';
             if (toShow.length === 0) {

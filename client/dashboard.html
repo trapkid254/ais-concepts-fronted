@@ -59,6 +59,37 @@
 
             <!-- Dashboard: only Active Projects, Documents, Pending Invoices, Upcoming Milestones -->
             <section id="client-dashboard" class="portal-section">
+                <!-- Money Overview Section -->
+                <div class="money-overview-container">
+                    <div class="money-overview-card money-paid">
+                        <div class="money-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="money-info">
+                            <h3>Total Paid</h3>
+                            <div class="money-amount" id="totalPaid">KES 0</div>
+                        </div>
+                    </div>
+                    <div class="money-overview-card money-used">
+                        <div class="money-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="money-info">
+                            <h3>Money Used</h3>
+                            <div class="money-amount" id="moneyUsed">KES 0</div>
+                        </div>
+                    </div>
+                    <div class="money-overview-card money-left">
+                        <div class="money-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="money-info">
+                            <h3>Money Left</h3>
+                            <div class="money-amount" id="moneyLeft">KES 0</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card stat-card-clickable" data-nav-section="client-projects" data-nav-filter="ongoing">
                         <div class="stat-info">

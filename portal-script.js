@@ -1285,6 +1285,9 @@ function loadClientDashboard() {
     if (elI) elI.textContent = String(pendingInv);
     if (elM) elM.textContent = String(ongoing);
 
+    // Update money overview cards
+    updateMoneyOverview(projects);
+
     var addBtn = document.getElementById('clientAddProjectBtn');
     var addModal = document.getElementById('clientAddProjectModal');
     var addForm = document.getElementById('clientAddProjectForm');
@@ -2457,4 +2460,40 @@ function editTimeEntry(entryId) {
     if (descEl) descEl.value = entry.description || '';
     if (hoursEl) hoursEl.value = entry.hours || '';
     if (modal) modal.classList.add('open');
+}
+
+// Money Overview Function
+function updateMoneyOverview(projects) {
+    var totalPaid = 0;
+    var totalUsed = 0;
+    var totalBudget = 0;
+    
+    projects.forEach(function(project) {
+        var paid = parseFloat(project.moneyPaid) || 0;
+        var used = parseFloat(project.moneyUsed) || 0;
+        var remaining = parseFloat(project.moneyRemaining) || 0;
+        
+        totalPaid += paid;
+        totalUsed += used;
+        totalBudget += (paid + remaining);
+    });
+    
+    var totalLeft = totalBudget - totalUsed;
+    
+    // Update the DOM elements
+    var totalPaidEl = document.getElementById('totalPaid');
+    var moneyUsedEl = document.getElementById('moneyUsed');
+    var moneyLeftEl = document.getElementById('moneyLeft');
+    
+    if (totalPaidEl) {
+        totalPaidEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    
+    if (moneyUsedEl) {
+        moneyUsedEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    
+    if (moneyLeftEl) {
+        moneyLeftEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
 }
