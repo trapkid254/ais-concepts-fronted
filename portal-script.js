@@ -2605,4 +2605,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+    });
+}
