@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ | AIS Concepts</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .faq-page {
+            padding-top: 120px;
+            min-height: 100vh;
+            background: #f9fafb;
+        }
+        
+        .faq-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .faq-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .faq-title {
+            font-size: 3rem;
+            font-weight: 300;
+            color: #0b1120;
+            margin-bottom: 20px;
+        }
+        
+        .faq-subtitle {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        
+        .faq-category {
+            margin-bottom: 40px;
+        }
+        
+        .faq-category-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #0f766e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0f766e;
+        }
+        
+        .faq-item {
+            background: #ffffff;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-item:hover {
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+        
+        .faq-question {
+            padding: 25px 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: #0b1120;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-question:hover {
+            background: rgba(15, 118, 110, 0.05);
+        }
+        
+        .faq-question.active {
+            background: rgba(15, 118, 110, 0.1);
+            color: #0f766e;
+        }
+        
+        .faq-icon {
+            transition: transform 0.3s ease;
+            color: #0f766e;
+        }
+        
+        .faq-question.active .faq-icon {
+            transform: rotate(180deg);
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            padding: 0 30px;
+            color: #4b5563;
+            line-height: 1.7;
+        }
+        
+        .faq-answer.active {
+            max-height: 500px;
+            padding: 0 30px 25px;
+        }
+        
+        .admin-faq-section {
+            background: #ffffff;
+            border: 2px solid #0f766e;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 60px;
+        }
+        
+        .admin-faq-title {
+            font-size: 1.5rem;
+            color: #0f766e;
+            margin-bottom: 20px;
+        }
+        
+        .add-faq-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .faq-title {
+                font-size: 2rem;
+            }
+            
+            .faq-question {
+                padding: 20px;
+                font-size: 1rem;
+            }
+            
+            .faq-answer {
+                padding: 0 20px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Architecture • Interior Design • Urban Planning • Sustainable Concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li class="has-dropdown">
+                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="projects.html">All Projects</a></li>
+                    <li><a href="projects.html?filter=residential">Residential</a></li>
+                    <li><a href="projects.html?filter=commercial">Commercial</a></li>
+                    <li><a href="projects.html?filter=urban">Urban</a></li>
+                    <li><a href="projects.html?filter=interior">Interior</a></li>
+                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
+                </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="index.html#services">Services <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="index.html#services">All Services</a></li>
+                    <li><a href="index.html#services">Architectural Design</a></li>
+                    <li><a href="index.html#services">Interior Architecture</a></li>
+                    <li><a href="index.html#services">Urban Planning</a></li>
+                    <li><a href="index.html#services">Sustainable Design</a></li>
+                </ul>
+            </li>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="faq.html" class="active">FAQ</a></li>
+            <li class="nav-auth-wrap">
+                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
+                <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
+                    <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
+                    <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+                <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
+            </li>
+            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
+            <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
+        </ul>
+        
+        <!-- Social Media Icons on the Right -->
+        <div class="navbar-social-icons">
+            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+    </nav>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content search-modal-content">
+            <span class="close-modal" id="searchClose">&times;</span>
+            <h2>Search AIS Concepts</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <input type="text" id="searchInput" placeholder="Search projects, services, or anything..." class="form-control" required>
+                </div>
+                <button type="submit" class="btn-primary">Search</button>
+            </form>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+
+    <main class="faq-page">
+
+    <!-- FAQ Page Content -->
+    <div class="faq-page">
+        <div class="faq-container">
+            <div class="faq-header">
+                <h1 class="faq-title">Frequently Asked Questions</h1>
+                <p class="faq-subtitle">Find answers to common questions about our architectural services</p>
+            </div>
+
+            <!-- General Questions Category -->
+            <div class="faq-category">
+                <h2 class="faq-category-title">General Questions</h2>
+                <div id="generalFAQs"></div>
+            </div>
+
+            <!-- Services Questions Category -->
+            <div class="faq-category">
+                <h2 class="faq-category-title">Our Services</h2>
+                <div id="servicesFAQs"></div>
+            </div>
+
+            <!-- Process Questions Category -->
+            <div class="faq-category">
+                <h2 class="faq-category-title">Our Process</h2>
+                <div id="processFAQs"></div>
+            </div>
+
+            <!-- Admin Section for Adding FAQs -->
+            <div class="admin-faq-section" id="adminFAQSection" style="display: none;">
+                <h3 class="admin-faq-title">Add New FAQ</h3>
+                <form class="add-faq-form" id="addFAQForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="faqCategory">Category</label>
+                            <select id="faqCategory" class="form-control" required>
+                                <option value="general">General</option>
+                                <option value="services">Services</option>
+                                <option value="process">Process</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="faqQuestion">Question</label>
+                            <input type="text" id="faqQuestion" class="form-control" placeholder="Enter question" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="faqAnswer">Answer</label>
+                        <textarea id="faqAnswer" class="form-control" rows="4" placeholder="Enter answer" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Add FAQ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- Contact -->
+                <div class="footer-col">
+                    <h4>Contact Us</h4>
+                    <address>
+                        Spur Mall<br>
+                        Kiambu, Kenya<br>
+                        <i class="fas fa-phone-alt"></i> +254 719548773<br>
+                        <i class="fas fa-envelope"></i> studio@aisconcepts.com
+                    </address>
+                </div>
+
+                <!-- Latest Projects -->
+                <div class="footer-col">
+                    <h4>Latest Projects</h4>
+                    <ul class="footer-links">
+                        <li><a href="projects.html">Modern Residence Design</a></li>
+                        <li><a href="projects.html">Commercial Complex</a></li>
+                        <li><a href="projects.html">Urban Planning Project</a></li>
+                        <li><a href="projects.html">Interior Design Studio</a></li>
+                    </ul>
+                </div>
+
+                <!-- Social Media -->
+                <div class="footer-col">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2026 AIS Concepts. All rights reserved. Designed with precision.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="api-config.js"></script>
+    <script src="api-client.js"></script>
+    <script>
+        // FAQ Data
+        const faqData = {
+            general: [
+                {
+                    question: "What types of projects do you handle?",
+                    answer: "We handle a wide range of projects including residential, commercial, urban planning, interior design, and conceptual architectural projects. Our team has experience with both small-scale renovations and large-scale developments."
+                },
+                {
+                    question: "How long has AIS Concepts been in business?",
+                    answer: "AIS Concepts has been providing innovative architectural solutions for over 15 years, establishing ourselves as a leading firm in the region."
+                },
+                {
+                    question: "Do you work on projects outside Kenya?",
+                    answer: "Yes, we have experience working on international projects and are open to collaborations beyond Kenya. Please contact us to discuss your specific location requirements."
+                }
+            ],
+            services: [
+                {
+                    question: "What architectural services do you offer?",
+                    answer: "We offer comprehensive architectural services including conceptual design, detailed design, construction documentation, project management, interior design, urban planning, and sustainable design consulting."
+                },
+                {
+                    question: "Do you provide 3D visualization services?",
+                    answer: "Yes, we provide advanced 3D visualization services including photorealistic renderings, virtual tours, and animated walkthroughs to help clients better understand and visualize their projects."
+                },
+                {
+                    question: "Can you help with permits and approvals?",
+                    answer: "Absolutely. We assist clients throughout the entire approval process, ensuring all designs comply with local building codes, zoning regulations, and other statutory requirements."
+                }
+            ],
+            process: [
+                {
+                    question: "What is your typical project timeline?",
+                    answer: "Project timelines vary depending on scope and complexity. A typical residential project might take 6-12 months from concept to completion, while larger commercial projects can take 18-36 months or more."
+                },
+                {
+                    question: "How do you charge for your services?",
+                    answer: "Our fee structure is typically based on a percentage of the project cost, though we also offer fixed fees for specific services. We provide detailed fee proposals after understanding your project requirements."
+                },
+                {
+                    question: "What is the first step in working with you?",
+                    answer: "The first step is an initial consultation where we discuss your vision, requirements, budget, and timeline. This helps us understand your needs and determine how we can best assist you."
+                }
+            ]
+        };
+
+        // Render FAQs
+        function renderFAQs() {
+            Object.keys(faqData).forEach(category => {
+                const container = document.getElementById(category + 'FAQs');
+                if (container) {
+                    container.innerHTML = faqData[category].map((item, index) => `
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(${category}${index})">
+                                <span>${item.question}</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer" id="faq${category}${index}">
+                                ${item.answer}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+
+        // Toggle FAQ Answer
+        function toggleFAQ(id) {
+            const answer = document.getElementById('faq' + id);
+            const question = answer.previousElementSibling;
+            
+            answer.classList.toggle('active');
+            question.classList.toggle('active');
+        }
+
+        // Check if user is admin
+        function checkAdminAccess() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'Admin')) {
+                document.getElementById('adminFAQSection').style.display = 'block';
+            }
+        }
+
+        // Add new FAQ
+        document.getElementById('addFAQForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const category = document.getElementById('faqCategory').value;
+            const question = document.getElementById('faqQuestion').value;
+            const answer = document.getElementById('faqAnswer').value;
+            
+            // Add to local data
+            faqData[category].push({ question, answer });
+            
+            // Re-render FAQs
+            renderFAQs();
+            
+            // Reset form
+            this.reset();
+            
+            // Show success message
+            alert('FAQ added successfully!');
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFAQs();
+            checkAdminAccess();
+        });
+    </script>
+</body>
+</html>
