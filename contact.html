@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIS Concepts | We're Hiring</title>
+    <title>Contact Us | AIS Concepts</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Navigation Bar -->
     <nav class="navbar" id="navbar">
         <div class="logo">
             <a href="index.html">
@@ -45,7 +48,7 @@
                     <li><a href="#services">Sustainable Design</a></li>
                 </ul>
             </li>
-            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="contact.html" class="active">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
             <li><a href="faq.html">FAQ</a></li>
             <li class="nav-auth-wrap">
@@ -57,7 +60,7 @@
                 <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
             </li>
             <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
-            <li><a href="careers.html" class="hiring-btn active">We're Hiring</a></li>
+            <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
         </ul>
     </nav>
 
@@ -92,130 +95,71 @@
         </div>
     </div>
 
-    <main class="careers-page-main">
-        <section class="careers-hero">
-            <div class="container">
-                <h1 class="section-title typewriter-title" data-typewriter="We're Hiring">We're Hiring</h1>
-                <h2 class="careers-vacancies typewriter-sub" data-typewriter="Vacancies">Vacancies</h2>
+    <!-- Contact Page Content -->
+    <div class="contact-page" style="padding-top: 120px;">
+        <div class="container">
+            <div class="contact-hero">
+                <h1 class="section-title">Get in Touch</h1>
+                <p class="section-subtitle">Let's discuss your next project</p>
             </div>
-        </section>
-
-        <section class="careers-open-positions">
-            <div class="container">
-                <h2 class="section-title typewriter-title" data-typewriter="Open positions">Open positions</h2>
-
-                <div class="careers-cards">
-                    <!-- Attachments -->
-                    <div class="career-card">
-                        <h3 class="career-card-title">Attachments</h3>
-                        <p class="career-card-desc">Join our dynamic team and gain hands-on experience in the exciting world of architecture and construction.</p>
-                        <button type="button" class="btn-apply career-apply-btn" data-role="Attachments">Apply Now</button>
+            
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>Contact Information</h3>
+                    <p>Have a project in mind? We'd love to hear about it. Reach out to our team and let's create something extraordinary together.</p>
+                    
+                    <div class="contact-detail">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Spur Mall, Kiambu, Kenya</span>
+                    </div>
+                    <div class="contact-detail">
+                        <i class="fas fa-phone"></i>
+                        <span>+254 719548773</span>
+                    </div>
+                    <div class="contact-detail">
+                        <i class="fas fa-envelope"></i>
+                        <span>studio@aisconcepts.com</span>
                     </div>
 
-                    <!-- Internships -->
-                    <div class="career-card">
-                        <h3 class="career-card-title">Internships</h3>
-                        <p class="career-card-desc">Help us build world-class projects while diversifying your design and construction skills.</p>
-                        <button type="button" class="btn-apply career-apply-btn" data-role="Internships">Apply Now</button>
-                    </div>
-
-                    <!-- Part-Time -->
-                    <div class="career-card">
-                        <h3 class="career-card-title">Part-Time Positions</h3>
-                        <p class="career-card-desc">We're a team who care deeply about each other. Apply for a part-time position.</p>
-                        <button type="button" class="btn-apply career-apply-btn" data-role="Part-Time Positions">Apply Now</button>
-                    </div>
-
-                    <!-- Full-Time -->
-                    <div class="career-card">
-                        <h3 class="career-card-title">Full-Time Positions</h3>
-                        <p class="career-card-desc">We value our work and are here for the long run. Want to join us for a full-time position?</p>
-                        <button type="button" class="btn-apply career-apply-btn" data-role="Full-Time Positions">Apply Now</button>
+                    <div class="contact-social">
+                        <span class="contact-social-label">Follow us</span>
+                        <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Stats -->
-        <section class="stats-section">
-            <div class="container">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-number" data-count="150">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Projects Done</p>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" data-count="80">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Happy Clients</p>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" data-count="15">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Years Experience</p>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" data-count="25">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Team Members</p>
-                    </div>
+                
+                <div class="contact-form-wrap">
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <input type="text" placeholder="Your Name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" placeholder="Your Email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" placeholder="Your Phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <textarea placeholder="Your Message" rows="5" class="form-control" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
+                    </form>
                 </div>
             </div>
-        </section>
-    </main>
 
-    <!-- Career Application Modal -->
-    <div class="modal" id="careerApplicationModal">
-        <div class="modal-content">
-            <span class="close-modal" data-close="careerApplicationModal">&times;</span>
-            <h2>Apply for <span id="careerRoleDisplay"></span></h2>
-            <p class="modal-subtitle">Tell us how you'd like to join AIS Concepts</p>
-            <form id="careerApplicationForm">
-                <div class="form-group">
-                    <label for="careerName">Full Name</label>
-                    <input type="text" id="careerName" required placeholder="Your full name">
+            <div class="contact-map-wrap">
+                <h3>Our Location</h3>
+                <div class="contact-map">
+                    <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=36.9682942%2C-1.1383865%2C36.9722942%2C-1.1343865&layer=mapnik&marker=-1.1363865%2C36.9702942" title="AIS Concepts location" width="100%" height="350" style="border:0; border-radius: 8px;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
-                <div class="form-group">
-                    <label for="careerEmail">Email</label>
-                    <input type="email" id="careerEmail" required placeholder="you@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="careerPhone">Phone</label>
-                    <input type="tel" id="careerPhone" placeholder="+254 7XX XXX XXX">
-                </div>
-                <div class="form-group">
-                    <label for="careerType">Application Type</label>
-                    <select id="careerType" required>
-                        <option value="">Select type</option>
-                        <option value="attachment">Attachment</option>
-                        <option value="internship">Internship</option>
-                        <option value="part-time">Part-Time</option>
-                        <option value="full-time">Full-Time</option>
-                    </select>
-                </div>
-                <div class="form-group career-extra-fields" id="careerCampusWrap" style="display: none;">
-                    <label for="careerCampus">Campus Name</label>
-                    <input type="text" id="careerCampus" placeholder="e.g. University of Nairobi">
-                </div>
-                <div class="form-group career-extra-fields" id="careerYearWrap" style="display: none;">
-                    <label for="careerYear">Year of Study</label>
-                    <input type="text" id="careerYear" placeholder="e.g. 3rd Year">
-                </div>
-                <div class="form-group career-cert-wrap" id="careerCertWrap" style="display: none;">
-                    <label for="careerCertificate">Certificates <span class="required">*</span></label>
-                    <input type="file" id="careerCertificate" accept=".pdf,.doc,.docx,image/*" multiple>
-                    <small>Required for Full-Time and Part-Time. Upload your certificates.</small>
-                </div>
-                <div class="form-group">
-                    <label for="careerCV">CV / Resume (optional)</label>
-                    <input type="file" id="careerCV" accept=".pdf,.doc,.docx">
-                </div>
-                <div class="form-group">
-                    <label for="careerMessage">Short Motivation</label>
-                    <textarea id="careerMessage" rows="4" placeholder="Tell us why you're a great fit"></textarea>
-                </div>
-                <button type="submit" class="btn-login">Submit Application</button>
-            </form>
+            </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -253,16 +197,15 @@
                     </div>
                 </div>
             </div>
+
             <div class="footer-bottom">
-                <p>&copy; 2026 AIS Concepts. All rights reserved.</p>
+                <p>© 2026 AIS Concepts. All rights reserved. Designed with precision.</p>
             </div>
         </div>
     </footer>
 
     <script src="api-config.js"></script>
     <script src="api-client.js"></script>
-    <script src="script.js"></script>
-    <script src="careers-script.js"></script>
     <script>
     // Search functionality
     const searchToggle = document.getElementById('searchToggle');
@@ -344,6 +287,13 @@
             searchResults.innerHTML = '<p>No results found for "' + query + '". Try different keywords.</p>';
         }
     }
+
+    // Contact form submission
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('Thank you for your message! We will get back to you soon.');
+        this.reset();
+    });
     </script>
 </body>
 </html>

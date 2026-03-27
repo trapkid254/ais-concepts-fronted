@@ -47,7 +47,7 @@
             <div class="auth-card">
                 <div class="auth-card-watermark" aria-hidden="true"></div>
                 <h1>Staff portal</h1>
-                <p class="sub">Use <strong>email</strong> or username <code>aisconcepts</code> for the main admin account.</p>
+                <p class="sub">Use <strong>username</strong> <code>Aisconcepts61</code> for the main admin account.</p>
                 <div class="portal-tabs" id="staffPortalTabs">
                     <button type="button" class="active" data-portal="admin">Admin</button>
                     <button type="button" data-portal="employee">Employee</button>
@@ -56,7 +56,7 @@
                     <input type="hidden" id="portalType" value="admin">
                     <div class="form-group">
                         <label for="sIdentifier">Email or username</label>
-                        <input type="text" id="sIdentifier" required autocomplete="username" placeholder="email@example.com or aisconcepts">
+                        <input type="text" id="sIdentifier" required autocomplete="username" placeholder="email@example.com or Aisconcepts61">
                     </div>
                     <div class="form-group">
                         <label for="sPassword">Password</label>
@@ -136,10 +136,12 @@
             var id = document.getElementById('sIdentifier').value.trim();
             var password = document.getElementById('sPassword').value;
             var portalType = document.getElementById('portalType').value;
+            
+            // Use backend authentication only
             fetch(API_BASE + '/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: id, password: password, portalType: portalType })
+                body: JSON.stringify({ email: id, username: id, password: password, portalType: portalType })
             })
                 .then(function (r) {
                     return r.json().then(function (data) {
@@ -150,6 +152,7 @@
                 .then(function (data) {
                     sessionStorage.setItem('authToken', data.token);
                     sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                    
                     if (portalType === 'admin') {
                         window.location.href = '../admin/dashboard.html';
                     } else {
@@ -160,7 +163,7 @@
                     if (err && err.error === 'account_pending') {
                         alert(err.message || 'Account pending approval.');
                     } else {
-                        alert((err && err.error) || 'Invalid credentials.');
+                        alert((err && err.error) || 'Invalid credentials. Please check your username and password.');
                     }
                 });
         });
