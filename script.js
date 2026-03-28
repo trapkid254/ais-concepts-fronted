@@ -3,20 +3,27 @@
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
 
-    /* ===== HERO VIDEO PLAY BUTTON ===== */
+    /* ===== HERO VIDEO AUTOPLAY WITH USER INTERACTION ===== */
     (function() {
         const videoPlayBtn = document.getElementById('videoPlayBtn');
         const heroVideo = document.querySelector('.hero-video');
         
         if (videoPlayBtn && heroVideo) {
-            videoPlayBtn.addEventListener('click', function() {
-                if (heroVideo.paused) {
+            // Try to autoplay immediately (may be blocked)
+            heroVideo.play().then(() => {
+                // Autoplay worked
+                videoPlayBtn.style.display = 'none';
+                console.log('Video autoplay successful');
+            }).catch((error) => {
+                // Autoplay blocked - show play button
+                console.log('Video autoplay blocked:', error);
+                videoPlayBtn.style.display = 'flex';
+                
+                // Add click listener for manual play
+                videoPlayBtn.addEventListener('click', function() {
                     heroVideo.play();
                     videoPlayBtn.style.display = 'none';
-                } else {
-                    heroVideo.pause();
-                    videoPlayBtn.style.display = 'flex';
-                }
+                });
             });
             
             // Hide play button when video starts playing
@@ -26,7 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show play button when video is paused
             heroVideo.addEventListener('pause', function() {
-                videoPlayBtn.style.display = 'flex';
+                if (!heroVideo.ended) {
+                    videoPlayBtn.style.display = 'flex';
+                }
             });
         }
     })();
