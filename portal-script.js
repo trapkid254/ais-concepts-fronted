@@ -275,6 +275,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (path.includes('/employee/')) {
         setupEmployeeInteractions(currentUser);
     }
+    
+    // Admin-specific forms and views
+    if (path.includes('/admin/')) {
+        setupFAQManagement();
+    }
 
     // Sidebar "pages" navigation (show one section at a time) – client, admin, employee
     const sidebarLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
@@ -1346,11 +1351,7 @@ function loadClientDashboard() {
         }
     }
 
-    const defaultDocs = [
-        { name: 'Contract Agreement.pdf', date: '2024-01-15', size: '2.4 MB' },
-        { name: 'Floor Plans - Rev 3.pdf', date: '2024-02-20', size: '5.1 MB' },
-        { name: 'Permit Application.pdf', date: '2024-03-01', size: '1.8 MB' }
-    ];
+    const defaultDocs = [];
     let documents = getStored('clientDocuments', null);
     if (!documents || !documents.length) {
         setStored('clientDocuments', defaultDocs);
@@ -1410,11 +1411,7 @@ function loadClientDashboard() {
         });
     }
 
-    const defaultClientInvoices = [
-        { number: 'INV-2024-001', amount: '$25,000', date: '2024-02-01', status: 'Paid', client: 'Client', project: 'Horizon Tower' },
-        { number: 'INV-2024-002', amount: '$15,000', date: '2024-03-01', status: 'Pending', client: 'Client', project: 'Eco-Sphere' },
-        { number: 'INV-2024-003', amount: '$30,000', date: '2024-04-01', status: 'Due', client: 'Client', project: 'Nexus Center' }
-    ];
+    const defaultClientInvoices = [];
     let clientInvoices = getStored('clientInvoices', null);
     if (!clientInvoices || !clientInvoices.length) {
         setStored('clientInvoices', defaultClientInvoices);
@@ -1435,11 +1432,7 @@ function loadClientDashboard() {
 
     const timelineList = document.getElementById('clientTimelineList');
     if (timelineList) {
-        const milestones = [
-            { title: 'Foundation Complete - Horizon Tower', date: '2024-04-15' },
-            { title: 'Permit Approval - Eco-Sphere', date: '2024-05-01' },
-            { title: 'Design Review - Horizon Tower', date: '2024-06-10' }
-        ];
+        const milestones = [];
         timelineList.innerHTML = milestones.map(m => `
             <div class="deadline-item">
                 <i class="fas fa-calendar-alt" style="color: var(--primary);"></i>
@@ -1468,11 +1461,7 @@ function loadClientDashboard() {
 
 function renderEmployeeTasks(container, tasks) {
     if (!container) return;
-    const list = tasks && tasks.length ? tasks : [
-        { id: 1, title: 'Update Horizon Tower floor plans', project: 'Horizon Tower', priority: 'High', dueDate: '2024-03-20', assignedBy: 'Sarah Johnson' },
-        { id: 2, title: 'Submit permit application for Eco-Sphere', project: 'Eco-Sphere Residence', priority: 'Medium', dueDate: '2024-03-22', assignedBy: 'Michael Chen' },
-        { id: 3, title: 'Review material samples', project: 'Nexus Center', priority: 'Low', dueDate: '2024-03-25', assignedBy: 'David Williams' }
-    ];
+    const list = tasks && tasks.length ? tasks : [];
     if (!tasks || !tasks.length) setStored('employeeTasks', list);
     const updates = getStored('employeeTaskUpdates', []);
     container.innerHTML = (tasks && tasks.length ? tasks : list).map(task => {
@@ -1494,11 +1483,7 @@ function renderEmployeeTasks(container, tasks) {
 
 function renderEmployeeTimeEntries(tbody, entries) {
     if (!tbody) return;
-    const list = entries && entries.length ? entries : [
-        { date: '2024-03-18', project: 'Horizon Tower', hours: 6.5, description: 'Drafting revisions' },
-        { date: '2024-03-18', project: 'Eco-Sphere', hours: 2.0, description: 'Client meeting' },
-        { date: '2024-03-17', project: 'Horizon Tower', hours: 8.0, description: 'Model updates' }
-    ];
+    const list = entries && entries.length ? entries : [];
     if (!entries || !entries.length) setStored('employeeTimeEntries', list);
     const data = entries && entries.length ? entries : list;
     tbody.innerHTML = data.map((entry, index) => `
@@ -1863,7 +1848,7 @@ function initAdminCharts() {
             type: 'line',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{ label: 'Revenue ($K)', data: [120, 190, 180, 220, 240, 280], borderColor: '#20c4b4', fill: true, backgroundColor: 'rgba(32,196,180,0.1)' }]
+                datasets: [{ label: 'Revenue ($K)', data: [], borderColor: '#20c4b4', fill: true, backgroundColor: 'rgba(32,196,180,0.1)' }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -1873,7 +1858,7 @@ function initAdminCharts() {
             type: 'pie',
             data: {
                 labels: ['Active', 'Review', 'Completed'],
-                datasets: [{ data: [12, 5, 8], backgroundColor: ['#20c4b4', '#ffd43b', '#51cf66'] }]
+                datasets: [{ data: [], backgroundColor: ['#20c4b4', '#ffd43b', '#51cf66'] }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -1883,7 +1868,7 @@ function initAdminCharts() {
             type: 'bar',
             data: {
                 labels: ['Users', 'Projects', 'Invoices'],
-                datasets: [{ label: 'Count', data: [156, 25, 48], backgroundColor: '#20c4b4' }]
+                datasets: [{ label: 'Count', data: [], backgroundColor: '#20c4b4' }]
             },
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
         });
@@ -2118,7 +2103,17 @@ async function loadAdminDashboard() {
     if (activeProjectsEl) activeProjectsEl.textContent = (projects && projects.length) ? String(projects.length) : '0';
     const totalRevenue = document.getElementById('totalRevenue');
     const pendingTasks = document.getElementById('pendingTasks');
-    if (totalRevenue) totalRevenue.textContent = '$2.4M';
+    if (totalRevenue) totalRevenue.textContent = '$0';
+    // Update dashboard statistics dynamically
+    updateAdminDashboardStats();
+    
+    // Update financial summary dynamically
+    updateFinancialSummary();
+    
+    // Update CRM statistics
+    updateCRMStats();
+    
+    // Update other statistics
     var pendingCount = 0;
     try {
         var pr = await fetch((window.API_BASE || '') + '/api/admin/pending-users', {
@@ -2604,4 +2599,279 @@ const requestFundsBtn = document.getElementById('requestFundsBtn');
             }
         });
     }
+}
+
+// Function to update admin dashboard statistics dynamically
+function updateAdminDashboardStats() {
+    const projects = getStored('portalProjects', []);
+    const users = getStored('portalUsers', []);
+    const assignments = getStored('assignments', []);
+    const invoices = getStored('portalInvoices', []);
+    const documents = getStored('clientDocuments', []);
+    const tasks = getStored('employeeTasks', []);
+    
+    // Calculate total clients (unique client emails from projects)
+    const uniqueClients = new Set(projects.map(p => p.client).filter(Boolean));
+    const totalClientsEl = document.getElementById('totalClients');
+    if (totalClientsEl) totalClientsEl.textContent = String(uniqueClients.size);
+    
+    // Calculate active projects
+    const activeProjects = projects.filter(p => p.status === 'ongoing' || p.status === 'active');
+    const activeProjectsEl = document.getElementById('activeProjects');
+    if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects.length);
+    
+    // Calculate pending tasks
+    const pendingTasks = tasks.filter(t => t.status === 'pending' || !t.status);
+    const pendingTasksEl = document.getElementById('pendingTasks');
+    if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTasks.length);
+    
+    // Calculate total revenue from paid invoices
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid' || inv.status === 'Paid');
+    const totalRevenue = paidInvoices.reduce((sum, inv) => {
+        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
+        return sum + amount;
+    }, 0);
+    const totalRevenueEl = document.getElementById('totalRevenue');
+    if (totalRevenueEl) totalRevenueEl.textContent = '$' + totalRevenue.toLocaleString();
+    
+    // Calculate total documents
+    const totalDocumentsEl = document.getElementById('totalDocuments');
+    if (totalDocumentsEl) totalDocumentsEl.textContent = String(documents.length);
+    
+    // Calculate team members (approved users)
+    const teamMembers = users.filter(u => u.approvalStatus === 'approved');
+    const totalUsersEl = document.getElementById('totalUsers');
+    if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
+    
+    // Calculate pending approvals
+    const pendingApprovals = users.filter(u => u.approvalStatus === 'pending');
+    const pendingApprovalsEl = document.getElementById('pendingApprovals');
+    if (pendingApprovalsEl) pendingApprovalsEl.textContent = String(pendingApprovals.length);
+    
+    // Active sites (can be calculated from projects with locations)
+    const activeSites = projects.filter(p => p.location || p.site);
+    const activeSitesEl = document.getElementById('activeSites');
+    if (activeSitesEl) activeSitesEl.textContent = String(activeSites.length);
+}
+
+// Function to update financial summary
+function updateFinancialSummary() {
+    const invoices = getStored('portalInvoices', []);
+    const projects = getStored('portalProjects', []);
+    
+    // Calculate total revenue
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid' || inv.status === 'Paid');
+    const totalRevenue = paidInvoices.reduce((sum, inv) => {
+        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
+        return sum + amount;
+    }, 0);
+    const totalRevenueAmountEl = document.getElementById('totalRevenueAmount');
+    if (totalRevenueAmountEl) totalRevenueAmountEl.textContent = '$' + totalRevenue.toLocaleString();
+    
+    // Calculate pending invoices
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
+    const pendingInvoiceAmount = pendingInvoices.reduce((sum, inv) => {
+        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
+        return sum + amount;
+    }, 0);
+    const pendingInvoiceAmountEl = document.getElementById('pendingInvoiceAmount');
+    if (pendingInvoiceAmountEl) pendingInvoiceAmountEl.textContent = '$' + pendingInvoiceAmount.toLocaleString();
+    
+    // Calculate expenses (from project budgets or expenses data)
+    const totalExpenses = projects.reduce((sum, project) => {
+        const expenses = parseFloat(project.expenses?.replace(/[^0-9.]/g, '')) || 0;
+        return sum + expenses;
+    }, 0);
+    const totalExpensesEl = document.getElementById('totalExpenses');
+    if (totalExpensesEl) totalExpensesEl.textContent = '$' + totalExpenses.toLocaleString();
+}
+
+// FAQ Management Functions
+function setupFAQManagement() {
+    const addFAQBtn = document.getElementById('adminAddFAQBtn');
+    const faqForm = document.getElementById('adminFAQForm');
+    const addNewFAQForm = document.getElementById('addNewFAQForm');
+    const cancelFAQBtn = document.getElementById('cancelFAQBtn');
+    
+    if (addFAQBtn) {
+        addFAQBtn.addEventListener('click', function() {
+            if (faqForm) {
+                faqForm.style.display = faqForm.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    }
+    
+    if (cancelFAQBtn) {
+        cancelFAQBtn.addEventListener('click', function() {
+            if (faqForm) {
+                faqForm.style.display = 'none';
+                addNewFAQForm.reset();
+            }
+        });
+    }
+    
+    if (addNewFAQForm) {
+        addNewFAQForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const category = document.getElementById('newFAQCategory').value;
+            const question = document.getElementById('newFAQQuestion').value;
+            const answer = document.getElementById('newFAQAnswer').value;
+            
+            if (!category || !question || !answer) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Get existing FAQs
+            const faqs = getStored('faqs', {
+                general: [],
+                services: [],
+                process: []
+            });
+            
+            // Add new FAQ
+            faqs[category].push({
+                id: Date.now(),
+                question: question,
+                answer: answer,
+                date: new Date().toISOString()
+            });
+            
+            // Save FAQs
+            setStored('faqs', faqs);
+            
+            // Update admin display
+            renderAdminFAQs();
+            
+            // Update frontend display
+            if (typeof updateFrontendFAQs === 'function') {
+                updateFrontendFAQs(faqs);
+            }
+            
+            // Reset form and hide
+            addNewFAQForm.reset();
+            if (faqForm) {
+                faqForm.style.display = 'none';
+            }
+            
+            alert('FAQ added successfully!');
+        });
+    }
+    
+    // Initial render
+    renderAdminFAQs();
+}
+
+function renderAdminFAQs() {
+    const faqs = getStored('faqs', {
+        general: [],
+        services: [],
+        process: []
+    });
+    
+    // Render General FAQs
+    const generalContainer = document.getElementById('adminGeneralFAQs');
+    if (generalContainer) {
+        generalContainer.innerHTML = faqs.general.map(faq => createAdminFAQItem(faq, 'general')).join('');
+    }
+    
+    // Render Services FAQs
+    const servicesContainer = document.getElementById('adminServicesFAQs');
+    if (servicesContainer) {
+        servicesContainer.innerHTML = faqs.services.map(faq => createAdminFAQItem(faq, 'services')).join('');
+    }
+    
+    // Render Process FAQs
+    const processContainer = document.getElementById('adminProcessFAQs');
+    if (processContainer) {
+        processContainer.innerHTML = faqs.process.map(faq => createAdminFAQItem(faq, 'process')).join('');
+    }
+}
+
+function createAdminFAQItem(faq, category) {
+    return `
+        <div class="faq-item-admin">
+            <div class="faq-content-admin">
+                <div class="faq-question-admin">${faq.question}</div>
+                <div class="faq-answer-admin">${faq.answer.substring(0, 100)}${faq.answer.length > 100 ? '...' : ''}</div>
+            </div>
+            <div class="faq-actions-admin">
+                <button class="btn-faq btn-faq-edit" onclick="editFAQ(${category}, ${faq.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-faq btn-faq-delete" onclick="deleteFAQ(${category}, ${faq.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function editFAQ(category, id) {
+    const faqs = getStored('faqs', {
+        general: [],
+        services: [],
+        process: []
+    });
+    
+    const faq = faqs[category].find(f => f.id === id);
+    if (!faq) return;
+    
+    // Show form and populate with existing data
+    const faqForm = document.getElementById('adminFAQForm');
+    if (faqForm) {
+        faqForm.style.display = 'block';
+        document.getElementById('newFAQCategory').value = category;
+        document.getElementById('newFAQQuestion').value = faq.question;
+        document.getElementById('newFAQAnswer').value = faq.answer;
+    }
+}
+
+function deleteFAQ(category, id) {
+    if (!confirm('Are you sure you want to delete this FAQ?')) return;
+    
+    const faqs = getStored('faqs', {
+        general: [],
+        services: [],
+        process: []
+    });
+    
+    // Remove FAQ
+    faqs[category] = faqs[category].filter(f => f.id !== id);
+    
+    // Save FAQs
+    setStored('faqs', faqs);
+    
+    // Update displays
+    renderAdminFAQs();
+    
+    // Update frontend display
+    if (typeof updateFrontendFAQs === 'function') {
+        updateFrontendFAQs(faqs);
+    }
+    
+    alert('FAQ deleted successfully!');
+}
+
+// Function to update CRM statistics
+function updateCRMStats() {
+    const projects = getStored('portalProjects', []);
+    const invoices = getStored('portalInvoices', []);
+    const users = getStored('portalUsers', []);
+    
+    // Calculate total clients (unique client emails from projects)
+    const uniqueClients = new Set(projects.map(p => p.client).filter(Boolean));
+    const totalClientsCountEl = document.getElementById('totalClientsCount');
+    if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
+    
+    // Calculate active projects for clients
+    const activeProjects = projects.filter(p => p.status === 'ongoing' || p.status === 'active');
+    const clientActiveProjectsEl = document.getElementById('clientActiveProjects');
+    if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
+    
+    // Calculate pending invoices
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
+    const pendingInvoicesEl = document.getElementById('pendingInvoices');
+    if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
 }

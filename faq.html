@@ -337,50 +337,26 @@
     <script src="api-config.js"></script>
     <script src="api-client.js"></script>
     <script>
-        // FAQ Data
-        const faqData = {
-            general: [
-                {
-                    question: "What types of projects do you handle?",
-                    answer: "We handle a wide range of projects including residential, commercial, urban planning, interior design, and conceptual architectural projects. Our team has experience with both small-scale renovations and large-scale developments."
-                },
-                {
-                    question: "How long has AIS Concepts been in business?",
-                    answer: "AIS Concepts has been providing innovative architectural solutions for over 15 years, establishing ourselves as a leading firm in the region."
-                },
-                {
-                    question: "Do you work on projects outside Kenya?",
-                    answer: "Yes, we have experience working on international projects and are open to collaborations beyond Kenya. Please contact us to discuss your specific location requirements."
-                }
-            ],
-            services: [
-                {
-                    question: "What architectural services do you offer?",
-                    answer: "We offer comprehensive architectural services including conceptual design, detailed design, construction documentation, project management, interior design, urban planning, and sustainable design consulting."
-                },
-                {
-                    question: "Do you provide 3D visualization services?",
-                    answer: "Yes, we provide advanced 3D visualization services including photorealistic renderings, virtual tours, and animated walkthroughs to help clients better understand and visualize their projects."
-                },
-                {
-                    question: "Can you help with permits and approvals?",
-                    answer: "Absolutely. We assist clients throughout the entire approval process, ensuring all designs comply with local building codes, zoning regulations, and other statutory requirements."
-                }
-            ],
-            process: [
-                {
-                    question: "What is your typical project timeline?",
-                    answer: "Project timelines vary depending on scope and complexity. A typical residential project might take 6-12 months from concept to completion, while larger commercial projects can take 18-36 months or more."
-                },
-                {
-                    question: "How do you charge for your services?",
-                    answer: "Our fee structure is typically based on a percentage of the project cost, though we also offer fixed fees for specific services. We provide detailed fee proposals after understanding your project requirements."
-                },
-                {
-                    question: "What is the first step in working with you?",
-                    answer: "The first step is an initial consultation where we discuss your vision, requirements, budget, and timeline. This helps us understand your needs and determine how we can best assist you."
-                }
-            ]
+        // FAQ Data - Now loaded from storage
+        let faqData = {
+            general: [],
+            services: [],
+            process: []
+        };
+
+        // Load FAQs from storage
+        function loadFAQs() {
+            const storedFAQs = localStorage.getItem('faqs');
+            if (storedFAQs) {
+                faqData = JSON.parse(storedFAQs);
+            }
+        }
+
+        // Update frontend FAQs
+        window.updateFrontendFAQs = function(newFAQs) {
+            faqData = newFAQs;
+            localStorage.setItem('faqs', JSON.stringify(faqData));
+            renderFAQs();
         };
 
         // Render FAQs
@@ -388,17 +364,21 @@
             Object.keys(faqData).forEach(category => {
                 const container = document.getElementById(category + 'FAQs');
                 if (container) {
-                    container.innerHTML = faqData[category].map((item, index) => `
-                        <div class="faq-item">
-                            <div class="faq-question" onclick="toggleFAQ(${category}${index})">
-                                <span>${item.question}</span>
-                                <i class="fas fa-chevron-down faq-icon"></i>
+                    if (faqData[category].length === 0) {
+                        container.innerHTML = '<p class="empty-state">No FAQs available in this category yet.</p>';
+                    } else {
+                        container.innerHTML = faqData[category].map((item, index) => `
+                            <div class="faq-item">
+                                <div class="faq-question" onclick="toggleFAQ('${category}${index}')">
+                                    <span>${item.question}</span>
+                                    <i class="fas fa-chevron-down faq-icon"></i>
+                                </div>
+                                <div class="faq-answer" id="faq${category}${index}">
+                                    ${item.answer}
+                                </div>
                             </div>
-                            <div class="faq-answer" id="faq${category}${index}">
-                                ${item.answer}
-                            </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                    }
                 }
             });
         }
@@ -420,7 +400,7 @@
             }
         }
 
-        // Add new FAQ
+        // Add new FAQ (for admin section in frontend)
         document.getElementById('addFAQForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -428,8 +408,16 @@
             const question = document.getElementById('faqQuestion').value;
             const answer = document.getElementById('faqAnswer').value;
             
-            // Add to local data
-            faqData[category].push({ question, answer });
+            // Add to data
+            faqData[category].push({ 
+                id: Date.now(),
+                question, 
+                answer,
+                date: new Date().toISOString()
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('faqs', JSON.stringify(faqData));
             
             // Re-render FAQs
             renderFAQs();
@@ -443,6 +431,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            loadFAQs();
             renderFAQs();
             checkAdminAccess();
         });

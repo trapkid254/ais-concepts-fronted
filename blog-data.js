@@ -3,32 +3,7 @@
   var __posts = [];
 
   function defaults() {
-    return [
-      {
-        id: 1,
-        title: 'Designing the Sustainable High-Rise',
-        date: '2026-03-01',
-        excerpt:
-          'How façade strategies, daylight modeling, and smart systems can reduce energy loads while keeping towers expressive and human.',
-        image: 'images/blog1.jpg'
-      },
-      {
-        id: 2,
-        title: 'African Modernism, Reimagined',
-        date: '2026-02-12',
-        excerpt:
-          'Blending local materials, craft, and climate intelligence to create contemporary spaces rooted in place.',
-        image: 'images/blog2.jpg'
-      },
-      {
-        id: 3,
-        title: 'Designing for Experience',
-        date: '2026-01-25',
-        excerpt:
-          'Why light, acoustics, and material tactility matter as much as the floor plan when crafting memorable interiors.',
-        image: 'images/blog3.jpg'
-      }
-    ];
+    return [];
   }
 
   global.loadWebsiteBlogPosts = function () {
