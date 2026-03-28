@@ -284,6 +284,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupCommunicationHub();
         setupSiteManagement();
         setupMarketingManagement();
+        setupFinancialManagement();
         setupApprovalsWorkflow();
         setupFAQManagement();
     }
@@ -2975,12 +2976,64 @@ window.deleteTask = function(taskId) {
 // Document Management Functions
 function setupDocumentManagement() {
     const uploadBtn = document.getElementById('adminUploadDocBtn');
+    const uploadModal = document.getElementById('adminUploadDocModal');
+    const uploadForm = document.getElementById('adminUploadDocForm');
     const docFilters = document.querySelectorAll('.doc-categories .filter-btn');
     const documentsTableBody = document.getElementById('adminDocumentsTableBody');
     
-    if (uploadBtn) {
+    if (uploadBtn && uploadModal) {
         uploadBtn.addEventListener('click', function() {
-            alert('Document upload functionality would open file picker here');
+            uploadForm.reset();
+            populateProjectDropdown('docProject');
+            uploadModal.classList.add('open');
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminUploadDocModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            uploadModal.classList.remove('open'); 
+        });
+    });
+    
+    if (uploadModal) {
+        uploadModal.addEventListener('click', function(e) { 
+            if (e.target === uploadModal) uploadModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('docFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            const document = {
+                id: Date.now(),
+                name: document.getElementById('docName').value,
+                type: document.getElementById('docType').value,
+                project: document.getElementById('docProject').value,
+                fileName: file.name,
+                fileSize: formatFileSize(file.size),
+                version: document.getElementById('docVersion').value,
+                uploaded: new Date().toISOString(),
+                fileData: 'file://' + file.name // In real app, this would be uploaded to server
+            };
+            
+            const documents = getStored('adminDocuments', []);
+            documents.push(document);
+            setStored('adminDocuments', documents);
+            
+            renderDocuments(documentsTableBody, documents);
+            uploadModal.classList.remove('open');
+            uploadForm.reset();
         });
     }
     
@@ -3001,6 +3054,26 @@ function setupDocumentManagement() {
     renderDocuments(documentsTableBody, documents);
 }
 
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function populateProjectDropdown(selectId) {
+    const projects = getStored('portalProjects', []);
+    const select = document.getElementById(selectId);
+    
+    if (select) {
+        select.innerHTML = '<option value="">Select project</option>' +
+            projects.map(project => 
+                `<option value="${project.id}">${project.name}</option>`
+            ).join('');
+    }
+}
+
 function renderDocuments(tbody, documents) {
     if (!tbody) return;
     
@@ -3008,9 +3081,9 @@ function renderDocuments(tbody, documents) {
         <tr>
             <td><i class="fas fa-file-${getFileIcon(doc.type)}"></i> ${doc.name}</td>
             <td>${doc.type}</td>
-            <td>${doc.project}</td>
+            <td>${getProjectName(doc.project)}</td>
             <td>${new Date(doc.uploaded).toLocaleDateString()}</td>
-            <td>${doc.size}</td>
+            <td>${doc.fileSize}</td>
             <td>v${doc.version}</td>
             <td>
                 <button class="btn-icon" onclick="viewDocument(${doc.id})" title="View">
@@ -3018,6 +3091,9 @@ function renderDocuments(tbody, documents) {
                 </button>
                 <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Download">
                     <i class="fas fa-download"></i>
+                </button>
+                <button class="btn-icon" onclick="deleteDocument(${doc.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
                 </button>
             </td>
         </tr>
@@ -3039,17 +3115,76 @@ window.viewDocument = function(docId) {
 };
 
 window.downloadDocument = function(docId) {
-    alert('Download document functionality would trigger file download');
+    const documents = getStored('adminDocuments', []);
+    const doc = documents.find(d => d.id === docId);
+    if (doc) {
+        // In a real app, this would trigger actual file download
+        alert(`Downloading: ${doc.fileName}\nSize: ${doc.fileSize}\nVersion: ${doc.version}`);
+    }
+};
+
+window.deleteDocument = function(docId) {
+    if (!confirm('Delete this document?')) return;
+    
+    const documents = getStored('adminDocuments', []);
+    const updatedDocs = documents.filter(doc => doc.id !== docId);
+    setStored('adminDocuments', updatedDocs);
+    
+    const tbody = document.getElementById('adminDocumentsTableBody');
+    renderDocuments(tbody, updatedDocs);
 };
 
 // Design & Drafting Functions
 function setupDesignManagement() {
     const addDesignBtn = document.getElementById('adminAddDesignBtn');
+    const designModal = document.getElementById('adminAddDesignModal');
+    const designForm = document.getElementById('adminAddDesignForm');
     const designsTableBody = document.getElementById('adminDesignTableBody');
     
-    if (addDesignBtn) {
+    if (addDesignBtn && designModal) {
         addDesignBtn.addEventListener('click', function() {
-            alert('New Design functionality would open design creation form');
+            designForm.reset();
+            populateProjectDropdown('designProject');
+            designModal.classList.add('open');
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminAddDesignModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            designModal.classList.remove('open'); 
+        });
+    });
+    
+    if (designModal) {
+        designModal.addEventListener('click', function(e) { 
+            if (e.target === designModal) designModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (designForm) {
+        designForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const design = {
+                id: Date.now(),
+                name: document.getElementById('designName').value,
+                type: document.getElementById('designType').value,
+                project: document.getElementById('designProject').value,
+                status: document.getElementById('designStatus').value,
+                progress: parseInt(document.getElementById('designProgress').value),
+                description: document.getElementById('designDescription').value,
+                createdDate: new Date().toISOString()
+            };
+            
+            const designs = getStored('adminDesigns', []);
+            designs.push(design);
+            setStored('adminDesigns', designs);
+            
+            renderDesigns(designsTableBody, designs);
+            designModal.classList.remove('open');
+            designForm.reset();
         });
     }
     
@@ -3065,7 +3200,7 @@ function renderDesigns(tbody, designs) {
         <tr>
             <td>${design.name}</td>
             <td>${design.type}</td>
-            <td>${design.project}</td>
+            <td>${getProjectName(design.project)}</td>
             <td><span class="status-${design.status}">${design.status}</span></td>
             <td>
                 <div class="progress-bar">
@@ -3080,6 +3215,9 @@ function renderDesigns(tbody, designs) {
                 <button class="btn-icon" onclick="editDesign(${design.id})" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
+                <button class="btn-icon" onclick="deleteDesign(${design.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
         </tr>
     `).join('') : '<tr><td colspan="6">No designs found</td></tr>';
@@ -3090,17 +3228,84 @@ window.viewDesign = function(designId) {
 };
 
 window.editDesign = function(designId) {
-    alert('Edit design functionality would open design editor');
+    const designs = getStored('adminDesigns', []);
+    const design = designs.find(d => d.id === designId);
+    if (!design) return;
+    
+    document.getElementById('designName').value = design.name;
+    document.getElementById('designType').value = design.type;
+    document.getElementById('designStatus').value = design.status;
+    document.getElementById('designProgress').value = design.progress;
+    document.getElementById('designDescription').value = design.description;
+    
+    populateProjectDropdown('designProject');
+    setTimeout(() => {
+        document.getElementById('designProject').value = design.project;
+    }, 100);
+    
+    document.getElementById('adminAddDesignModal').classList.add('open');
+};
+
+window.deleteDesign = function(designId) {
+    if (!confirm('Delete this design?')) return;
+    
+    const designs = getStored('adminDesigns', []);
+    const updatedDesigns = designs.filter(d => d.id !== designId);
+    setStored('adminDesigns', updatedDesigns);
+    
+    const tbody = document.getElementById('adminDesignTableBody');
+    renderDesigns(tbody, updatedDesigns);
 };
 
 // Communication Hub Functions
 function setupCommunicationHub() {
     const newMessageBtn = document.getElementById('adminNewMessageBtn');
+    const messageModal = document.getElementById('adminNewMessageModal');
+    const messageForm = document.getElementById('adminNewMessageForm');
     const communicationTableBody = document.getElementById('adminCommunicationTableBody');
     
-    if (newMessageBtn) {
+    if (newMessageBtn && messageModal) {
         newMessageBtn.addEventListener('click', function() {
-            alert('New Message functionality would open message composer');
+            messageForm.reset();
+            messageModal.classList.add('open');
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminNewMessageModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            messageModal.classList.remove('open'); 
+        });
+    });
+    
+    if (messageModal) {
+        messageModal.addEventListener('click', function(e) { 
+            if (e.target === messageModal) messageModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const communication = {
+                id: Date.now(),
+                type: document.getElementById('messageType').value,
+                recipients: document.getElementById('messageRecipients').value,
+                subject: document.getElementById('messageSubject').value,
+                content: document.getElementById('messageContent').value,
+                date: new Date().toISOString(),
+                status: 'sent'
+            };
+            
+            const communications = getStored('adminCommunications', []);
+            communications.push(communication);
+            setStored('adminCommunications', communications);
+            
+            renderCommunications(communicationTableBody, communications);
+            messageModal.classList.remove('open');
+            messageForm.reset();
         });
     }
     
@@ -3142,11 +3347,56 @@ window.replyCommunication = function(commId) {
 // Site Management Functions
 function setupSiteManagement() {
     const addSiteVisitBtn = document.getElementById('adminAddSiteVisitBtn');
+    const siteModal = document.getElementById('adminAddSiteVisitModal');
+    const siteForm = document.getElementById('adminAddSiteVisitForm');
     const siteTableBody = document.getElementById('adminSiteManagementTableBody');
     
-    if (addSiteVisitBtn) {
+    if (addSiteVisitBtn && siteModal) {
         addSiteVisitBtn.addEventListener('click', function() {
-            alert('Add Site Visit functionality would open site visit form');
+            siteForm.reset();
+            populateProjectDropdown('siteVisitProject');
+            siteModal.classList.add('open');
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminAddSiteVisitModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            siteModal.classList.remove('open'); 
+        });
+    });
+    
+    if (siteModal) {
+        siteModal.addEventListener('click', function(e) { 
+            if (e.target === siteModal) siteModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (siteForm) {
+        siteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const siteVisit = {
+                id: Date.now(),
+                name: document.getElementById('siteVisitName').value,
+                project: document.getElementById('siteVisitProject').value,
+                visitDate: document.getElementById('siteVisitDate').value,
+                visitType: document.getElementById('siteVisitType').value,
+                progress: parseInt(document.getElementById('siteVisitProgress').value),
+                issues: parseInt(document.getElementById('siteVisitIssues').value),
+                nextVisit: document.getElementById('siteVisitNextDate').value,
+                notes: document.getElementById('siteVisitNotes').value,
+                lastVisit: new Date().toISOString()
+            };
+            
+            const sites = getStored('adminSites', []);
+            sites.push(siteVisit);
+            setStored('adminSites', sites);
+            
+            renderSites(siteTableBody, sites);
+            siteModal.classList.remove('open');
+            siteForm.reset();
         });
     }
     
@@ -3161,7 +3411,7 @@ function renderSites(tbody, sites) {
     tbody.innerHTML = sites.length ? sites.map(site => `
         <tr>
             <td>${site.name}</td>
-            <td>${site.project}</td>
+            <td>${getProjectName(site.project)}</td>
             <td>${new Date(site.lastVisit).toLocaleDateString()}</td>
             <td>
                 <div class="progress-bar">
@@ -3170,13 +3420,16 @@ function renderSites(tbody, sites) {
                 </div>
             </td>
             <td><span class="issues-${site.issues}">${site.issues} issues</span></td>
-            <td>${new Date(site.nextVisit).toLocaleDateString()}</td>
+            <td>${site.nextVisit ? new Date(site.nextVisit).toLocaleDateString() : 'Not scheduled'}</td>
             <td>
                 <button class="btn-icon" onclick="viewSite(${site.id})" title="View Site">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="btn-icon" onclick="addVisit(${site.id})" title="Add Visit">
-                    <i class="fas fa-plus"></i>
+                <button class="btn-icon" onclick="editSite(${site.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon" onclick="deleteSite(${site.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
                 </button>
             </td>
         </tr>
@@ -3184,12 +3437,263 @@ function renderSites(tbody, sites) {
 }
 
 window.viewSite = function(siteId) {
-    alert('View site functionality would open site details');
+    const sites = getStored('adminSites', []);
+    const site = sites.find(s => s.id === siteId);
+    if (site) {
+        alert(`Site: ${site.name}\nProject: ${getProjectName(site.project)}\nProgress: ${site.progress}%\nIssues: ${site.issues}\nNotes: ${site.notes || 'No notes'}`);
+    }
+};
+
+window.editSite = function(siteId) {
+    const sites = getStored('adminSites', []);
+    const site = sites.find(s => s.id === siteId);
+    if (!site) return;
+    
+    document.getElementById('siteVisitName').value = site.name;
+    document.getElementById('siteVisitType').value = site.visitType;
+    document.getElementById('siteVisitProgress').value = site.progress;
+    document.getElementById('siteVisitIssues').value = site.issues;
+    document.getElementById('siteVisitNotes').value = site.notes || '';
+    document.getElementById('siteVisitDate').value = site.visitDate;
+    document.getElementById('siteVisitNextDate').value = site.nextVisit || '';
+    
+    populateProjectDropdown('siteVisitProject');
+    setTimeout(() => {
+        document.getElementById('siteVisitProject').value = site.project;
+    }, 100);
+    
+    document.getElementById('adminAddSiteVisitModal').classList.add('open');
+};
+
+window.deleteSite = function(siteId) {
+    if (!confirm('Delete this site visit record?')) return;
+    
+    const sites = getStored('adminSites', []);
+    const updatedSites = sites.filter(s => s.id !== siteId);
+    setStored('adminSites', updatedSites);
+    
+    const tbody = document.getElementById('adminSiteManagementTableBody');
+    renderSites(tbody, updatedSites);
 };
 
 window.addVisit = function(siteId) {
-    alert('Add visit functionality would open site visit form');
+    alert('Add visit functionality would open new visit form for this site');
 };
+
+// Financial & Billing Functions
+function setupFinancialManagement() {
+    const addFinancialBtn = document.getElementById('adminAddFinancialBtn');
+    const exportBtn = document.getElementById('adminExportFinancialBtn');
+    const financialModal = document.getElementById('adminFinancialModal');
+    const financialForm = document.getElementById('adminFinancialForm');
+    const financialTableBody = document.getElementById('adminFinancialTableBody');
+    
+    if (addFinancialBtn && financialModal) {
+        addFinancialBtn.addEventListener('click', function() {
+            financialForm.reset();
+            document.getElementById('adminFinancialModalTitle').textContent = 'Add Financial Entry';
+            document.getElementById('financialId').value = '';
+            financialModal.classList.add('open');
+        });
+    }
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            exportFinancialData();
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminFinancialModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            financialModal.classList.remove('open'); 
+        });
+    });
+    
+    if (financialModal) {
+        financialModal.addEventListener('click', function(e) { 
+            if (e.target === financialModal) financialModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (financialForm) {
+        financialForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const financialId = document.getElementById('financialId').value;
+            const financialEntry = {
+                id: financialId || Date.now(),
+                type: document.getElementById('financialType').value,
+                description: document.getElementById('financialDescription').value,
+                client: document.getElementById('financialClient').value,
+                amount: parseFloat(document.getElementById('financialAmount').value),
+                date: document.getElementById('financialDate').value,
+                status: document.getElementById('financialStatus').value,
+                category: document.getElementById('financialCategory').value
+            };
+            
+            const financials = getStored('adminFinancials', []);
+            
+            if (financialId) {
+                // Edit existing entry
+                const index = financials.findIndex(f => f.id == financialId);
+                if (index !== -1) {
+                    financials[index] = financialEntry;
+                }
+            } else {
+                // Add new entry
+                financials.push(financialEntry);
+                
+                // If it's an invoice, add to approvals workflow
+                if (financialEntry.type === 'invoice' && financialEntry.status === 'pending') {
+                    const approvals = getStored('adminApprovals', []);
+                    approvals.push({
+                        id: Date.now(),
+                        document: financialEntry.description,
+                        type: 'invoice',
+                        project: financialEntry.client,
+                        submittedBy: 'Admin',
+                        approvalType: 'financial',
+                        status: 'pending',
+                        submitted: new Date().toISOString(),
+                        financialId: financialEntry.id
+                    });
+                    setStored('adminApprovals', approvals);
+                }
+            }
+            
+            setStored('adminFinancials', financials);
+            
+            renderFinancials(financialTableBody, financials);
+            updateFinancialSummary();
+            financialModal.classList.remove('open');
+            financialForm.reset();
+        });
+    }
+    
+    // Initial render
+    const financials = getStored('adminFinancials', []);
+    renderFinancials(financialTableBody, financials);
+    updateFinancialSummary();
+}
+
+function renderFinancials(tbody, financials) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = financials.length ? financials.map(fin => `
+        <tr>
+            <td><span class="type-${fin.type}">${fin.type}</span></td>
+            <td>${fin.description}</td>
+            <td>${fin.client}</td>
+            <td>$${fin.amount.toLocaleString()}</td>
+            <td>${new Date(fin.date).toLocaleDateString()}</td>
+            <td><span class="status-${fin.status}">${fin.status}</span></td>
+            <td>${fin.category}</td>
+            <td>
+                <button class="btn-icon" onclick="viewFinancial(${fin.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="editFinancial(${fin.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon" onclick="deleteFinancial(${fin.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="8">No financial entries found</td></tr>';
+}
+
+function updateFinancialSummary() {
+    const financials = getStored('adminFinancials', []);
+    
+    const totalRevenue = financials
+        .filter(f => f.type === 'revenue' && f.status === 'paid')
+        .reduce((sum, f) => sum + f.amount, 0);
+    
+    const pendingInvoices = financials
+        .filter(f => f.type === 'invoice' && f.status === 'pending')
+        .reduce((sum, f) => sum + f.amount, 0);
+    
+    const totalExpenses = financials
+        .filter(f => f.type === 'expense')
+        .reduce((sum, f) => sum + f.amount, 0);
+    
+    const revenueEl = document.getElementById('totalRevenueAmount');
+    const pendingEl = document.getElementById('pendingInvoiceAmount');
+    const expensesEl = document.getElementById('totalExpenses');
+    
+    if (revenueEl) revenueEl.textContent = '$' + totalRevenue.toLocaleString();
+    if (pendingEl) pendingEl.textContent = '$' + pendingInvoices.toLocaleString();
+    if (expensesEl) expensesEl.textContent = '$' + totalExpenses.toLocaleString();
+}
+
+window.viewFinancial = function(finId) {
+    const financials = getStored('adminFinancials', []);
+    const fin = financials.find(f => f.id === finId);
+    if (fin) {
+        alert(`Type: ${fin.type}\nDescription: ${fin.description}\nClient: ${fin.client}\nAmount: $${fin.amount}\nStatus: ${fin.status}\nCategory: ${fin.category}`);
+    }
+};
+
+window.editFinancial = function(finId) {
+    const financials = getStored('adminFinancials', []);
+    const fin = financials.find(f => f.id === finId);
+    if (!fin) return;
+    
+    document.getElementById('adminFinancialModalTitle').textContent = 'Edit Financial Entry';
+    document.getElementById('financialId').value = fin.id;
+    document.getElementById('financialType').value = fin.type;
+    document.getElementById('financialDescription').value = fin.description;
+    document.getElementById('financialClient').value = fin.client;
+    document.getElementById('financialAmount').value = fin.amount;
+    document.getElementById('financialDate').value = fin.date;
+    document.getElementById('financialStatus').value = fin.status;
+    document.getElementById('financialCategory').value = fin.category;
+    
+    document.getElementById('adminFinancialModal').classList.add('open');
+};
+
+window.deleteFinancial = function(finId) {
+    if (!confirm('Delete this financial entry?')) return;
+    
+    const financials = getStored('adminFinancials', []);
+    const updatedFinancials = financials.filter(f => f.id !== finId);
+    setStored('adminFinancials', updatedFinancials);
+    
+    const tbody = document.getElementById('adminFinancialTableBody');
+    renderFinancials(tbody, updatedFinancials);
+    updateFinancialSummary();
+};
+
+function exportFinancialData() {
+    const financials = getStored('adminFinancials', []);
+    
+    // Create CSV content
+    const headers = ['Type', 'Description', 'Client', 'Amount', 'Date', 'Status', 'Category'];
+    const csvContent = [
+        headers.join(','),
+        ...financials.map(fin => [
+            fin.type,
+            `"${fin.description}"`,
+            `"${fin.client}"`,
+            fin.amount,
+            fin.date,
+            fin.status,
+            fin.category
+        ].join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `financial_data_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
 
 // Marketing Functions
 function setupMarketingManagement() {

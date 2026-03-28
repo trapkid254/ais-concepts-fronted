@@ -1141,6 +1141,14 @@
             <section id="admin-financial" class="table-container portal-section" style="display: none;">
                 <div class="table-header">
                     <h2>Financial & Billing</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAddFinancialBtn">
+                            <i class="fas fa-plus"></i> Add Entry
+                        </button>
+                        <button class="btn btn-secondary" id="adminExportFinancialBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
                     <div class="financial-summary">
                         <div class="summary-card">
                             <h4>Total Revenue</h4>
@@ -1159,12 +1167,13 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Invoice #</th>
-                            <th>Client</th>
-                            <th>Project</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Client/Project</th>
                             <th>Amount</th>
+                            <th>Date</th>
                             <th>Status</th>
-                            <th>Due Date</th>
+                            <th>Category</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1376,6 +1385,239 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Upload Document Modal -->
+            <div class="modal" id="adminUploadDocModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminUploadDocModal">&times;</span>
+                    <h2>Upload Document</h2>
+                    <form id="adminUploadDocForm">
+                        <div class="form-group">
+                            <label>Document Name</label>
+                            <input type="text" id="docName" required placeholder="Enter document name">
+                        </div>
+                        <div class="form-group">
+                            <label>Document Type</label>
+                            <select id="docType" required>
+                                <option value="">Select type</option>
+                                <option value="drawings">Drawings</option>
+                                <option value="contracts">Contracts</option>
+                                <option value="permits">Permits</option>
+                                <option value="reports">Reports</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="docProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>File</label>
+                            <input type="file" id="docFile" required accept=".pdf,.doc,.docx,.dwg,.jpg,.png">
+                        </div>
+                        <div class="form-group">
+                            <label>Version</label>
+                            <input type="text" id="docVersion" value="1.0" placeholder="e.g. 1.0">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Document</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Design Modal -->
+            <div class="modal" id="adminAddDesignModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddDesignModal">&times;</span>
+                    <h2>Add New Design</h2>
+                    <form id="adminAddDesignForm">
+                        <div class="form-group">
+                            <label>Design Name</label>
+                            <input type="text" id="designName" required placeholder="Enter design name">
+                        </div>
+                        <div class="form-group">
+                            <label>Design Type</label>
+                            <select id="designType" required>
+                                <option value="">Select type</option>
+                                <option value="2d-drafting">2D Drafting</option>
+                                <option value="3d-modeling">3D Modeling</option>
+                                <option value="rendering">Rendering</option>
+                                <option value="bim">BIM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="designProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="designStatus" required>
+                                <option value="draft">Draft</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="review">Review</option>
+                                <option value="approved">Approved</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Progress (%)</label>
+                            <input type="number" id="designProgress" min="0" max="100" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="designDescription" rows="3" placeholder="Design description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Design</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- New Message Modal -->
+            <div class="modal" id="adminNewMessageModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminNewMessageModal">&times;</span>
+                    <h2>Compose New Message</h2>
+                    <form id="adminNewMessageForm">
+                        <div class="form-group">
+                            <label>Message Type</label>
+                            <select id="messageType" required>
+                                <option value="">Select type</option>
+                                <option value="team-chat">Team Chat</option>
+                                <option value="client-email">Client Email</option>
+                                <option value="video-meeting">Video Meeting</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Recipients</label>
+                            <input type="text" id="messageRecipients" required placeholder="Enter email addresses (comma separated)">
+                        </div>
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <input type="text" id="messageSubject" required placeholder="Message subject">
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="messageContent" rows="5" required placeholder="Type your message here"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Attachments (optional)</label>
+                            <input type="file" id="messageAttachments" multiple accept=".pdf,.doc,.docx,.jpg,.png">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Site Visit Modal -->
+            <div class="modal" id="adminAddSiteVisitModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddSiteVisitModal">&times;</span>
+                    <h2>Add Site Visit</h2>
+                    <form id="adminAddSiteVisitForm">
+                        <div class="form-group">
+                            <label>Site Name</label>
+                            <input type="text" id="siteVisitName" required placeholder="Enter site name">
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="siteVisitProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Visit Date</label>
+                            <input type="date" id="siteVisitDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Visit Type</label>
+                            <select id="siteVisitType" required>
+                                <option value="">Select type</option>
+                                <option value="inspection">Inspection</option>
+                                <option value="progress">Progress Check</option>
+                                <option value="meeting">Site Meeting</option>
+                                <option value="survey">Survey</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Progress (%)</label>
+                            <input type="number" id="siteVisitProgress" min="0" max="100" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Issues Found</label>
+                            <input type="number" id="siteVisitIssues" min="0" value="0" placeholder="Number of issues">
+                        </div>
+                        <div class="form-group">
+                            <label>Next Visit Date</label>
+                            <input type="date" id="siteVisitNextDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="siteVisitNotes" rows="3" placeholder="Visit notes and observations"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Photos (optional)</label>
+                            <input type="file" id="siteVisitPhotos" multiple accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Site Visit</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Financial Entry Modal -->
+            <div class="modal" id="adminFinancialModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminFinancialModal">&times;</span>
+                    <h2 id="adminFinancialModalTitle">Add Financial Entry</h2>
+                    <form id="adminFinancialForm">
+                        <input type="hidden" id="financialId">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="financialType" required>
+                                <option value="revenue">Revenue</option>
+                                <option value="expense">Expense</option>
+                                <option value="invoice">Invoice</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="financialDescription" required placeholder="Entry description">
+                        </div>
+                        <div class="form-group">
+                            <label>Client/Project</label>
+                            <input type="text" id="financialClient" required placeholder="Client or project name">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="financialAmount" required placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="financialDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="financialStatus">
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="financialCategory">
+                                <option value="materials">Materials</option>
+                                <option value="labor">Labor</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="consulting">Consulting</option>
+                                <option value="permits">Permits</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </form>
+                </div>
+            </div>
 
         </main>
     </div>
