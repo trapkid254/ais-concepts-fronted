@@ -278,6 +278,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Admin-specific forms and views
     if (path.includes('/admin/')) {
+        setupTaskManagement();
+        setupDocumentManagement();
+        setupDesignManagement();
+        setupCommunicationHub();
+        setupSiteManagement();
+        setupMarketingManagement();
+        setupApprovalsWorkflow();
         setupFAQManagement();
     }
 
@@ -2810,6 +2817,509 @@ function updateFinancialSummary() {
     const totalExpensesEl = document.getElementById('totalExpenses');
     if (totalExpensesEl) totalExpensesEl.textContent = '$' + totalExpenses.toLocaleString();
 }
+
+// Task Management Functions
+function setupTaskManagement() {
+    const addTaskBtn = document.getElementById('adminAddTaskBtn');
+    const taskModal = document.getElementById('adminAddTaskModal');
+    const taskForm = document.getElementById('adminAddTaskForm');
+    const tasksTableBody = document.getElementById('adminTasksTableBody');
+    const taskFilters = document.querySelectorAll('.task-filters .filter-btn');
+    
+    if (addTaskBtn && taskModal) {
+        addTaskBtn.addEventListener('click', function() {
+            taskForm.reset();
+            populateTaskDropdowns();
+            taskModal.classList.add('open');
+        });
+    }
+    
+    // Close modal handlers
+    document.querySelectorAll('[data-close="adminAddTaskModal"]').forEach(el => {
+        el.addEventListener('click', function() { 
+            taskModal.classList.remove('open'); 
+        });
+    });
+    
+    if (taskModal) {
+        taskModal.addEventListener('click', function(e) { 
+            if (e.target === taskModal) taskModal.classList.remove('open'); 
+        });
+    }
+    
+    // Form submission
+    if (taskForm) {
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const task = {
+                id: Date.now(),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                assignee: document.getElementById('taskAssignee').value,
+                project: document.getElementById('taskProject').value,
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                status: 'pending',
+                createdDate: new Date().toISOString()
+            };
+            
+            const tasks = getStored('adminTasks', []);
+            tasks.push(task);
+            setStored('adminTasks', tasks);
+            
+            renderTasks(tasksTableBody, tasks);
+            taskModal.classList.remove('open');
+            taskForm.reset();
+        });
+    }
+    
+    // Filter functionality
+    taskFilters.forEach(filter => {
+        filter.addEventListener('click', function() {
+            taskFilters.forEach(f => f.classList.remove('active'));
+            this.classList.add('active');
+            const filterValue = this.getAttribute('data-filter');
+            const tasks = getStored('adminTasks', []);
+            const filteredTasks = filterValue === 'all' ? tasks : tasks.filter(task => task.status === filterValue);
+            renderTasks(tasksTableBody, filteredTasks);
+        });
+    });
+    
+    // Initial render
+    const tasks = getStored('adminTasks', []);
+    renderTasks(tasksTableBody, tasks);
+}
+
+function populateTaskDropdowns() {
+    const users = getStored('portalUsers', []);
+    const projects = getStored('portalProjects', []);
+    
+    const assigneeSelect = document.getElementById('taskAssignee');
+    const projectSelect = document.getElementById('taskProject');
+    
+    if (assigneeSelect) {
+        assigneeSelect.innerHTML = '<option value="">Select team member</option>' +
+            users.filter(user => user.role === 'Employee').map(user => 
+                `<option value="${user.email}">${user.name}</option>`
+            ).join('');
+    }
+    
+    if (projectSelect) {
+        projectSelect.innerHTML = '<option value="">Select project</option>' +
+            projects.map(project => 
+                `<option value="${project.id}">${project.name}</option>`
+            ).join('');
+    }
+}
+
+function renderTasks(tbody, tasks) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = tasks.length ? tasks.map(task => `
+        <tr>
+            <td>${task.title}</td>
+            <td>${task.assignee}</td>
+            <td>${getProjectName(task.project)}</td>
+            <td><span class="priority-${task.priority}">${task.priority}</span></td>
+            <td>${new Date(task.dueDate).toLocaleDateString()}</td>
+            <td><span class="status-${task.status}">${task.status}</span></td>
+            <td>
+                <button class="btn-icon" onclick="editTask(${task.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon" onclick="deleteTask(${task.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="7">No tasks found</td></tr>';
+}
+
+function getProjectName(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => p.id == projectId);
+    return project ? project.name : 'Unknown Project';
+}
+
+window.editTask = function(taskId) {
+    const tasks = getStored('adminTasks', []);
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    document.getElementById('taskTitle').value = task.title;
+    document.getElementById('taskDescription').value = task.description;
+    document.getElementById('taskPriority').value = task.priority;
+    document.getElementById('taskDueDate').value = task.dueDate;
+    
+    populateTaskDropdowns();
+    setTimeout(() => {
+        document.getElementById('taskAssignee').value = task.assignee;
+        document.getElementById('taskProject').value = task.project;
+    }, 100);
+    
+    document.getElementById('adminAddTaskModal').classList.add('open');
+};
+
+window.deleteTask = function(taskId) {
+    if (!confirm('Delete this task?')) return;
+    
+    const tasks = getStored('adminTasks', []);
+    const updatedTasks = tasks.filter(t => t.id !== taskId);
+    setStored('adminTasks', updatedTasks);
+    
+    const tbody = document.getElementById('adminTasksTableBody');
+    renderTasks(tbody, updatedTasks);
+};
+
+// Document Management Functions
+function setupDocumentManagement() {
+    const uploadBtn = document.getElementById('adminUploadDocBtn');
+    const docFilters = document.querySelectorAll('.doc-categories .filter-btn');
+    const documentsTableBody = document.getElementById('adminDocumentsTableBody');
+    
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', function() {
+            alert('Document upload functionality would open file picker here');
+        });
+    }
+    
+    // Filter functionality
+    docFilters.forEach(filter => {
+        filter.addEventListener('click', function() {
+            docFilters.forEach(f => f.classList.remove('active'));
+            this.classList.add('active');
+            const filterValue = this.getAttribute('data-filter');
+            const documents = getStored('adminDocuments', []);
+            const filteredDocs = filterValue === 'all' ? documents : documents.filter(doc => doc.type === filterValue);
+            renderDocuments(documentsTableBody, filteredDocs);
+        });
+    });
+    
+    // Initial render
+    const documents = getStored('adminDocuments', []);
+    renderDocuments(documentsTableBody, documents);
+}
+
+function renderDocuments(tbody, documents) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = documents.length ? documents.map(doc => `
+        <tr>
+            <td><i class="fas fa-file-${getFileIcon(doc.type)}"></i> ${doc.name}</td>
+            <td>${doc.type}</td>
+            <td>${doc.project}</td>
+            <td>${new Date(doc.uploaded).toLocaleDateString()}</td>
+            <td>${doc.size}</td>
+            <td>v${doc.version}</td>
+            <td>
+                <button class="btn-icon" onclick="viewDocument(${doc.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="7">No documents found</td></tr>';
+}
+
+function getFileIcon(type) {
+    const icons = {
+        'drawings': 'drafting-compass',
+        'contracts': 'file-contract',
+        'permits': 'certificate',
+        'reports': 'file-alt'
+    };
+    return icons[type] || 'alt';
+}
+
+window.viewDocument = function(docId) {
+    alert('View document functionality would open document viewer');
+};
+
+window.downloadDocument = function(docId) {
+    alert('Download document functionality would trigger file download');
+};
+
+// Design & Drafting Functions
+function setupDesignManagement() {
+    const addDesignBtn = document.getElementById('adminAddDesignBtn');
+    const designsTableBody = document.getElementById('adminDesignTableBody');
+    
+    if (addDesignBtn) {
+        addDesignBtn.addEventListener('click', function() {
+            alert('New Design functionality would open design creation form');
+        });
+    }
+    
+    // Initial render
+    const designs = getStored('adminDesigns', []);
+    renderDesigns(designsTableBody, designs);
+}
+
+function renderDesigns(tbody, designs) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = designs.length ? designs.map(design => `
+        <tr>
+            <td>${design.name}</td>
+            <td>${design.type}</td>
+            <td>${design.project}</td>
+            <td><span class="status-${design.status}">${design.status}</span></td>
+            <td>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${design.progress}%"></div>
+                    <span>${design.progress}%</span>
+                </div>
+            </td>
+            <td>
+                <button class="btn-icon" onclick="viewDesign(${design.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="editDesign(${design.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6">No designs found</td></tr>';
+}
+
+window.viewDesign = function(designId) {
+    alert('View design functionality would open design viewer');
+};
+
+window.editDesign = function(designId) {
+    alert('Edit design functionality would open design editor');
+};
+
+// Communication Hub Functions
+function setupCommunicationHub() {
+    const newMessageBtn = document.getElementById('adminNewMessageBtn');
+    const communicationTableBody = document.getElementById('adminCommunicationTableBody');
+    
+    if (newMessageBtn) {
+        newMessageBtn.addEventListener('click', function() {
+            alert('New Message functionality would open message composer');
+        });
+    }
+    
+    // Initial render
+    const communications = getStored('adminCommunications', []);
+    renderCommunications(communicationTableBody, communications);
+}
+
+function renderCommunications(tbody, communications) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = communications.length ? communications.map(comm => `
+        <tr>
+            <td>${comm.subject}</td>
+            <td>${comm.participants}</td>
+            <td><span class="type-${comm.type}">${comm.type}</span></td>
+            <td>${new Date(comm.date).toLocaleDateString()}</td>
+            <td><span class="status-${comm.status}">${comm.status}</span></td>
+            <td>
+                <button class="btn-icon" onclick="viewCommunication(${comm.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="replyCommunication(${comm.id})" title="Reply">
+                    <i class="fas fa-reply"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6">No communications found</td></tr>';
+}
+
+window.viewCommunication = function(commId) {
+    alert('View communication functionality would open conversation');
+};
+
+window.replyCommunication = function(commId) {
+    alert('Reply functionality would open message composer');
+};
+
+// Site Management Functions
+function setupSiteManagement() {
+    const addSiteVisitBtn = document.getElementById('adminAddSiteVisitBtn');
+    const siteTableBody = document.getElementById('adminSiteManagementTableBody');
+    
+    if (addSiteVisitBtn) {
+        addSiteVisitBtn.addEventListener('click', function() {
+            alert('Add Site Visit functionality would open site visit form');
+        });
+    }
+    
+    // Initial render
+    const sites = getStored('adminSites', []);
+    renderSites(siteTableBody, sites);
+}
+
+function renderSites(tbody, sites) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = sites.length ? sites.map(site => `
+        <tr>
+            <td>${site.name}</td>
+            <td>${site.project}</td>
+            <td>${new Date(site.lastVisit).toLocaleDateString()}</td>
+            <td>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${site.progress}%"></div>
+                    <span>${site.progress}%</span>
+                </div>
+            </td>
+            <td><span class="issues-${site.issues}">${site.issues} issues</span></td>
+            <td>${new Date(site.nextVisit).toLocaleDateString()}</td>
+            <td>
+                <button class="btn-icon" onclick="viewSite(${site.id})" title="View Site">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="addVisit(${site.id})" title="Add Visit">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="7">No sites found</td></tr>';
+}
+
+window.viewSite = function(siteId) {
+    alert('View site functionality would open site details');
+};
+
+window.addVisit = function(siteId) {
+    alert('Add visit functionality would open site visit form');
+};
+
+// Marketing Functions
+function setupMarketingManagement() {
+    const addPortfolioBtn = document.getElementById('adminAddPortfolioBtn');
+    const marketingTableBody = document.getElementById('adminMarketingTableBody');
+    
+    if (addPortfolioBtn) {
+        addPortfolioBtn.addEventListener('click', function() {
+            alert('Add Portfolio functionality would open portfolio creation form');
+        });
+    }
+    
+    // Initial render
+    const portfolioItems = getStored('adminPortfolio', []);
+    renderPortfolio(marketingTableBody, portfolioItems);
+}
+
+function renderPortfolio(tbody, portfolioItems) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = portfolioItems.length ? portfolioItems.map(item => `
+        <tr>
+            <td>${item.title}</td>
+            <td>${item.category}</td>
+            <td>${item.views}</td>
+            <td>${item.inquiries}</td>
+            <td><span class="featured-${item.featured}">${item.featured ? 'Yes' : 'No'}</span></td>
+            <td>
+                <button class="btn-icon" onclick="viewPortfolio(${item.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="editPortfolio(${item.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon" onclick="deletePortfolio(${item.id})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6">No portfolio items found</td></tr>';
+}
+
+window.viewPortfolio = function(itemId) {
+    alert('View portfolio functionality would open portfolio item');
+};
+
+window.editPortfolio = function(itemId) {
+    alert('Edit portfolio functionality would open portfolio editor');
+};
+
+window.deletePortfolio = function(itemId) {
+    if (!confirm('Delete this portfolio item?')) return;
+    
+    const items = getStored('adminPortfolio', []);
+    const updatedItems = items.filter(item => item.id !== itemId);
+    setStored('adminPortfolio', updatedItems);
+    
+    const tbody = document.getElementById('adminMarketingTableBody');
+    renderPortfolio(tbody, updatedItems);
+};
+
+// Approvals Workflow Functions
+function setupApprovalsWorkflow() {
+    const approvalsTableBody = document.getElementById('adminApprovalsWorkflowTableBody');
+    
+    // Initial render
+    const approvals = getStored('adminApprovals', []);
+    renderApprovals(approvalsTableBody, approvals);
+}
+
+function renderApprovals(tbody, approvals) {
+    if (!tbody) return;
+    
+    tbody.innerHTML = approvals.length ? approvals.map(approval => `
+        <tr>
+            <td>${approval.document}</td>
+            <td>${approval.type}</td>
+            <td>${approval.project}</td>
+            <td>${approval.submittedBy}</td>
+            <td>${approval.approvalType}</td>
+            <td><span class="status-${approval.status}">${approval.status}</span></td>
+            <td>${new Date(approval.submitted).toLocaleDateString()}</td>
+            <td>
+                <button class="btn-icon" onclick="viewApproval(${approval.id})" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="approveApproval(${approval.id})" title="Approve">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn-icon" onclick="rejectApproval(${approval.id})" title="Reject">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="8">No approvals pending</td></tr>';
+}
+
+window.viewApproval = function(approvalId) {
+    alert('View approval functionality would open document viewer');
+};
+
+window.approveApproval = function(approvalId) {
+    if (!confirm('Approve this request?')) return;
+    
+    const approvals = getStored('adminApprovals', []);
+    const approval = approvals.find(a => a.id === approvalId);
+    if (approval) {
+        approval.status = 'approved';
+        setStored('adminApprovals', approvals);
+        
+        const tbody = document.getElementById('adminApprovalsWorkflowTableBody');
+        renderApprovals(tbody, approvals);
+    }
+};
+
+window.rejectApproval = function(approvalId) {
+    const reason = prompt('Reason for rejection:');
+    if (!reason) return;
+    
+    const approvals = getStored('adminApprovals', []);
+    const approval = approvals.find(a => a.id === approvalId);
+    if (approval) {
+        approval.status = 'rejected';
+        approval.rejectionReason = reason;
+        setStored('adminApprovals', approvals);
+        
+        const tbody = document.getElementById('adminApprovalsWorkflowTableBody');
+        renderApprovals(tbody, approvals);
+    }
+};
 
 // FAQ Management Functions
 function setupFAQManagement() {
