@@ -1,6 +1,7 @@
 (function () {
   var h = window.location.hostname || '';
   var p = window.location.port || '';
+<<<<<<< HEAD
   
   // Production deployment URLs
   if (h === 'ais-concepts-fronted.vercel.app' || h.endsWith('.vercel.app')) {
@@ -10,6 +11,9 @@
   
   // Fallback for Netlify (if still needed)
   if (h === 'aisconcepts.netlify.app' || h.endsWith('.netlify.app')) {
+=======
+  if (h === 'ais-concepts-fronted.vercel.app' || h.endsWith('.vercel.app')) {
+>>>>>>> 8748139bc3c7d0d4614ab60125c354af4a91d19d
     window.API_BASE = 'https://ais-concepts-backend.onrender.com';
     return;
   }
