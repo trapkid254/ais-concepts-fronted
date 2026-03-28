@@ -2605,5 +2605,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+}
 })();
-});
+})();
+})();
