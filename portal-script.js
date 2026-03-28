@@ -2544,8 +2544,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Admin Request Funds functionality - moved inside main DOMContentLoaded
-(function() {
-    const requestFundsBtn = document.getElementById('requestFundsBtn');
+const requestFundsBtn = document.getElementById('requestFundsBtn');
     const requestFundsModal = document.getElementById('adminRequestFundsModal');
     const requestFundsForm = document.getElementById('adminRequestFundsForm');
     
@@ -2606,4 +2605,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 }
-})();
