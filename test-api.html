@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script src="api-config.js"></script>
+    <script>
+        function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing API connection...';
+            
+            fetch(window.API_BASE + '/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: 'test@test.com', 
+                    username: 'test', 
+                    password: 'test', 
+                    portalType: 'admin' 
+                })
+            })
+            .then(response => {
+                resultDiv.innerHTML = `
+                    <h3>API Response:</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>URL:</strong> ${window.API_BASE}/api/auth/login</p>
+                    <p><strong>Response:</strong> ${response.statusText}</p>
+                `;
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `
+                    <h3>Connection Error:</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>API_BASE:</strong> ${window.API_BASE}</p>
+                `;
+            });
+        }
+        
+        // Auto-test on page load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>
