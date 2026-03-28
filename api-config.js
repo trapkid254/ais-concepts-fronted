@@ -3,13 +3,13 @@
   var p = window.location.port || '';
   
   // Production deployment URLs
-  if (h === 'ais-concepts-fronted.vercel.app' || h.endsWith('.vercel.app')) {
+  if (h === 'ais-concepts.netlify.app' || h.endsWith('.netlify.app')) {
     window.API_BASE = 'https://ais-concepts-backend.onrender.com';
     return;
   }
   
-  // Fallback for Netlify (if still needed)
-  if (h === 'aisconcepts.netlify.app' || h.endsWith('.netlify.app')) {
+  // Fallback for Vercel (if still needed)
+  if (h === 'ais-concepts-fronted.vercel.app' || h.endsWith('.vercel.app')) {
     window.API_BASE = 'https://ais-concepts-backend.onrender.com';
     return;
   }
