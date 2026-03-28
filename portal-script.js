@@ -435,7 +435,132 @@ function setupAdminInteractions(currentUser) {
     const assignForm = document.getElementById('assignProjectForm');
     const assignmentsBody = document.getElementById('assignmentsTableBody');
     const adminMessageForm = document.getElementById('adminMessageForm');
-
+    
+    // Client Management
+    const adminAddClientBtn = document.getElementById('adminAddClientBtn');
+    const adminAddClientForm = document.getElementById('adminAddClientForm');
+    const adminClientsTableBody = document.getElementById('adminClientsTableBody');
+    
+    if (adminAddClientBtn) {
+        adminAddClientBtn.addEventListener('click', function() {
+            const modal = document.getElementById('adminAddClientModal');
+            if (modal) modal.classList.add('open');
+        });
+    }
+    
+    if (adminAddClientForm) {
+        adminAddClientForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('clientName').value;
+            const email = document.getElementById('clientEmail').value;
+            const phone = document.getElementById('clientPhone').value;
+            const company = document.getElementById('clientCompany').value;
+            const address = document.getElementById('clientAddress').value;
+            const notes = document.getElementById('clientNotes').value;
+            
+            if (!name || !email) {
+                alert('Please fill in at least name and email');
+                return;
+            }
+            
+            // Get existing clients
+            const clients = getStored('portalClients', []);
+            
+            // Add new client
+            const newClient = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                phone: phone,
+                company: company,
+                address: address,
+                notes: notes,
+                date: new Date().toISOString(),
+                projects: []
+            };
+            
+            clients.push(newClient);
+            setStored('portalClients', clients);
+            
+            // Re-render table
+            renderAdminClientsTable();
+            
+            // Reset form and close modal
+            adminAddClientForm.reset();
+            document.getElementById('adminAddClientModal').classList.remove('open');
+            
+            alert('Client added successfully!');
+        });
+    }
+    
+    // Initial render
+    renderAdminClientsTable();
+    
+    // Function to render admin clients table
+    function renderAdminClientsTable() {
+        const clients = getStored('portalClients', []);
+        const tbody = adminClientsTableBody;
+        if (!tbody) return;
+        
+        if (clients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No clients added yet. Click "Add Client" to get started.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = clients.map(client => `
+            <tr>
+                <td>${client.name || ''}</td>
+                <td>${client.email || ''}</td>
+                <td>${client.projects ? client.projects.length : 0}</td>
+                <td>KES ${client.projects ? client.projects.reduce((sum, p) => {
+                    const budget = parseFloat(p.budget?.replace(/[^0-9.]/g, '')) || 0;
+                    return sum + budget;
+                }, 0).toLocaleString() : '0'}</td>
+                <td>${new Date(client.date).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn-icon" onclick="editClient(${client.id})" title="Edit client">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon" onclick="deleteClient(${client.id})" title="Delete client">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Function to edit client
+    window.editClient = function(clientId) {
+        const clients = getStored('portalClients', []);
+        const client = clients.find(c => c.id === clientId);
+        if (!client) return;
+        
+        // Populate form with existing data
+        document.getElementById('clientName').value = client.name || '';
+        document.getElementById('clientEmail').value = client.email || '';
+        document.getElementById('clientPhone').value = client.phone || '';
+        document.getElementById('clientCompany').value = client.company || '';
+        document.getElementById('clientAddress').value = client.address || '';
+        document.getElementById('clientNotes').value = client.notes || '';
+        
+        // Show modal
+        document.getElementById('adminAddClientModal').classList.add('open');
+    };
+    
+    // Function to delete client
+    window.deleteClient = function(clientId) {
+        if (!confirm('Are you sure you want to delete this client?')) return;
+        
+        const clients = getStored('portalClients', []);
+        const filteredClients = clients.filter(c => c.id !== clientId);
+        
+        setStored('portalClients', filteredClients);
+        renderAdminClientsTable();
+        
+        alert('Client deleted successfully!');
+    };
+    
     const assignments = getStored('assignments', []);
     renderAssignments(assignmentsBody, assignments);
 
