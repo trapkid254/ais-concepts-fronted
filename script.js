@@ -3,6 +3,34 @@
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
 
+    /* ===== HERO VIDEO PLAY BUTTON ===== */
+    (function() {
+        const videoPlayBtn = document.getElementById('videoPlayBtn');
+        const heroVideo = document.querySelector('.hero-video');
+        
+        if (videoPlayBtn && heroVideo) {
+            videoPlayBtn.addEventListener('click', function() {
+                if (heroVideo.paused) {
+                    heroVideo.play();
+                    videoPlayBtn.style.display = 'none';
+                } else {
+                    heroVideo.pause();
+                    videoPlayBtn.style.display = 'flex';
+                }
+            });
+            
+            // Hide play button when video starts playing
+            heroVideo.addEventListener('play', function() {
+                videoPlayBtn.style.display = 'none';
+            });
+            
+            // Show play button when video is paused
+            heroVideo.addEventListener('pause', function() {
+                videoPlayBtn.style.display = 'flex';
+            });
+        }
+    })();
+    
     /* ===== THEME (light/dark) ===== */
     (function() {
         var saved = sessionStorage.getItem('theme');
