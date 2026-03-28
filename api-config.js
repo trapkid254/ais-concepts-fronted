@@ -1,7 +1,7 @@
 (function () {
   var h = window.location.hostname || '';
   var p = window.location.port || '';
-  if (h === 'aisconcepts.netlify.app' || h.endsWith('.netlify.app')) {
+  if (h === 'ais-concepts-fronted.vercel.app' || h.endsWith('.vercel.app')) {
     window.API_BASE = 'https://ais-concepts-backend.onrender.com';
     return;
   }

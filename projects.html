@@ -22,10 +22,10 @@
             <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#home">Home</a></li>
             <li><a href="about.html">About Us</a></li>
             <li class="has-dropdown">
-                <a href="projects.html" class="active">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
                     <li><a href="projects.html">All Projects</a></li>
                     <li><a href="projects.html?filter=residential">Residential</a></li>
@@ -45,45 +45,12 @@
                     <li><a href="index.html#services">Sustainable Design</a></li>
                 </ul>
             </li>
-            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="index.html#contact">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-            <li class="nav-auth-wrap">
-                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
-                <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
-                    <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
-                    <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                </div>
-                <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
-            </li>
-            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
+            <li><a href="client/login.html" id="loginBtn">Client login</a></li>
             <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
         </ul>
-        
-        <!-- Social Media Icons on the Right -->
-        <div class="navbar-social-icons">
-            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-            <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-        </div>
     </nav>
-
-    <!-- Search Modal -->
-    <div id="searchModal" class="modal">
-        <div class="modal-content search-modal-content">
-            <span class="close-modal" id="searchClose">&times;</span>
-            <h2>Search AIS Concepts</h2>
-            <form id="searchForm">
-                <div class="form-group">
-                    <input type="text" id="searchInput" placeholder="Search projects, services, or anything..." class="form-control" required>
-                </div>
-                <button type="submit" class="btn-primary">Search</button>
-            </form>
-            <div id="searchResults" class="search-results"></div>
-        </div>
-    </div>
 
     <main class="projects-page-main" style="padding: 120px 0 80px;">
         <div class="container">
@@ -188,102 +155,6 @@
             render(initialFilter, projects);
         });
     })();
-
-    // Search functionality
-    const searchToggle = document.getElementById('searchToggle');
-    const searchModal = document.getElementById('searchModal');
-    const searchClose = document.getElementById('searchClose');
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-
-    if (searchToggle && searchModal) {
-        searchToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            searchModal.style.display = 'block';
-            searchInput.focus();
-        });
-    }
-
-    if (searchClose && searchModal) {
-        searchClose.addEventListener('click', function() {
-            searchModal.style.display = 'none';
-            searchInput.value = '';
-            searchResults.innerHTML = '';
-        });
-    }
-
-    if (searchModal) {
-        searchModal.addEventListener('click', function(e) {
-            if (e.target === searchModal) {
-                searchModal.style.display = 'none';
-                searchInput.value = '';
-                searchResults.innerHTML = '';
-            }
-        });
-    }
-
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (query) {
-                performSearch(query);
-            }
-        });
-    }
-
-    function performSearch(query) {
-        // Comprehensive search across all website content
-        const allContent = [
-            // Pages
-            { title: 'Home', description: 'Main landing page with hero section and overview', url: 'index.html' },
-            { title: 'About Us', description: 'Learn about AIS Concepts architecture firm', url: 'about.html' },
-            { title: 'Contact Us', description: 'Get in touch with our team', url: 'contact.html' },
-            { title: 'Careers', description: 'Join our team - view open positions', url: 'careers.html' },
-            { title: 'FAQ', description: 'Frequently asked questions about our services', url: 'faq.html' },
-            { title: 'Blog', description: 'Latest news and insights from our team', url: 'blog.html' },
-            
-            // Services
-            { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: 'index.html#services' },
-            { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: 'index.html#services' },
-            { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: 'index.html#services' },
-            { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: 'index.html#services' },
-            
-            // Portfolio Categories
-            { title: 'Residential Projects', description: 'Modern home designs and residential architecture', url: 'projects.html?filter=residential' },
-            { title: 'Commercial Projects', description: 'Office buildings and commercial spaces', url: 'projects.html?filter=commercial' },
-            { title: 'Urban Projects', description: 'City planning and urban development projects', url: 'projects.html?filter=urban' },
-            { title: 'Interior Projects', description: 'Interior design and space transformations', url: 'projects.html?filter=interior' },
-            { title: 'Conceptual Projects', description: 'Innovative conceptual designs and proposals', url: 'projects.html?filter=conceptual' },
-            
-            // Client Portal
-            { title: 'Client Login', description: 'Access your project portal and track progress', url: 'client/login.html' },
-            { title: 'Client Dashboard', description: 'View your projects, documents, and financial information', url: 'client/dashboard.html' },
-            
-            // Company Info
-            { title: 'Our Studio', description: 'Located at Spur Mall, Kiambu, Kenya - +254 719548773', url: 'about.html' },
-            { title: 'Contact Information', description: 'Email: studio@aisconcepts.com, Phone: +254 719548773', url: 'contact.html' },
-            { title: 'Social Media', description: 'Follow us on Instagram, Facebook, TikTok, YouTube, and WhatsApp', url: 'contact.html' }
-        ];
-
-        const filteredResults = allContent.filter(item => {
-            const searchLower = query.toLowerCase();
-            return item.title.toLowerCase().includes(searchLower) || 
-                   item.description.toLowerCase().includes(searchLower);
-        });
-
-        if (filteredResults.length > 0) {
-            searchResults.innerHTML = filteredResults.map(result => `
-                <div class="search-result-item" onclick="window.location.href='${result.url}'">
-                    <div class="search-result-title">${result.title}</div>
-                    <div class="search-result-description">${result.description}</div>
-                </div>
-            `).join('');
-        } else {
-            searchResults.innerHTML = '<p>No results found for "' + query + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>';
-        }
-    }
     </script>
 </body>
 </html>

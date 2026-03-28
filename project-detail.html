@@ -22,7 +22,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#home">Home</a></li>
             <li><a href="about.html">About Us</a></li>
             <li class="has-dropdown">
                 <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
@@ -35,55 +35,12 @@
                     <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
                 </ul>
             </li>
-            <li class="has-dropdown">
-                <a href="index.html#services">Services <i class="fas fa-chevron-down"></i></a>
-                <ul class="nav-dropdown">
-                    <li><a href="index.html#services">All Services</a></li>
-                    <li><a href="index.html#services">Architectural Design</a></li>
-                    <li><a href="index.html#services">Interior Architecture</a></li>
-                    <li><a href="index.html#services">Urban Planning</a></li>
-                    <li><a href="index.html#services">Sustainable Design</a></li>
-                </ul>
-            </li>
-            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="index.html#services">Services</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
             <li><a href="blog.html">Blog</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-            <li class="nav-auth-wrap">
-                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
-                <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
-                    <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
-                    <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                </div>
-                <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
-            </li>
-            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
             <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
         </ul>
-        
-        <!-- Social Media Icons on the Right -->
-        <div class="navbar-social-icons">
-            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-            <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-        </div>
     </nav>
-
-    <!-- Search Modal -->
-    <div id="searchModal" class="modal">
-        <div class="modal-content search-modal-content">
-            <span class="close-modal" id="searchClose">&times;</span>
-            <h2>Search AIS Concepts</h2>
-            <form id="searchForm">
-                <div class="form-group">
-                    <input type="text" id="searchInput" placeholder="Search projects, services, or anything..." class="form-control" required>
-                </div>
-                <button type="submit" class="btn-primary">Search</button>
-            </form>
-            <div id="searchResults" class="search-results"></div>
-        </div>
-    </div>
 
     <main class="project-detail-main">
         <div class="container" id="projectDetailRoot">

@@ -22,75 +22,34 @@
             <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#home">Home</a></li>
             <li><a href="about.html" class="active">About Us</a></li>
             <li class="has-dropdown">
-                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <a href="index.html#portfolio">Portfolio <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
-                    <li><a href="projects.html">All Projects</a></li>
-                    <li><a href="projects.html?filter=residential">Residential</a></li>
-                    <li><a href="projects.html?filter=commercial">Commercial</a></li>
-                    <li><a href="projects.html?filter=urban">Urban</a></li>
-                    <li><a href="projects.html?filter=interior">Interior</a></li>
-                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
+                    <li><a href="index.html#portfolio">All Projects</a></li>
+                    <li><a href="index.html#portfolio">Commercial</a></li>
+                    <li><a href="index.html#portfolio">Residential</a></li>
+                    <li><a href="index.html#portfolio">Cultural & Public</a></li>
+                    <li><a href="index.html#portfolio">Mixed-Use</a></li>
                 </ul>
             </li>
             <li class="has-dropdown">
-                <a href="#services">Services <i class="fas fa-chevron-down"></i></a>
+                <a href="index.html#services">Services <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
-                    <li><a href="#services">All Services</a></li>
-                    <li><a href="#services">Architectural Design</a></li>
-                    <li><a href="#services">Interior Architecture</a></li>
-                    <li><a href="#services">Urban Planning</a></li>
-                    <li><a href="#services">Sustainable Design</a></li>
+                    <li><a href="index.html#services">All Services</a></li>
+                    <li><a href="index.html#services">Architectural Design</a></li>
+                    <li><a href="index.html#services">Interior Architecture</a></li>
+                    <li><a href="index.html#services">Urban Planning</a></li>
+                    <li><a href="index.html#services">Sustainable Design</a></li>
                 </ul>
             </li>
-            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="index.html#contact">Contact Us</a></li>
             <li><a href="blog.html">Blog</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-            <li class="nav-auth-wrap">
-                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
-                <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
-                    <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
-                    <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                </div>
-                <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
-            </li>
-            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
+            <li><a href="client/login.html" id="loginBtn">Client login</a></li>
             <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
         </ul>
     </nav>
-
-    <!-- Social Media Icons Below Navbar -->
-    <div class="navbar-social">
-        <div class="container">
-            <div class="social-links-horizontal">
-                <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-                <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
-                <a href="#" aria-label="X"><i class="fab fa-x"></i></a>
-                <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Search Modal -->
-    <div id="searchModal" class="modal">
-        <div class="modal-content search-modal-content">
-            <span class="close-modal" id="searchClose">&times;</span>
-            <h2>Search AIS Concepts</h2>
-            <form id="searchForm">
-                <div class="form-group">
-                    <input type="text" id="searchInput" placeholder="Search projects, services, or anything..." class="form-control" required>
-                </div>
-                <button type="submit" class="btn-primary">Search</button>
-            </form>
-            <div id="searchResults" class="search-results"></div>
-        </div>
-    </div>
 
     <main class="about-page-main">
         <section class="about-hero">
@@ -244,34 +203,32 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-col">
-                    <h4>Contact Us</h4>
+                    <div class="footer-logo">AIS<span> Concepts</span></div>
+                    <p class="footer-about">Creating iconic architecture that balances innovation, sustainability, and human experience.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
+                        <a href="#"><i class="fab fa-x"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Our Studio</h4>
                     <address>
-                        Spur Mall<br>
-                        Kiambu, Kenya<br>
+                        Spur Mall<br>Kiambu, Kenya<br>
                         <i class="fas fa-phone-alt"></i> +254 719548773<br>
                         <i class="fas fa-envelope"></i> studio@aisconcepts.com
                     </address>
                 </div>
-
                 <div class="footer-col">
-                    <h4>Latest Projects</h4>
-                    <ul class="footer-links">
-                        <li><a href="projects.html">Modern Residence Design</a></li>
-                        <li><a href="projects.html">Commercial Complex</a></li>
-                        <li><a href="projects.html">Urban Planning Project</a></li>
-                        <li><a href="projects.html">Interior Design Studio</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Follow Us</h4>
-                    <div class="social-links">
-                        <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-                        <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    </div>
+                    <h4>Newsletter</h4>
+                    <p>Subscribe to receive our latest projects and insights.</p>
+                    <form class="newsletter-form" id="newsletterForm">
+                        <input type="email" placeholder="Your email address" required>
+                        <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                    </form>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -283,87 +240,5 @@
     <script src="api-config.js"></script>
     <script src="api-client.js"></script>
     <script src="script.js"></script>
-    <script>
-    // Search functionality
-    const searchToggle = document.getElementById('searchToggle');
-    const searchModal = document.getElementById('searchModal');
-    const searchClose = document.getElementById('searchClose');
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-
-    if (searchToggle && searchModal) {
-        searchToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            searchModal.style.display = 'block';
-            searchInput.focus();
-        });
-    }
-
-    if (searchClose && searchModal) {
-        searchClose.addEventListener('click', function() {
-            searchModal.style.display = 'none';
-            searchInput.value = '';
-            searchResults.innerHTML = '';
-        });
-    }
-
-    if (searchModal) {
-        searchModal.addEventListener('click', function(e) {
-            if (e.target === searchModal) {
-                searchModal.style.display = 'none';
-                searchInput.value = '';
-                searchResults.innerHTML = '';
-            }
-        });
-    }
-
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (query) {
-                performSearch(query);
-            }
-        });
-    }
-
-    function performSearch(query) {
-        // Simulate search functionality
-        const mockResults = [
-            {
-                title: 'Modern Residential Architecture',
-                description: 'Contemporary home design with sustainable materials and energy-efficient features.',
-                url: 'projects.html?search=' + encodeURIComponent(query)
-            },
-            {
-                title: 'Commercial Complex Design',
-                description: 'Innovative commercial space planning with modern amenities.',
-                url: 'projects.html?search=' + encodeURIComponent(query)
-            },
-            {
-                title: 'Interior Design Services',
-                description: 'Complete interior design solutions for residential and commercial spaces.',
-                url: '#services'
-            }
-        ];
-
-        const filteredResults = mockResults.filter(item => 
-            item.title.toLowerCase().includes(query.toLowerCase()) || 
-            item.description.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (filteredResults.length > 0) {
-            searchResults.innerHTML = filteredResults.map(result => `
-                <div class="search-result-item">
-                    <div class="search-result-title">${result.title}</div>
-                    <div class="search-result-description">${result.description}</div>
-                </div>
-            `).join('');
-        } else {
-            searchResults.innerHTML = '<p>No results found for "' + query + '". Try different keywords.</p>';
-        }
-    }
-    </script>
 </body>
 </html>

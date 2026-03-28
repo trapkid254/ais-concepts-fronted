@@ -1285,9 +1285,6 @@ function loadClientDashboard() {
     if (elI) elI.textContent = String(pendingInv);
     if (elM) elM.textContent = String(ongoing);
 
-    // Update money overview cards
-    updateMoneyOverview(projects);
-
     var addBtn = document.getElementById('clientAddProjectBtn');
     var addModal = document.getElementById('clientAddProjectModal');
     var addForm = document.getElementById('clientAddProjectForm');
@@ -2299,11 +2296,9 @@ function viewProjectDetails(projectId) {
     var p = projects.find(function(proj) { return proj.id === projectId || String(proj.id) === String(projectId); });
     var modal = document.getElementById('clientProjectViewModal');
     var content = document.getElementById('clientProjectViewContent');
-    var actions = document.getElementById('clientProjectViewActions');
     if (!modal || !content) return;
     if (!p) {
         content.innerHTML = '<p>Project not found.</p>';
-        actions.innerHTML = '';
     } else {
         var dl = p.deadline || p.completionDate || '-';
         var ups = (getStored('adminClientProgressUpdates', []) || []).filter(function (u) {
@@ -2316,17 +2311,53 @@ function viewProjectDetails(projectId) {
                   .map(function (u) {
                       return (
                           '<tr><td colspan="2">' +
-                          '<div class="update-item">' +
-                          '<i class="fas fa-bell"></i>' +
-                          '<div class="update-content">' +
-                          '<strong>' + (u.at ? new Date(u.at).toLocaleString() + ': ' : '') + '</strong>' +
-                          '<span>' + (u.message || '') + '</span>' +
-                          '</div>' +
-                          '</div>' +
+                          escapeHtml((u.at ? new Date(u.at).toLocaleString() + ': ' : '') + (u.message || '')) +
                           '</td></tr>'
                       );
-                  }).join('')
-            : '<tr><td colspan="2" style="text-align:center;color:#6b7280;">No updates yet</td></tr>';
+                  })
+                  .join('')
+            : '';
+        content.innerHTML =
+            '<table class="invoice-view-table">' +
+            '<tr><th>Project</th><td>' +
+            escapeHtml(p.name || '') +
+            '</td></tr>' +
+            '<tr><th>Status</th><td><span class="status-badge status-' +
+            String(p.status || '')
+                .toLowerCase()
+                .replace(/\s/g, '-') +
+            '">' +
+            escapeHtml(p.status || '') +
+            '</span></td></tr>' +
+            '<tr><th>Progress</th><td>' +
+            (p.progress || 0) +
+            '%</td></tr>' +
+            '<tr><th>Deadline</th><td>' +
+            escapeHtml(dl) +
+            '</td></tr>' +
+            '<tr><th>Next Milestone</th><td>' +
+            escapeHtml(p.nextMilestone || '-') +
+            '</td></tr>' +
+            '<tr><th>Est. Completion</th><td>' +
+            escapeHtml(p.completionDate || '-') +
+            '</td></tr>' +
+            '<tr><th>Money Paid</th><td>' +
+            escapeHtml(p.moneyPaid !== undefined && p.moneyPaid !== null && p.moneyPaid !== '' ? p.moneyPaid : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Used</th><td>' +
+            escapeHtml(p.moneyUsed !== undefined && p.moneyUsed !== null && p.moneyUsed !== '' ? p.moneyUsed : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Remaining</th><td>' +
+            escapeHtml(p.moneyRemaining !== undefined && p.moneyRemaining !== null && p.moneyRemaining !== '' ? p.moneyRemaining : '-') +
+            '</td></tr>' +
+            '<tr><th>Money Owed</th><td>' +
+            escapeHtml(p.moneyOwed !== undefined && p.moneyOwed !== null && p.moneyOwed !== '' ? p.moneyOwed : '-') +
+            '</td></tr>' +
+            (p.description ? '<tr><th>Description</th><td>' + escapeHtml(p.description) + '</td></tr>' : '') +
+            (upRows ? '<tr><th colspan="2">Team updates</th></tr>' + upRows : '') +
+            '</table>';
+    }
+    modal.classList.add('open');
 }
 
 function downloadDocument(docName) {
@@ -2426,184 +2457,4 @@ function editTimeEntry(entryId) {
     if (descEl) descEl.value = entry.description || '';
     if (hoursEl) hoursEl.value = entry.hours || '';
     if (modal) modal.classList.add('open');
-}
-
-// Money Overview Function
-function updateMoneyOverview(projects) {
-    var totalPaid = 0;
-    var totalUsed = 0;
-    var totalBudget = 0;
-    
-    projects.forEach(function(project) {
-        var paid = parseFloat(project.moneyPaid) || 0;
-        var used = parseFloat(project.moneyUsed) || 0;
-        var remaining = parseFloat(project.moneyRemaining) || 0;
-        
-        totalPaid += paid;
-        totalUsed += used;
-        totalBudget += (paid + remaining);
-    });
-    
-    var totalLeft = totalBudget - totalUsed;
-    
-    // Update the DOM elements
-    var totalPaidEl = document.getElementById('totalPaid');
-    var moneyUsedEl = document.getElementById('moneyUsed');
-    var moneyLeftEl = document.getElementById('moneyLeft');
-    
-    if (totalPaidEl) {
-        totalPaidEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyUsedEl) {
-        moneyUsedEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyLeftEl) {
-        moneyLeftEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const addFundsBtn = document.getElementById('addFundsBtn');
-    const addFundsModal = document.getElementById('clientAddFundsModal');
-    const addFundsForm = document.getElementById('clientAddFundsForm');
-    
-    if (addFundsBtn && addFundsModal && addFundsForm) {
-        addFundsBtn.addEventListener('click', function() {
-            addFundsModal.classList.add('open');
-        });
-        
-        document.querySelectorAll('[data-close="clientAddFundsModal"]').forEach(function(el) {
-            el.addEventListener('click', function() {
-                addFundsModal.classList.remove('open');
-            });
-        });
-        
-        addFundsModal.addEventListener('click', function(e) {
-            if (e.target === addFundsModal) {
-                addFundsModal.classList.remove('open');
-            }
-        });
-        
-        addFundsForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const amount = document.getElementById('fundsAmount').value;
-            const paymentMethod = document.getElementById('fundsPaymentMethod').value;
-            const transactionId = document.getElementById('fundsTransactionId').value;
-            const notes = document.getElementById('fundsNotes').value;
-            
-            // Get current project
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectId = urlParams.get('projectId');
-            
-            if (projectId) {
-                const projects = getStored('clientProjects', []);
-                const project = projects.find(p => p.id === projectId);
-                
-                if (project) {
-                    // Update project with new funds
-                    const currentPaid = parseFloat(project.moneyPaid || '0').replace(/[^0-9.]/g, '');
-                    const newPaid = currentPaid + parseFloat(amount);
-                    const currentRemaining = parseFloat(project.moneyRemaining || '0').replace(/[^0-9.]/g, '');
-                    const newRemaining = currentRemaining + parseFloat(amount);
-                    
-                    project.moneyPaid = 'KES ' + newPaid.toLocaleString();
-                    project.moneyRemaining = 'KES ' + newRemaining.toLocaleString();
-                    
-                    // Update stored projects
-                    const updatedProjects = projects.map(p => p.id === projectId ? project : p);
-                    store('clientProjects', updatedProjects);
-                    
-                    // Add to transactions
-                    const transactions = getStored('clientTransactions', []);
-                    transactions.push({
-                        id: Date.now(),
-                        projectId: projectId,
-                        projectName: project.name,
-                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
-                        paymentMethod: paymentMethod,
-                        transactionId: transactionId,
-                        notes: notes,
-                        date: new Date().toISOString(),
-                        type: 'payment'
-                    });
-                    store('clientTransactions', transactions);
-                    
-                    // Show success message
-                    alert('Funds added successfully! Amount: KES ' + parseFloat(amount).toLocaleString());
-                    
-                    // Close modal and refresh project details
-                    addFundsModal.classList.remove('open');
-                    addFundsForm.reset();
-                    viewProjectDetails(projectId);
-                }
-            }
-        });
-    }
-});
-
-// Admin Request Funds functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const requestFundsBtn = document.getElementById('requestFundsBtn');
-    const requestFundsModal = document.getElementById('adminRequestFundsModal');
-    const requestFundsForm = document.getElementById('adminRequestFundsForm');
-    
-    if (requestFundsBtn && requestFundsModal && requestFundsForm) {
-        requestFundsBtn.addEventListener('click', function() {
-            requestFundsModal.classList.add('open');
-        });
-        
-        document.querySelectorAll('[data-close="adminRequestFundsModal"]').forEach(function(el) {
-            el.addEventListener('click', function() {
-                requestFundsModal.classList.remove('open');
-            });
-        });
-        
-        requestFundsModal.addEventListener('click', function(e) {
-            if (e.target === requestFundsModal) {
-                requestFundsModal.classList.remove('open');
-            }
-        });
-        
-        requestFundsForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const projectId = document.getElementById('requestFundsProject').value;
-            const amount = document.getElementById('requestFundsAmount').value;
-            const reason = document.getElementById('requestFundsReason').value;
-            const description = document.getElementById('requestFundsDescription').value;
-            const dueDate = document.getElementById('requestFundsDueDate').value;
-            
-            if (projectId && amount && reason && description) {
-                const projects = getStored('portalProjects', []);
-                const project = projects.find(p => p.id === projectId);
-                
-                if (project) {
-                    // Add to fund requests
-                    const requests = getStored('adminFundRequests', []);
-                    requests.push({
-                        id: Date.now(),
-                        projectId: projectId,
-                        projectName: project.name,
-                        clientName: project.client,
-                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
-                        reason: reason,
-                        description: description,
-                        dueDate: dueDate,
-                        date: new Date().toISOString(),
-                        status: 'pending'
-                    });
-                    store('adminFundRequests', requests);
-                    
-                    // Show success message
-                    alert('Fund request sent to client! Amount: KES ' + parseFloat(amount).toLocaleString());
-                    
-                    // Close modal
-                    requestFundsModal.classList.remove('open');
-                    requestFundsForm.reset();
-                }
-            }
-        });
-    }
-    });
 }
