@@ -3,6 +3,43 @@
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
 
+    /* ===== HERO VIDEO AUTOPLAY WITH USER INTERACTION ===== */
+    (function() {
+        const videoPlayBtn = document.getElementById('videoPlayBtn');
+        const heroVideo = document.querySelector('.hero-video');
+        
+        if (videoPlayBtn && heroVideo) {
+            // Try to autoplay immediately (may be blocked)
+            heroVideo.play().then(() => {
+                // Autoplay worked
+                videoPlayBtn.style.display = 'none';
+                console.log('Video autoplay successful');
+            }).catch((error) => {
+                // Autoplay blocked - show play button
+                console.log('Video autoplay blocked:', error);
+                videoPlayBtn.style.display = 'flex';
+                
+                // Add click listener for manual play
+                videoPlayBtn.addEventListener('click', function() {
+                    heroVideo.play();
+                    videoPlayBtn.style.display = 'none';
+                });
+            });
+            
+            // Hide play button when video starts playing
+            heroVideo.addEventListener('play', function() {
+                videoPlayBtn.style.display = 'none';
+            });
+            
+            // Show play button when video is paused
+            heroVideo.addEventListener('pause', function() {
+                if (!heroVideo.ended) {
+                    videoPlayBtn.style.display = 'flex';
+                }
+            });
+        }
+    })();
+    
     /* ===== THEME (light/dark) ===== */
     (function() {
         var saved = sessionStorage.getItem('theme');

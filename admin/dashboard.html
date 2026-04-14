@@ -33,12 +33,22 @@
                     <li><a href="#" data-section="admin-dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
                     <li><a href="#" data-section="admin-approvals"><i class="fas fa-user-check"></i> Pending approvals</a></li>
                     <li><a href="#" data-section="admin-users"><i class="fas fa-users"></i> User Management</a></li>
+                    <li><a href="#" data-section="admin-clients"><i class="fas fa-handshake"></i> Client CRM</a></li>
                     <li><a href="#" data-section="admin-projects"><i class="fas fa-building"></i> Projects</a></li>
+                    <li><a href="#" data-section="admin-tasks"><i class="fas fa-tasks"></i> Task Management</a></li>
+                    <li><a href="#" data-section="admin-documents"><i class="fas fa-file-alt"></i> Documents</a></li>
+                    <li><a href="#" data-section="admin-design"><i class="fas fa-drafting-compass"></i> Design & Drafting</a></li>
+                    <li><a href="#" data-section="admin-financial"><i class="fas fa-calculator"></i> Financial & Billing</a></li>
+                    <li><a href="#" data-section="admin-communication"><i class="fas fa-comments"></i> Communication</a></li>
+                    <li><a href="#" data-section="admin-approvals-workflow"><i class="fas fa-check-circle"></i> Approvals Workflow</a></li>
+                    <li><a href="#" data-section="admin-site-management"><i class="fas fa-hard-hat"></i> Site Management</a></li>
                     <li><a href="#" data-section="admin-invoices"><i class="fas fa-file-invoice"></i> Invoices</a></li>
+                    <li><a href="#" data-section="admin-marketing"><i class="fas fa-bullhorn"></i> Marketing</a></li>
                     <li><a href="#" data-section="admin-assignments"><i class="fas fa-tasks"></i> Assignments</a></li>
                     <li><a href="#" data-section="admin-careers"><i class="fas fa-briefcase"></i> Careers</a></li>
                     <li><a href="#" data-section="admin-analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                     <li><a href="#" data-section="admin-content"><i class="fas fa-database"></i> Content</a></li>
+                    <li><a href="#" data-section="admin-faq"><i class="fas fa-question-circle"></i> FAQ Management</a></li>
                     <li><a href="#" data-section="admin-security"><i class="fas fa-shield-alt"></i> Security</a></li>
                     <li><a href="#" data-section="admin-notifications"><i class="fas fa-bell"></i> Notifications</a></li>
                     <li><a href="#" data-section="admin-profile"><i class="fas fa-user"></i> Profile</a></li>
@@ -70,43 +80,83 @@
             
             <!-- Stats Cards -->
             <section id="admin-dashboard" class="portal-section stats-grid">
-                <div class="stat-card stat-card-clickable" data-nav-section="admin-users">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-clients">
                     <div class="stat-info">
-                        <h3>Total Users</h3>
-                        <div class="stat-number" id="totalUsers">156</div>
+                        <h3>Total Clients</h3>
+                        <div class="stat-number" id="totalClients">0</div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-handshake"></i>
                     </div>
                 </div>
                 
                 <div class="stat-card stat-card-clickable" data-nav-section="admin-projects" data-nav-filter="ongoing">
                     <div class="stat-info">
                         <h3>Active Projects</h3>
-                        <div class="stat-number" id="activeProjects">23</div>
+                        <div class="stat-number" id="activeProjects">0</div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-building"></i>
                     </div>
                 </div>
                 
-                <div class="stat-card stat-card-clickable" data-nav-section="admin-invoices">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-tasks">
+                    <div class="stat-info">
+                        <h3>Pending Tasks</h3>
+                        <div class="stat-number" id="pendingTasks">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-financial">
                     <div class="stat-info">
                         <h3>Total Revenue</h3>
-                        <div class="stat-number" id="totalRevenue">$2.4M</div>
+                        <div class="stat-number" id="totalRevenue">$0</div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                 </div>
                 
-                <div class="stat-card stat-card-clickable" data-nav-section="admin-approvals">
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-documents">
+                    <div class="stat-info">
+                        <h3>Documents</h3>
+                        <div class="stat-number" id="totalDocuments">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-approvals-workflow">
                     <div class="stat-info">
                         <h3>Pending Approvals</h3>
-                        <div class="stat-number" id="pendingTasks">0</div>
+                        <div class="stat-number" id="pendingApprovals">0</div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-site-management">
+                    <div class="stat-info">
+                        <h3>Active Sites</h3>
+                        <div class="stat-number" id="activeSites">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-hard-hat"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-users">
+                    <div class="stat-info">
+                        <h3>Team Members</h3>
+                        <div class="stat-number" id="totalUsers">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
             </section>
@@ -599,6 +649,54 @@
                     <span class="close-modal" data-close="adminViewProjectModal">&times;</span>
                     <h2>Project Details</h2>
                     <div id="adminViewProjectContent"></div>
+                    <div id="adminViewProjectActions" style="margin-top: 16px;">
+                        <button class="btn btn-primary" id="requestFundsBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class="fas fa-hand-holding-usd"></i> Request Funds
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Request Funds Modal -->
+            <div class="modal" id="adminRequestFundsModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminRequestFundsModal">&times;</span>
+                    <h2>Request Funds from Client</h2>
+                    <p class="modal-subtitle">Send a payment request to the client</p>
+                    <form id="adminRequestFundsForm">
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="requestFundsProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Requested</label>
+                            <input type="number" id="requestFundsAmount" required placeholder="Enter amount" min="100" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason</label>
+                            <select id="requestFundsReason" required>
+                                <option value="">Select reason</option>
+                                <option value="milestone">Milestone Payment</option>
+                                <option value="materials">Materials Purchase</option>
+                                <option value="labor">Labor Costs</option>
+                                <option value="additional">Additional Work</option>
+                                <option value="contingency">Contingency</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="requestFundsDescription" rows="4" placeholder="Detailed explanation of why funds are needed"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="requestFundsDueDate" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class="fas fa-paper-plane"></i> Send Request
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -820,6 +918,707 @@
                     </form>
                 </div>
             </div>
+        <!-- Client CRM Section -->
+            <section id="admin-clients" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Client Relationship Management</h2>
+                    <button class="btn btn-primary" id="adminAddClientBtn">
+                        <i class="fas fa-user-plus"></i> Add Client
+                    </button>
+                </div>
+                <div class="crm-overview">
+                    <div class="crm-stats">
+                        <div class="crm-stat">
+                            <h4>Total Clients</h4>
+                            <span id="totalClientsCount">0</span>
+                        </div>
+                        <div class="crm-stat">
+                            <h4>Active Projects</h4>
+                            <span id="clientActiveProjects">0</span>
+                        </div>
+                        <div class="crm-stat">
+                            <h4>Pending Invoices</h4>
+                            <span id="pendingInvoices">0</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>Contact</th>
+                            <th>Projects</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                            <th>Last Contact</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminClientsTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Add Client Modal -->
+            <div class="modal" id="adminAddClientModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddClientModal">&times;</span>
+                    <h2>Add New Client</h2>
+                    <form id="adminAddClientForm">
+                        <div class="form-group">
+                            <label>Client Name</label>
+                            <input type="text" id="clientName" required placeholder="Enter client name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="clientEmail" required placeholder="client@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="clientPhone" required placeholder="+254 XXX XXX XXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" id="clientCompany" placeholder="Company name (optional)">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <textarea id="clientAddress" rows="3" placeholder="Client address"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="clientNotes" rows="3" placeholder="Additional notes about client"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Client</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Task Management Section -->
+            <section id="admin-tasks" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Task Management</h2>
+                    <button class="btn btn-primary" id="adminAddTaskBtn">
+                        <i class="fas fa-plus"></i> Add Task
+                    </button>
+                </div>
+                <div class="task-filters">
+                    <button class="filter-btn active" data-filter="all">All Tasks</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="in-progress">In Progress</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Assigned To</th>
+                            <th>Project</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTasksTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Add Task Modal -->
+            <div class="modal" id="adminAddTaskModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddTaskModal">&times;</span>
+                    <h2>Add New Task</h2>
+                    <form id="adminAddTaskForm">
+                        <div class="form-group">
+                            <label>Task Title</label>
+                            <input type="text" id="taskTitle" required placeholder="Enter task title">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="taskDescription" rows="4" placeholder="Detailed task description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Assigned To</label>
+                            <select id="taskAssignee" required>
+                                <option value="">Select team member</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="taskProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="taskPriority" required>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="taskDueDate" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Task</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Document Management Section -->
+            <section id="admin-documents" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Document Management</h2>
+                    <button class="btn btn-primary" id="adminUploadDocBtn">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </button>
+                </div>
+                <div class="doc-categories">
+                    <button class="filter-btn active" data-filter="all">All Documents</button>
+                    <button class="filter-btn" data-filter="drawings">Drawings</button>
+                    <button class="filter-btn" data-filter="contracts">Contracts</button>
+                    <button class="filter-btn" data-filter="permits">Permits</button>
+                    <button class="filter-btn" data-filter="reports">Reports</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Project</th>
+                            <th>Uploaded</th>
+                            <th>Size</th>
+                            <th>Version</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminDocumentsTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Design & Drafting Section -->
+            <section id="admin-design" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Design & Drafting</h2>
+                    <button class="btn btn-primary" id="adminAddDesignBtn">
+                        <i class="fas fa-plus"></i> New Design
+                    </button>
+                </div>
+                <div class="design-tools">
+                    <div class="tool-card">
+                        <i class="fas fa-drafting-compass"></i>
+                        <h4>2D Drafting</h4>
+                        <p>Plans, sections, elevations</p>
+                    </div>
+                    <div class="tool-card">
+                        <i class="fas fa-cube"></i>
+                        <h4>3D Modeling</h4>
+                        <p>BIM and visualization</p>
+                    </div>
+                    <div class="tool-card">
+                        <i class="fas fa-image"></i>
+                        <h4>Rendering</h4>
+                        <p>Photorealistic outputs</p>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Design Name</th>
+                            <th>Type</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminDesignTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Financial & Billing Section -->
+            <section id="admin-financial" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Financial & Billing</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAddFinancialBtn">
+                            <i class="fas fa-plus"></i> Add Entry
+                        </button>
+                        <button class="btn btn-secondary" id="adminExportFinancialBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                    <div class="financial-summary">
+                        <div class="summary-card">
+                            <h4>Total Revenue</h4>
+                            <span id="totalRevenueAmount">$0</span>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Pending Invoices</h4>
+                            <span id="pendingInvoiceAmount">$0</span>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Expenses</h4>
+                            <span id="totalExpenses">$0</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Client/Project</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Category</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminFinancialTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Communication Section -->
+            <section id="admin-communication" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Communication Hub</h2>
+                    <button class="btn btn-primary" id="adminNewMessageBtn">
+                        <i class="fas fa-envelope"></i> New Message
+                    </button>
+                </div>
+                <div class="communication-channels">
+                    <div class="channel-card">
+                        <i class="fas fa-comments"></i>
+                        <h4>Team Chat</h4>
+                        <p>Internal team communication</p>
+                    </div>
+                    <div class="channel-card">
+                        <i class="fas fa-envelope"></i>
+                        <h4>Client Email</h4>
+                        <p>Client correspondence</p>
+                    </div>
+                    <div class="channel-card">
+                        <i class="fas fa-video"></i>
+                        <h4>Video Meetings</h4>
+                        <p>Scheduled meetings</p>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Participants</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminCommunicationTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Approvals Workflow Section -->
+            <section id="admin-approvals-workflow" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Approvals Workflow</h2>
+                    <div class="approval-stats">
+                        <div class="approval-stat">
+                            <h4>Pending Client</h4>
+                            <span id="pendingClientApprovals">5</span>
+                        </div>
+                        <div class="approval-stat">
+                            <h4>Pending Authority</h4>
+                            <span id="pendingAuthorityApprovals">3</span>
+                        </div>
+                        <div class="approval-stat">
+                            <h4>Approved This Month</h4>
+                            <span id="approvedThisMonth">12</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Project</th>
+                            <th>Submitted By</th>
+                            <th>Approval Type</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminApprovalsWorkflowTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Site Management Section -->
+            <section id="admin-site-management" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Site & Construction Management</h2>
+                    <button class="btn btn-primary" id="adminAddSiteVisitBtn">
+                        <i class="fas fa-plus"></i> Add Site Visit
+                    </button>
+                </div>
+                <div class="site-overview">
+                    <div class="site-stat">
+                        <h4>Active Sites</h4>
+                        <span id="activeSitesCount">12</span>
+                    </div>
+                    <div class="site-stat">
+                        <h4>This Week Visits</h4>
+                        <span id="weeklySiteVisits">8</span>
+                    </div>
+                    <div class="site-stat">
+                        <h4>Open Snags</h4>
+                        <span id="openSnags">24</span>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>Project</th>
+                            <th>Last Visit</th>
+                            <th>Progress</th>
+                            <th>Issues</th>
+                            <th>Next Visit</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminSiteManagementTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- Marketing Section -->
+            <section id="admin-marketing" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Marketing & Portfolio</h2>
+                    <button class="btn btn-primary" id="adminAddPortfolioBtn">
+                        <i class="fas fa-plus"></i> Add Portfolio Item
+                    </button>
+                </div>
+                <div class="marketing-overview">
+                    <div class="marketing-stat">
+                        <h4>Website Visitors</h4>
+                        <span id="websiteVisitors">12,456</span>
+                    </div>
+                    <div class="marketing-stat">
+                        <h4>Leads Generated</h4>
+                        <span id="leadsGenerated">89</span>
+                    </div>
+                    <div class="marketing-stat">
+                        <h4>Conversion Rate</h4>
+                        <span id="conversionRate">3.2%</span>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Portfolio Item</th>
+                            <th>Category</th>
+                            <th>Views</th>
+                            <th>Inquiries</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminMarketingTableBody"></tbody>
+                </table>
+            </section>
+
+            <!-- FAQ Management Section -->
+            <section id="admin-faq" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>FAQ Management</h2>
+                    <button class="btn btn-primary" id="adminAddFAQBtn">
+                        <i class="fas fa-plus"></i> Add New FAQ
+                    </button>
+                </div>
+                
+                <!-- Add FAQ Form -->
+                <div class="card profile-form-login-style" id="adminFAQForm" style="display: none; margin-bottom: 24px;">
+                    <h3><i class="fas fa-question-circle"></i> Add New FAQ</h3>
+                    <form id="addNewFAQForm" class="portal-form-grid">
+                        <div class="form-group">
+                            <label for="newFAQCategory">Category</label>
+                            <select id="newFAQCategory" class="form-control" required>
+                                <option value="">Select Category</option>
+                                <option value="general">General</option>
+                                <option value="services">Services</option>
+                                <option value="process">Process</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="newFAQQuestion">Question</label>
+                            <input type="text" id="newFAQQuestion" class="form-control" placeholder="Enter question" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="newFAQAnswer">Answer</label>
+                            <textarea id="newFAQAnswer" class="form-control" rows="4" placeholder="Enter detailed answer" required></textarea>
+                        </div>
+                        <div class="form-group form-group-action full-width">
+                            <button type="submit" class="btn btn-primary">Add FAQ</button>
+                            <button type="button" class="btn btn-secondary" id="cancelFAQBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- FAQ List -->
+                <div class="faq-admin-list">
+                    <div class="faq-category-admin">
+                        <h4>General Questions</h4>
+                        <div id="adminGeneralFAQs"></div>
+                    </div>
+                    <div class="faq-category-admin">
+                        <h4>Services Questions</h4>
+                        <div id="adminServicesFAQs"></div>
+                    </div>
+                    <div class="faq-category-admin">
+                        <h4>Process Questions</h4>
+                        <div id="adminProcessFAQs"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Document Modal -->
+            <div class="modal" id="adminUploadDocModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminUploadDocModal">&times;</span>
+                    <h2>Upload Document</h2>
+                    <form id="adminUploadDocForm">
+                        <div class="form-group">
+                            <label>Document Name</label>
+                            <input type="text" id="docName" required placeholder="Enter document name">
+                        </div>
+                        <div class="form-group">
+                            <label>Document Type</label>
+                            <select id="docType" required>
+                                <option value="">Select type</option>
+                                <option value="drawings">Drawings</option>
+                                <option value="contracts">Contracts</option>
+                                <option value="permits">Permits</option>
+                                <option value="reports">Reports</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="docProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>File</label>
+                            <input type="file" id="docFile" required accept=".pdf,.doc,.docx,.dwg,.jpg,.png">
+                        </div>
+                        <div class="form-group">
+                            <label>Version</label>
+                            <input type="text" id="docVersion" value="1.0" placeholder="e.g. 1.0">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Document</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Design Modal -->
+            <div class="modal" id="adminAddDesignModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddDesignModal">&times;</span>
+                    <h2>Add New Design</h2>
+                    <form id="adminAddDesignForm">
+                        <div class="form-group">
+                            <label>Design Name</label>
+                            <input type="text" id="designName" required placeholder="Enter design name">
+                        </div>
+                        <div class="form-group">
+                            <label>Design Type</label>
+                            <select id="designType" required>
+                                <option value="">Select type</option>
+                                <option value="2d-drafting">2D Drafting</option>
+                                <option value="3d-modeling">3D Modeling</option>
+                                <option value="rendering">Rendering</option>
+                                <option value="bim">BIM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="designProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="designStatus" required>
+                                <option value="draft">Draft</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="review">Review</option>
+                                <option value="approved">Approved</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Progress (%)</label>
+                            <input type="number" id="designProgress" min="0" max="100" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="designDescription" rows="3" placeholder="Design description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Design</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- New Message Modal -->
+            <div class="modal" id="adminNewMessageModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminNewMessageModal">&times;</span>
+                    <h2>Compose New Message</h2>
+                    <form id="adminNewMessageForm">
+                        <div class="form-group">
+                            <label>Message Type</label>
+                            <select id="messageType" required>
+                                <option value="">Select type</option>
+                                <option value="team-chat">Team Chat</option>
+                                <option value="client-email">Client Email</option>
+                                <option value="video-meeting">Video Meeting</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Recipients</label>
+                            <input type="text" id="messageRecipients" required placeholder="Enter email addresses (comma separated)">
+                        </div>
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <input type="text" id="messageSubject" required placeholder="Message subject">
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="messageContent" rows="5" required placeholder="Type your message here"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Attachments (optional)</label>
+                            <input type="file" id="messageAttachments" multiple accept=".pdf,.doc,.docx,.jpg,.png">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Site Visit Modal -->
+            <div class="modal" id="adminAddSiteVisitModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddSiteVisitModal">&times;</span>
+                    <h2>Add Site Visit</h2>
+                    <form id="adminAddSiteVisitForm">
+                        <div class="form-group">
+                            <label>Site Name</label>
+                            <input type="text" id="siteVisitName" required placeholder="Enter site name">
+                        </div>
+                        <div class="form-group">
+                            <label>Project</label>
+                            <select id="siteVisitProject" required>
+                                <option value="">Select project</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Visit Date</label>
+                            <input type="date" id="siteVisitDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Visit Type</label>
+                            <select id="siteVisitType" required>
+                                <option value="">Select type</option>
+                                <option value="inspection">Inspection</option>
+                                <option value="progress">Progress Check</option>
+                                <option value="meeting">Site Meeting</option>
+                                <option value="survey">Survey</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Progress (%)</label>
+                            <input type="number" id="siteVisitProgress" min="0" max="100" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Issues Found</label>
+                            <input type="number" id="siteVisitIssues" min="0" value="0" placeholder="Number of issues">
+                        </div>
+                        <div class="form-group">
+                            <label>Next Visit Date</label>
+                            <input type="date" id="siteVisitNextDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="siteVisitNotes" rows="3" placeholder="Visit notes and observations"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Photos (optional)</label>
+                            <input type="file" id="siteVisitPhotos" multiple accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Site Visit</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Financial Entry Modal -->
+            <div class="modal" id="adminFinancialModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminFinancialModal">&times;</span>
+                    <h2 id="adminFinancialModalTitle">Add Financial Entry</h2>
+                    <form id="adminFinancialForm">
+                        <input type="hidden" id="financialId">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="financialType" required>
+                                <option value="revenue">Revenue</option>
+                                <option value="expense">Expense</option>
+                                <option value="invoice">Invoice</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="financialDescription" required placeholder="Entry description">
+                        </div>
+                        <div class="form-group">
+                            <label>Client/Project</label>
+                            <input type="text" id="financialClient" required placeholder="Client or project name">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="financialAmount" required placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="financialDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="financialStatus">
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="financialCategory">
+                                <option value="materials">Materials</option>
+                                <option value="labor">Labor</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="consulting">Consulting</option>
+                                <option value="permits">Permits</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </form>
+                </div>
+            </div>
+
         </main>
     </div>
     

@@ -443,6 +443,36 @@ section {
     backface-visibility: hidden;
 }
 
+.video-play-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.video-play-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.video-play-btn i {
+    font-size: 24px;
+    color: #0f766e;
+    margin-left: 4px;
+}
+
 .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1790,12 +1820,20 @@ section {
     }
     
     .navbar .nav-links {
+<<<<<<< HEAD
         position: absolute;
         top: 100%;
+=======
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
         right: 0;
         background: white;
         flex-direction: column;
         gap: 0;
+<<<<<<< HEAD
         padding: 0;
         min-width: 200px;
         border-radius: 8px;
@@ -1814,10 +1852,19 @@ section {
         opacity: 1;
         transform: translateY(0);
         padding: 15px;
+=======
+        padding: 20px;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+    }
+    
+    .navbar.open .nav-links {
+        display: flex;
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .nav-links li {
         width: 100%;
+<<<<<<< HEAD
         opacity: 0;
         transform: translateX(-20px);
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -1884,6 +1931,14 @@ section {
     .nav-dropdown li a:hover {
         background-color: rgba(15, 118, 110, 0.1);
         color: #0f766e;
+=======
+    }
+    
+    .nav-links a {
+        font-size: 0.95rem;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .nav-toggle {
@@ -1943,12 +1998,20 @@ section {
     }
     
     .navbar .nav-links {
+<<<<<<< HEAD
         position: absolute;
         top: 100%;
+=======
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
         right: 0;
         background: white;
         flex-direction: column;
         gap: 0;
+<<<<<<< HEAD
         padding: 0;
         min-width: 200px;
         border-radius: 8px;
@@ -1960,6 +2023,10 @@ section {
         opacity: 0;
         transform: translateY(-10px);
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+=======
+        padding: 20px;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .navbar.open .nav-links {
@@ -1976,6 +2043,7 @@ section {
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
+<<<<<<< HEAD
     .navbar.open .nav-links li {
         opacity: 1;
         transform: translateX(0);
@@ -2005,6 +2073,14 @@ section {
         color: #0f766e;
     }
     
+=======
+    .nav-links a {
+        font-size: 0.95rem;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+>>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     .nav-toggle {
         display: block;
         order: 5;
