@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         a.addEventListener('click', function(e) {
             if (window.innerWidth <= 768) {
                 e.preventDefault();
-                a.parentElement.classList.toggle('open');
+                a.parentElement.classList.toggle('mobile-open');
             }
         });
     });
