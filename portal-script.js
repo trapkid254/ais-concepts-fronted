@@ -2318,6 +2318,9 @@ window.renderAdminProjectsTable = function () {
                 '<button type="button" class="btn-icon" title="Edit Project" onclick="editProject(\'' +
                 idStr +
                 '\')"><i class="fas fa-edit"></i></button> ' +
+                '<button type="button" class="btn-icon btn-danger" title="Delete Project" onclick="deleteProject(\'' +
+                idStr +
+                '\')"><i class="fas fa-trash"></i></button> ' +
                 '</td>' +
                 '</tr>'
             );
@@ -2485,9 +2488,50 @@ window.viewProjectDetails = function(projectId) {
     detailsHTML += `
             </div>
         </div>
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+            <button class="btn btn-primary" onclick="openRequestFundsModal('${projectId}')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="fas fa-hand-holding-usd"></i> Request Funds
+            </button>
+        </div>
     `;
     
     content.innerHTML = detailsHTML;
+    modal.classList.add('open');
+};
+
+window.deleteProject = function(projectId) {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
+    
+    const projects = getStored('portalProjects', []);
+    const filteredProjects = projects.filter(p => String(p.id) !== projectId);
+    
+    store('portalProjects', filteredProjects);
+    renderAdminProjectsTable();
+    
+    alert('Project deleted successfully!');
+};
+
+window.openRequestFundsModal = function(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => String(p.id) === projectId);
+    if (!project) return;
+    
+    const modal = document.getElementById('adminRequestFundsModal');
+    if (!modal) return;
+    
+    // Set project information
+    document.getElementById('requestFundsProject').value = project.name || '';
+    document.getElementById('requestFundsProject').setAttribute('data-project-id', projectId);
+    
+    // Set minimum due date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('requestFundsDueDate').setAttribute('min', today);
+    
+    // Close the view modal first
+    const viewModal = document.getElementById('adminViewProjectModal');
+    if (viewModal) viewModal.classList.remove('open');
+    
+    // Open the request funds modal
     modal.classList.add('open');
 };
 
@@ -3269,7 +3313,8 @@ const requestFundsBtn = document.getElementById('requestFundsBtn');
         
         requestFundsForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const projectId = document.getElementById('requestFundsProject').value;
+            const projectSelect = document.getElementById('requestFundsProject');
+            const projectId = projectSelect.getAttribute('data-project-id');
             const amount = document.getElementById('requestFundsAmount').value;
             const reason = document.getElementById('requestFundsReason').value;
             const description = document.getElementById('requestFundsDescription').value;
@@ -3277,31 +3322,67 @@ const requestFundsBtn = document.getElementById('requestFundsBtn');
             
             if (projectId && amount && reason && description) {
                 const projects = getStored('portalProjects', []);
-                const project = projects.find(p => p.id === projectId);
+                const project = projects.find(p => String(p.id) === projectId);
                 
                 if (project) {
                     // Add to fund requests
                     const requests = getStored('adminFundRequests', []);
-                    requests.push({
+                    const request = {
                         id: Date.now(),
                         projectId: projectId,
                         projectName: project.name,
                         clientName: project.client,
-                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
+                        clientEmail: project.clientEmail || '',
+                        amount: 'KSH ' + parseFloat(amount).toLocaleString(),
+                        amountValue: parseFloat(amount),
                         reason: reason,
                         description: description,
                         dueDate: dueDate,
                         date: new Date().toISOString(),
                         status: 'pending'
-                    });
+                    };
+                    requests.push(request);
                     store('adminFundRequests', requests);
                     
-                    // Show success message
-                    alert('Fund request sent to client! Amount: KES ' + parseFloat(amount).toLocaleString());
+                    // Add to client notifications
+                    const clientNotifications = getStored('clientNotifications', []);
+                    clientNotifications.push({
+                        id: Date.now(),
+                        type: 'fund_request',
+                        title: 'Fund Request - ' + project.name,
+                        message: `A fund request of KSH ${parseFloat(amount).toLocaleString()} has been sent for ${project.name}. Reason: ${reason}. Due date: ${dueDate}.`,
+                        amount: amount,
+                        projectName: project.name,
+                        clientName: project.client,
+                        date: new Date().toISOString(),
+                        read: false
+                    });
+                    store('clientNotifications', clientNotifications);
                     
-                    // Close modal
+                    // Add to admin messages for tracking
+                    const messages = getStored('portalMessages', []);
+                    messages.push({
+                        from: 'admin@aisconcepts.com',
+                        to: project.clientEmail || 'client',
+                        project: project.name,
+                        subject: `Fund Request - KSH ${parseFloat(amount).toLocaleString()}`,
+                        body: `Dear ${project.client},\n\nWe are requesting funds of KSH ${parseFloat(amount).toLocaleString()} for the project "${project.name}".\n\nReason: ${reason}\nDescription: ${description}\nDue Date: ${dueDate}\n\nPlease process this request at your earliest convenience.\n\nThank you,\nAIS Concepts Team`,
+                        timestamp: new Date().toISOString(),
+                        type: 'fund_request'
+                    });
+                    store('portalMessages', messages);
+                    
+                    // Show success message
+                    alert(`Fund request of KSH ${parseFloat(amount).toLocaleString()} sent to ${project.client}! The client will be notified.`);
+                    
+                    // Close modal and reset form
                     requestFundsModal.classList.remove('open');
                     requestFundsForm.reset();
+                    
+                    // Refresh notifications badge
+                    if (typeof refreshNotificationsBadge === 'function') {
+                        refreshNotificationsBadge();
+                    }
                 }
             }
         });
