@@ -1819,22 +1819,14 @@ color: #e5e7eb;
     }
     
     .navbar .nav-links {
-<<<<<<< HEAD
         position: absolute;
         top: 100%;
-=======
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
         right: 0;
         background: white;
         flex-direction: column;
         gap: 0;
-<<<<<<< HEAD
         padding: 0;
-        min-width: 200px;
+        min-width: 280px;
         border-radius: 8px;
         box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
         border: 1px solid rgba(0, 0, 0, 0.1);
@@ -1851,19 +1843,10 @@ color: #e5e7eb;
         opacity: 1;
         transform: translateY(0);
         padding: 15px;
-=======
-        padding: 20px;
-        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
-    }
-    
-    .navbar.open .nav-links {
-        display: flex;
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .nav-links li {
         width: 100%;
-<<<<<<< HEAD
         opacity: 0;
         transform: translateX(-20px);
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -1930,14 +1913,6 @@ color: #e5e7eb;
     .nav-dropdown li a:hover {
         background-color: rgba(15, 118, 110, 0.1);
         color: #0f766e;
-=======
-    }
-    
-    .nav-links a {
-        font-size: 0.95rem;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .nav-toggle {
@@ -1997,22 +1972,14 @@ color: #e5e7eb;
     }
     
     .navbar .nav-links {
-<<<<<<< HEAD
         position: absolute;
         top: 100%;
-=======
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
         right: 0;
         background: white;
         flex-direction: column;
         gap: 0;
-<<<<<<< HEAD
         padding: 0;
-        min-width: 200px;
+        min-width: 280px;
         border-radius: 8px;
         box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
         border: 1px solid rgba(0, 0, 0, 0.1);
@@ -2022,10 +1989,6 @@ color: #e5e7eb;
         opacity: 0;
         transform: translateY(-10px);
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-=======
-        padding: 20px;
-        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     }
     
     .navbar.open .nav-links {
@@ -2042,7 +2005,6 @@ color: #e5e7eb;
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
-<<<<<<< HEAD
     .navbar.open .nav-links li {
         opacity: 1;
         transform: translateX(0);
@@ -2060,26 +2022,11 @@ color: #e5e7eb;
     .navbar.open .nav-links li:nth-child(10) { transition-delay: 1.0s; }
     
     .nav-links a {
-        font-size: 0.9rem;
-        padding: 10px 15px;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        color: #374151;
-        transition: background-color 0.2s ease;
-    }
-    
-    .nav-links a:hover {
-        background-color: rgba(15, 118, 110, 0.1);
-        color: #0f766e;
-    }
-    
-=======
-    .nav-links a {
         font-size: 0.95rem;
         padding: 12px 0;
         border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     
->>>>>>> c6af6773b80c7a6d52f20b29a47bcd2669b754d1
     .nav-toggle {
         display: block;
         order: 5;

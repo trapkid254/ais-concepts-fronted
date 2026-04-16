@@ -149,6 +149,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    /* ===== MOBILE DROPDOWN TOGGLES ===== */
+    const hasDropdownItems = document.querySelectorAll('.has-dropdown');
+    
+    hasDropdownItems.forEach(function(item) {
+        const link = item.querySelector('a');
+        const dropdown = item.querySelector('.nav-dropdown');
+        
+        if (link && dropdown) {
+            link.addEventListener('click', function(e) {
+                // Only handle on mobile view
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    
+                    // Close other dropdowns
+                    hasDropdownItems.forEach(function(otherItem) {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('mobile-open');
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    item.classList.toggle('mobile-open');
+                }
+            });
+        }
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768 && navbar && navbar.classList.contains('open')) {
+            if (!navbar.contains(e.target) && e.target !== navToggle) {
+                navbar.classList.remove('open');
+                // Close all dropdowns
+                hasDropdownItems.forEach(function(item) {
+                    item.classList.remove('mobile-open');
+                });
+            }
+        }
+    });
+
     /* ===== MODALS (careers, etc. — login uses dedicated pages) ===== */
     const loginModal = document.getElementById('loginModal');
     const closeModal = document.querySelector('.close-modal');

@@ -569,6 +569,10 @@ function setupAdminInteractions(currentUser) {
                 if (!response.ok) {
                     return response.text().then(text => {
                         console.error('Error response body:', text);
+                        const errorData = JSON.parse(text);
+                        if (errorData.error && errorData.error.includes('already exists')) {
+                            throw new Error(`Foreman already exists with this email or phone. Please use different credentials or update the existing foreman.`);
+                        }
                         throw new Error(`Failed to save foreman to database: ${response.status} ${text}`);
                     });
                 }
@@ -669,10 +673,10 @@ function setupAdminInteractions(currentUser) {
         
         // Load directly from MongoDB
         const authToken = sessionStorage.getItem('authToken');
-        console.log('Loading foremen from:', `${window.API_BASE}/api/foremen`);
+        console.log('Loading foremen from:', `${window.API_BASE}/api/users?role=foreman`);
         console.log('Auth token:', authToken ? 'exists' : 'missing');
         
-        fetch(`${window.API_BASE}/api/foremen`, {
+        fetch(`${window.API_BASE}/api/users?role=foreman`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -1224,10 +1228,22 @@ function setupAdminInteractions(currentUser) {
             
             // Validate foreman credentials if checkbox is checked
             const shouldCreateForemanAccount = document.getElementById('createForemanAccount').checked;
+            console.log('Should create foreman account:', shouldCreateForemanAccount);
+            
             if (shouldCreateForemanAccount) {
-                const foremanName = document.getElementById('projectForemanName2').value;
-                const foremanId = document.getElementById('projectForemanId').value;
-                const foremanPassword = document.getElementById('projectForemanPassword').value;
+                const foremanNameEl = document.getElementById('projectForemanName2');
+                const foremanIdEl = document.getElementById('projectForemanId');
+                const foremanPasswordEl = document.getElementById('projectForemanPassword');
+                
+                console.log('Foreman name element:', foremanNameEl);
+                console.log('Foreman ID element:', foremanIdEl);
+                console.log('Foreman password element:', foremanPasswordEl);
+                
+                const foremanName = foremanNameEl ? foremanNameEl.value : '';
+                const foremanId = foremanIdEl ? foremanIdEl.value : '';
+                const foremanPassword = foremanPasswordEl ? foremanPasswordEl.value : '';
+                
+                console.log('Foreman values:', { foremanName, foremanId, foremanPassword });
                 
                 if (!foremanName || !foremanId || !foremanPassword) {
                     alert('Please fill in all foreman credentials when creating a foreman account.');
