@@ -855,6 +855,10 @@ function setupAdminInteractions(currentUser) {
     const projectModal = document.getElementById('adminProjectModal');
     const projectForm = document.getElementById('adminProjectForm');
     const projectsList = document.querySelector('.admin-projects tbody');
+    
+    // Foreman management elements
+    const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
+    const selectedForemanName = document.querySelector('.selected-foreman-name');
     if (newProjectBtn && projectModal) {
         newProjectBtn.addEventListener('click', function() {
             document.getElementById('adminProjectModalTitle').textContent = 'New Project';
@@ -965,8 +969,6 @@ function setupAdminInteractions(currentUser) {
         const createNewForeman = document.getElementById('createNewForeman');
         const pickExistingForemanModal = document.getElementById('pickExistingForemanModal');
         const createNewForemanModal = document.getElementById('createNewForemanModal');
-        const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
-        const selectedForemanName = document.querySelector('.selected-foreman-name');
         const removeForemanBtn = document.getElementById('removeForemanBtn');
         
         let selectedForeman = null;
@@ -2505,7 +2507,7 @@ window.deleteProject = function(projectId) {
     const projects = getStored('portalProjects', []);
     const filteredProjects = projects.filter(p => String(p.id) !== projectId);
     
-    store('portalProjects', filteredProjects);
+    setStored('portalProjects', filteredProjects);
     renderAdminProjectsTable();
     
     alert('Project deleted successfully!');
