@@ -502,8 +502,72 @@ function setupAdminInteractions(currentUser) {
         });
     }
     
+    // Foreman Management
+    const adminAddForemanBtn = document.getElementById('adminAddForemanBtn');
+    const adminForemanForm = document.getElementById('adminForemanForm');
+    
+    if (adminAddForemanBtn) {
+        adminAddForemanBtn.addEventListener('click', function() {
+            const modal = document.getElementById('adminForemanModal');
+            if (modal) modal.classList.add('open');
+        });
+    }
+    
+    if (adminForemanForm) {
+        adminForemanForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('adminForemanName').value;
+            const id = document.getElementById('adminForemanId').value;
+            const email = document.getElementById('adminForemanEmail').value;
+            const phone = document.getElementById('adminForemanPhone').value;
+            const password = document.getElementById('adminForemanPassword').value;
+            const confirmPassword = document.getElementById('adminForemanConfirmPassword').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (!name || !id || !password) {
+                alert('Please fill in all required fields!');
+                return;
+            }
+            
+            // Create new foreman object
+            const newForeman = {
+                name: name,
+                id: id,
+                email: email || `${id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
+                phone: phone,
+                password: password,
+                role: 'foreman',
+                status: 'active',
+                assignedProjects: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            // Save to users
+            const users = getStored('portalUsers', []);
+            users.push(newForeman);
+            store('portalUsers', users);
+            
+            // Refresh foremen table
+            renderAdminForemenTable();
+            
+            // Close modal and reset form
+            const modal = document.getElementById('adminForemanModal');
+            if (modal) modal.classList.remove('open');
+            adminForemanForm.reset();
+            
+            alert('Foreman created successfully!');
+        });
+    }
+    
     // Initial render
     renderAdminClientsTable();
+    renderAdminForemenTable();
     
     // Function to render admin clients table
     function renderAdminClientsTable() {
@@ -567,6 +631,69 @@ function setupAdminInteractions(currentUser) {
         renderAdminClientsTable();
         
         alert('Client deleted successfully!');
+    }
+    
+    // Function to render admin foremen table
+    function renderAdminForemenTable() {
+        const users = getStored('portalUsers', []);
+        const foremen = users.filter(user => user.role === 'foreman');
+        const tbody = document.getElementById('adminForemenTableBody');
+        if (!tbody) return;
+        
+        if (foremen.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = foremen.map(foreman => `
+            <tr>
+                <td>${foreman.name || ''}</td>
+                <td>${foreman.email || ''}</td>
+                <td>${foreman.phone || ''}</td>
+                <td>${foreman.assignedProjects ? foreman.assignedProjects.length : 0}</td>
+                <td><span class="status-badge status-${foreman.status || 'active'}">${foreman.status || 'Active'}</span></td>
+                <td>${new Date(foreman.createdAt).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn-icon" onclick="editForeman('${foreman.id}')" title="Edit foreman">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon" onclick="deleteForeman('${foreman.id}')" title="Delete foreman">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Function to edit foreman
+    window.editForeman = function(foremanId) {
+        const users = getStored('portalUsers', []);
+        const foreman = users.find(u => u.id === foremanId && u.role === 'foreman');
+        if (!foreman) return;
+        
+        // Populate form with existing data
+        document.getElementById('adminForemanName').value = foreman.name || '';
+        document.getElementById('adminForemanId').value = foreman.id || '';
+        document.getElementById('adminForemanEmail').value = foreman.email || '';
+        document.getElementById('adminForemanPhone').value = foreman.phone || '';
+        document.getElementById('adminForemanPassword').value = foreman.password || '';
+        document.getElementById('adminForemanConfirmPassword').value = foreman.password || '';
+        
+        // Show modal
+        document.getElementById('adminForemanModal').classList.add('open');
+    };
+    
+    // Function to delete foreman
+    window.deleteForeman = function(foremanId) {
+        if (!confirm('Are you sure you want to delete this foreman?')) return;
+        
+        const users = getStored('portalUsers', []);
+        const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
+        
+        store('portalUsers', filteredUsers);
+        renderAdminForemenTable();
+        
+        alert('Foreman deleted successfully!');
     };
     
     const assignments = getStored('assignments', []);

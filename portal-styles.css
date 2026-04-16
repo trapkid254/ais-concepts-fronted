@@ -1640,6 +1640,11 @@ body > .modal.open {
 }
 
 /* ===== Foreman Selection Modal Professional Styles ===== */
+#foremanSelectionModal,
+#pickExistingForemanModal,
+#createNewForemanModal {
+    z-index: 10000 !important;
+}
 .foreman-selection-options {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

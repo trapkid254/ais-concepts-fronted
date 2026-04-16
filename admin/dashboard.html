@@ -805,6 +805,44 @@
                 </div>
             </div>
 
+            <!-- Foreman Management Modal -->
+            <div class="modal modal-center" id="adminForemanModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="adminForemanModal">&times;</span>
+                    <h2>Create Foreman Account</h2>
+                    <form id="adminForemanForm">
+                        <div class="form-group">
+                            <label>Foreman Name *</label>
+                            <input type="text" id="adminForemanName" required placeholder="Enter foreman name">
+                        </div>
+                        <div class="form-group">
+                            <label>ID Number *</label>
+                            <input type="text" id="adminForemanId" required placeholder="Enter ID number">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="adminForemanEmail" placeholder="foreman@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="adminForemanPhone" placeholder="+254 XXX XXX XXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" id="adminForemanPassword" required placeholder="Enter password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" id="adminForemanConfirmPassword" required placeholder="Confirm password">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" data-close="adminForemanModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Foreman</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Add/Edit Project Modal (centered) -->
             <div class="modal modal-center" id="adminProjectModal">
                 <div class="modal-content modal-content-center">
