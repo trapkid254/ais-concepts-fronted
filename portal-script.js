@@ -549,21 +549,34 @@ function setupAdminInteractions(currentUser) {
             };
             
             // Save directly to MongoDB
+            const authToken = sessionStorage.getItem('authToken');
+            console.log('Creating foreman with data:', newForeman);
+            console.log('Auth token:', authToken ? 'exists' : 'missing');
+            console.log('API base:', window.API_BASE);
+            
             fetch(`${window.API_BASE}/api/foreman/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${authToken}`
                 },
                 body: JSON.stringify(newForeman)
             })
             .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to save foreman to database');
+                    return response.text().then(text => {
+                        console.error('Error response body:', text);
+                        throw new Error(`Failed to save foreman to database: ${response.status} ${text}`);
+                    });
                 }
                 return response.json();
             })
-            .then(() => {
+            .then(data => {
+                console.log('Foreman created successfully:', data);
+                
                 // Close modal and reset form
                 const modal = document.getElementById('adminForemanModal');
                 if (modal) modal.classList.remove('open');
@@ -576,7 +589,7 @@ function setupAdminInteractions(currentUser) {
             })
             .catch(error => {
                 console.error('Error creating foreman:', error);
-                alert('Failed to create foreman. Please try again.');
+                alert(`Failed to create foreman: ${error.message}`);
             });
         });
     }
@@ -655,18 +668,27 @@ function setupAdminInteractions(currentUser) {
         if (!tbody) return;
         
         // Load directly from MongoDB
+        const authToken = sessionStorage.getItem('authToken');
+        console.log('Loading foremen from:', `${window.API_BASE}/api/foremen`);
+        console.log('Auth token:', authToken ? 'exists' : 'missing');
+        
         fetch(`${window.API_BASE}/api/foremen`, {
             headers: {
-                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${authToken}`
             }
         })
         .then(response => {
+            console.log('Foremen load response status:', response.status);
             if (!response.ok) {
-                throw new Error('Failed to load foremen from database');
+                return response.text().then(text => {
+                    console.error('Foremen load error response:', text);
+                    throw new Error(`Failed to load foremen from database: ${response.status} ${text}`);
+                });
             }
             return response.json();
         })
         .then(foremen => {
+            console.log('Foremen loaded successfully:', foremen);
             if (foremen.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
                 return;
@@ -677,7 +699,7 @@ function setupAdminInteractions(currentUser) {
         })
         .catch(error => {
             console.error('Error loading foremen from database:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error loading foremen. Please refresh the page.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error loading foremen: ' + error.message + '</td></tr>';
         });
     }
     
@@ -1204,8 +1226,8 @@ function setupAdminInteractions(currentUser) {
             const shouldCreateForemanAccount = document.getElementById('createForemanAccount').checked;
             if (shouldCreateForemanAccount) {
                 const foremanName = document.getElementById('projectForemanName2').value;
-                const foremanId = document.getElementById('projectForemanId2').value;
-                const foremanPassword = document.getElementById('projectForemanPassword2').value;
+                const foremanId = document.getElementById('projectForemanId').value;
+                const foremanPassword = document.getElementById('projectForemanPassword').value;
                 
                 if (!foremanName || !foremanId || !foremanPassword) {
                     alert('Please fill in all foreman credentials when creating a foreman account.');
@@ -1356,8 +1378,8 @@ function setupAdminInteractions(currentUser) {
             if (createForemanAccount && foremanId) {
                 const foremanData = {
                     name: document.getElementById('projectForemanName2').value,
-                    id: document.getElementById('projectForemanId2').value,
-                    password: document.getElementById('projectForemanPassword2').value,
+                    id: document.getElementById('projectForemanId').value,
+                    password: document.getElementById('projectForemanPassword').value,
                     email: `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
