@@ -551,7 +551,7 @@ function setupAdminInteractions(currentUser) {
             // Save to users
             const users = getStored('portalUsers', []);
             users.push(newForeman);
-            store('portalUsers', users);
+            setStored('portalUsers', users);
             
             // Refresh foremen table
             renderAdminForemenTable();
