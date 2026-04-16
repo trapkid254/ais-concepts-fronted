@@ -816,17 +816,174 @@ function setupAdminInteractions(currentUser) {
         });
     }
     if (projectForm && projectModal && projectsList) {
-        // Handle foreman assignment checkbox toggle
-        const foremanSelect = document.getElementById('projectForeman');
-        const foremanCredentialsSection = document.getElementById('foremanCredentialsSection');
+        // Foreman Selection System
+        const selectForemanBtn = document.getElementById('selectForemanBtn');
+        const foremanSelectionModal = document.getElementById('foremanSelectionModal');
+        const pickExistingForeman = document.getElementById('pickExistingForeman');
+        const createNewForeman = document.getElementById('createNewForeman');
+        const pickExistingForemanModal = document.getElementById('pickExistingForemanModal');
+        const createNewForemanModal = document.getElementById('createNewForemanModal');
+        const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
+        const selectedForemanName = document.querySelector('.selected-foreman-name');
+        const removeForemanBtn = document.getElementById('removeForemanBtn');
         
-        if (foremanSelect) {
-            foremanSelect.addEventListener('change', function() {
-                if (this.value) {
-                    foremanCredentialsSection.style.display = 'block';
-                } else {
-                    foremanCredentialsSection.style.display = 'none';
+        let selectedForeman = null;
+        
+        // Open foreman selection modal
+        if (selectForemanBtn) {
+            selectForemanBtn.addEventListener('click', function() {
+                if (foremanSelectionModal) {
+                    foremanSelectionModal.classList.add('open');
                 }
+            });
+        }
+        
+        // Handle option selection
+        if (pickExistingForeman) {
+            pickExistingForeman.addEventListener('click', function() {
+                if (foremanSelectionModal) {
+                    foremanSelectionModal.classList.remove('open');
+                }
+                if (pickExistingForemanModal) {
+                    loadExistingForemen();
+                    pickExistingForemanModal.classList.add('open');
+                }
+            });
+        }
+        
+        if (createNewForeman) {
+            createNewForeman.addEventListener('click', function() {
+                if (foremanSelectionModal) {
+                    foremanSelectionModal.classList.remove('open');
+                }
+                if (createNewForemanModal) {
+                    createNewForemanModal.classList.add('open');
+                }
+            });
+        }
+        
+        // Load existing foremen
+        function loadExistingForemen() {
+            const foremenList = document.getElementById('existingForemenList');
+            if (!foremenList) return;
+            
+            const users = getStored('portalUsers', []);
+            const foremen = users.filter(user => user.role === 'foreman');
+            
+            foremenList.innerHTML = '';
+            
+            if (foremen.length === 0) {
+                foremenList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No foremen found in the system</p>';
+                return;
+            }
+            
+            foremen.forEach(foreman => {
+                const foremanItem = document.createElement('div');
+                foremanItem.className = 'foreman-item';
+                foremanItem.innerHTML = `
+                    <div class="foreman-avatar">${foreman.name.charAt(0).toUpperCase()}</div>
+                    <div class="foreman-info">
+                        <div class="foreman-name">${foreman.name}</div>
+                        <div class="foreman-details">ID: ${foreman.id} | ${foreman.email || 'No email'}</div>
+                    </div>
+                    <div class="foreman-status">${foreman.status || 'Active'}</div>
+                `;
+                
+                foremanItem.addEventListener('click', function() {
+                    // Remove previous selection
+                    document.querySelectorAll('.foreman-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    
+                    // Add selection to this item
+                    this.classList.add('selected');
+                    
+                    // Store selected foreman
+                    selectedForeman = foreman;
+                    
+                    // Update display
+                    updateSelectedForemanDisplay(foreman);
+                    
+                    // Close modal
+                    if (pickExistingForemanModal) {
+                        pickExistingForemanModal.classList.remove('open');
+                    }
+                });
+                
+                foremenList.appendChild(foremanItem);
+            });
+        }
+        
+        // Update selected foreman display
+        function updateSelectedForemanDisplay(foreman) {
+            if (selectedForemanDisplay && selectedForemanName) {
+                selectedForemanName.textContent = foreman.name;
+                selectedForemanDisplay.style.display = 'block';
+            }
+        }
+        
+        // Remove selected foreman
+        if (removeForemanBtn) {
+            removeForemanBtn.addEventListener('click', function() {
+                selectedForeman = null;
+                if (selectedForemanDisplay) {
+                    selectedForemanDisplay.style.display = 'none';
+                }
+                if (selectedForemanName) {
+                    selectedForemanName.textContent = '';
+                }
+            });
+        }
+        
+        // Handle create new foreman form
+        const createNewForemanForm = document.getElementById('createNewForemanForm');
+        if (createNewForemanForm) {
+            createNewForemanForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('newForemanName').value;
+                const id = document.getElementById('newForemanId').value;
+                const email = document.getElementById('newForemanEmail').value;
+                const phone = document.getElementById('newForemanPhone').value;
+                const password = document.getElementById('newForemanPassword').value;
+                const confirmPassword = document.getElementById('newForemanConfirmPassword').value;
+                
+                // Validate passwords match
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+                
+                // Create new foreman object
+                const newForeman = {
+                    name: name,
+                    id: id,
+                    email: email || `${id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
+                    phone: phone,
+                    password: password,
+                    role: 'foreman',
+                    status: 'active',
+                    assignedProjects: [],
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to users
+                const users = getStored('portalUsers', []);
+                users.push(newForeman);
+                store('portalUsers', users);
+                
+                // Update selected foreman display
+                selectedForeman = newForeman;
+                updateSelectedForemanDisplay(newForeman);
+                
+                // Close modal and reset form
+                if (createNewForemanModal) {
+                    createNewForemanModal.classList.remove('open');
+                }
+                createNewForemanForm.reset();
+                
+                // Show success message
+                alert('Foreman created successfully!');
             });
         }
         
@@ -836,10 +993,29 @@ function setupAdminInteractions(currentUser) {
             const projects = getStored('portalProjects', []);
             const name = document.getElementById('adminProjectName').value;
             const client = document.getElementById('adminProjectClient').value;
-            const location = document.getElementById('projectLocation').value;
-            const budget = document.getElementById('projectBudget').value || '$0';
+            
+            // New location fields
+            const locationName = document.getElementById('projectLocationName').value;
+            const latitude = document.getElementById('projectLatitude').value;
+            const longitude = document.getElementById('projectLongitude').value;
+            
+            // Build location object
+            const location = {
+                name: locationName,
+                latitude: latitude || null,
+                longitude: longitude || null
+            };
+            
+            const budget = document.getElementById('adminProjectBudget').value || 'KSH 0';
             let deadline = document.getElementById('projectDeadline').value;
-            const foremanId = document.getElementById('projectForeman').value;
+            
+            // Handle selected foreman
+            const assignedForeman = selectedForeman ? {
+                name: selectedForeman.name,
+                id: selectedForeman.id,
+                email: selectedForeman.email
+            } : null;
+            
             const createForemanAccount = document.getElementById('createForemanAccount').checked;
             const status = document.getElementById('adminProjectStatus').value;
             const category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
@@ -858,7 +1034,7 @@ function setupAdminInteractions(currentUser) {
                         location,
                         budget,
                         deadline,
-                        foremanId,
+                        assignedForeman,
                         createForemanAccount,
                         progress,
                         status,
@@ -878,7 +1054,7 @@ function setupAdminInteractions(currentUser) {
                     location,
                     budget,
                     deadline,
-                    foremanId,
+                    assignedForeman,
                     createForemanAccount,
                     progress,
                     status,

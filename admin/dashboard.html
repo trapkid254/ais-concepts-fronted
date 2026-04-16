@@ -622,8 +622,8 @@
             <!-- Settings -->
             <section id="admin-settings" class="table-container portal-section" style="display: none;">
                 <div class="table-header">
-                    <h2>Settings</h2>
-                    <span class="section-sub">Portal and notification preferences</span>
+                    <h2>System Settings</h2>
+                    <span class="section-sub">Configure portal preferences, notifications, and system parameters</span>
                 </div>
                 <div class="card profile-form-login-style" style="max-width: 560px;">
                     <form id="adminSettingsForm" class="portal-form-grid">
@@ -732,6 +732,79 @@
                 </div>
             </div>
 
+            <!-- Foreman Selection Modal -->
+            <div class="modal modal-center" id="foremanSelectionModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="foremanSelectionModal">&times;</span>
+                    <h2>Select Foreman</h2>
+                    <div class="foreman-selection-options">
+                        <div class="option-card" id="pickExistingForeman">
+                            <div class="option-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Pick from Foreman Management</h3>
+                            <p>Select from existing foremen in the system</p>
+                        </div>
+                        <div class="option-card" id="createNewForeman">
+                            <div class="option-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <h3>Create New Foreman</h3>
+                            <p>Add a new foreman to the system</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pick Existing Foreman Modal -->
+            <div class="modal modal-center" id="pickExistingForemanModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="pickExistingForemanModal">&times;</span>
+                    <h2>Select Existing Foreman</h2>
+                    <div class="foreman-list" id="existingForemenList">
+                        <!-- Foremen will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create New Foreman Modal -->
+            <div class="modal modal-center" id="createNewForemanModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="createNewForemanModal">&times;</span>
+                    <h2>Create New Foreman</h2>
+                    <form id="createNewForemanForm">
+                        <div class="form-group">
+                            <label>Foreman Name *</label>
+                            <input type="text" id="newForemanName" required placeholder="Enter foreman name">
+                        </div>
+                        <div class="form-group">
+                            <label>ID Number *</label>
+                            <input type="text" id="newForemanId" required placeholder="Enter ID number">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="newForemanEmail" placeholder="foreman@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="newForemanPhone" placeholder="+254 XXX XXX XXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" id="newForemanPassword" required placeholder="Enter password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" id="newForemanConfirmPassword" required placeholder="Confirm password">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" data-close="createNewForemanModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Foreman</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Add/Edit Project Modal (centered) -->
             <div class="modal modal-center" id="adminProjectModal">
                 <div class="modal-content modal-content-center">
@@ -749,9 +822,15 @@
                         </div>
                         <div class="form-group">
                             <label>Assign Foreman (Optional)</label>
-                            <select id="projectForeman">
-                                <option value="">No foreman assigned</option>
-                            </select>
+                            <button type="button" id="selectForemanBtn" class="btn btn-secondary">
+                                <i class="fas fa-user-plus"></i> Select Foreman
+                            </button>
+                            <div id="selectedForemanDisplay" style="margin-top: 8px; display: none;">
+                                <span class="selected-foreman-name"></span>
+                                <button type="button" id="removeForemanBtn" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times"></i> Remove
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group" id="foremanCredentialsSection" style="display: none;">
                             <label>Foreman Login Credentials</label>
@@ -774,8 +853,20 @@
                             </label>
                         </div>
                         <div class="form-group">
-                            <label>Location</label>
-                            <input type="text" id="projectLocation" required placeholder="Enter project location">
+                            <label>Location Name</label>
+                            <input type="text" id="projectLocationName" required placeholder="Enter project location name">
+                        </div>
+                        <div class="form-group">
+                            <label>Coordinates</label>
+                            <div style="display: flex; gap: 12px;">
+                                <div style="flex: 1;">
+                                    <input type="number" id="projectLatitude" placeholder="Latitude" step="any" style="width: 100%;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <input type="number" id="projectLongitude" placeholder="Longitude" step="any" style="width: 100%;">
+                                </div>
+                            </div>
+                            <small style="color: #64748b; font-size: 0.875rem;">Optional: Add GPS coordinates for precise location tracking</small>
                         </div>
                         <div class="form-group">
                             <label>Budget</label>
