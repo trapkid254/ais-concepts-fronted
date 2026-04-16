@@ -293,6 +293,121 @@
                 </div>
             </section>
 
+            <!-- Mark Attendance Modal -->
+            <div class="modal" id="markAttendanceModal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="markAttendanceModal">&times;</span>
+                    <h2>Mark Worker Attendance</h2>
+                    <form id="markAttendanceForm">
+                        <div class="form-group">
+                            <label for="attendanceProject">Select Project</label>
+                            <select id="attendanceProject" required>
+                                <option value="">Choose project...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attendanceWorker">Select Worker</label>
+                            <select id="attendanceWorker" required>
+                                <option value="">Choose worker...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attendanceStatus">Attendance Status</label>
+                            <select id="attendanceStatus" required>
+                                <option value="present">Present</option>
+                                <option value="absent">Absent</option>
+                                <option value="late">Late</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attendanceNotes">Notes</label>
+                            <textarea id="attendanceNotes" rows="3" placeholder="Optional notes..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="requireLivenessCheck" checked> Require Liveness Verification
+                            </label>
+                        </div>
+                        <div class="form-group" id="livenessSection">
+                            <label>Worker Liveness Verification</label>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <div style="flex: 1;">
+                                    <video id="livenessVideo" width="320" height="240" autoplay muted style="border: 2px solid #ccc; border-radius: 8px;"></video>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <button type="button" class="btn btn-primary" id="startLivenessBtn">
+                                        <i class="fas fa-camera"></i> Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="captureLivenessBtn" disabled>
+                                        <i class="fas fa-check"></i> Capture & Verify
+                                    </button>
+                                    <div id="livenessStatus" style="margin-top: 10px; font-size: 14px; color: #666;">
+                                        Ready to capture
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group-action">
+                            <button type="submit" class="btn btn-primary">Mark Attendance</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Worker Registration Modal -->
+            <div class="modal" id="registerWorkerModal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="registerWorkerModal">&times;</span>
+                    <h2>Register New Worker</h2>
+                    <form id="registerWorkerForm">
+                        <div class="form-group">
+                            <label for="workerName">Full Name *</label>
+                            <input type="text" id="workerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerNationalId">National ID *</label>
+                            <input type="text" id="workerNationalId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerPhone">Phone Number *</label>
+                            <input type="tel" id="workerPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerDailyRate">Daily Rate ($) *</label>
+                            <input type="number" id="workerDailyRate" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerProject">Assign to Project *</label>
+                            <select id="workerProject" required>
+                                <option value="">Select project...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Worker Photo & Liveness Data</label>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <div style="flex: 1;">
+                                    <video id="workerLivenessVideo" width="320" height="240" autoplay muted style="border: 2px solid #ccc; border-radius: 8px;"></video>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <button type="button" class="btn btn-primary" id="startWorkerCameraBtn">
+                                        <i class="fas fa-camera"></i> Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="captureWorkerBtn" disabled>
+                                        <i class="fas fa-check"></i> Capture & Register
+                                    </button>
+                                    <div id="workerLivenessStatus" style="margin-top: 10px; font-size: 14px; color: #666;">
+                                        Ready to Capture
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group-action">
+                            <button type="submit" class="btn btn-primary">Register Worker</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Profile Settings -->
             <section id="foreman-profile" class="table-container portal-section" style="display: none;">
                 <div class="table-header">

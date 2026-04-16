@@ -274,7 +274,9 @@
                         <tr>
                             <th>Project Name</th>
                             <th>Client</th>
-                            <th>Budget</th>
+                            <th>Location</th>
+                            <th>Foreman</th>
+                            <th>Workers</th>
                             <th>Progress</th>
                             <th>Deadline</th>
                             <th>Status</th>
@@ -1772,6 +1774,65 @@
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Project Creation Modal -->
+            <div id="projectModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close-modal" id="closeProjectModal">&times;</span>
+                    <h2>Create New Project</h2>
+                    <form id="projectForm">
+                        <div class="form-group">
+                            <label for="projectName">Project Name *</label>
+                            <input type="text" id="projectName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectClient">Client *</label>
+                            <input type="text" id="projectClient" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectLocation">Location *</label>
+                            <input type="text" id="projectLocation" required placeholder="Enter project location for 50m attendance radius">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectBudget">Budget</label>
+                            <input type="number" id="projectBudget" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectDeadline">Deadline</label>
+                            <input type="date" id="projectDeadline">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectForeman">Assign Foreman (Optional)</label>
+                            <select id="projectForeman">
+                                <option value="">No foreman assigned</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="foremanCredentialsSection" style="display: none;">
+                            <label>Foreman Login Credentials</label>
+                            <div class="form-group">
+                                <label for="foremanName">Foreman Name *</label>
+                                <input type="text" id="foremanName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="foremanId">ID Number *</label>
+                                <input type="text" id="foremanId" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="foremanPassword">Password *</label>
+                                <input type="password" id="foremanPassword" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="createForemanAccount"> Create foreman account with credentials above
+                            </label>
+                        </div>
+                        <div class="form-group-action">
+                            <button type="submit" class="btn btn-primary">Create Project</button>
+                        </div>
                     </form>
                 </div>
             </div>

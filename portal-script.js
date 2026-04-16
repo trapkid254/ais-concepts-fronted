@@ -816,21 +816,38 @@ function setupAdminInteractions(currentUser) {
         });
     }
     if (projectForm && projectModal && projectsList) {
+        // Handle foreman assignment checkbox toggle
+        const foremanSelect = document.getElementById('projectForeman');
+        const foremanCredentialsSection = document.getElementById('foremanCredentialsSection');
+        
+        if (foremanSelect) {
+            foremanSelect.addEventListener('change', function() {
+                if (this.value) {
+                    foremanCredentialsSection.style.display = 'block';
+                } else {
+                    foremanCredentialsSection.style.display = 'none';
+                }
+            });
+        }
+        
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('adminProjectId').value;
             const projects = getStored('portalProjects', []);
             const name = document.getElementById('adminProjectName').value;
             const client = document.getElementById('adminProjectClient').value;
-            const budget = document.getElementById('adminProjectBudget').value || '$0';
-            const progress = parseInt(document.getElementById('adminProjectProgress').value, 10) || 0;
+            const location = document.getElementById('projectLocation').value;
+            const budget = document.getElementById('projectBudget').value || '$0';
+            const deadline = document.getElementById('projectDeadline').value;
+            const foremanId = document.getElementById('projectForeman').value;
+            const createForemanAccount = document.getElementById('createForemanAccount').checked;
             const status = document.getElementById('adminProjectStatus').value;
             const category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
             const moneyPaid = document.getElementById('adminProjectMoneyPaid') ? document.getElementById('adminProjectMoneyPaid').value : '';
             const moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
             const moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
             const moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
-            const deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
+            deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
             if (id) {
                 const idx = projects.findIndex(p => String(p.id) === id);
                 if (idx >= 0) {
@@ -838,7 +855,11 @@ function setupAdminInteractions(currentUser) {
                         ...projects[idx],
                         name,
                         client,
+                        location,
                         budget,
+                        deadline,
+                        foremanId,
+                        createForemanAccount,
                         progress,
                         status,
                         category,
@@ -846,8 +867,7 @@ function setupAdminInteractions(currentUser) {
                         moneyUsed,
                         moneyRemaining,
                         moneyOwed,
-                        deadline: deadline || projects[idx].deadline,
-                        completionDate: deadline || projects[idx].completionDate
+                        completionDate: deadline || ''
                     };
                 }
             } else {
@@ -855,7 +875,11 @@ function setupAdminInteractions(currentUser) {
                     id: Date.now(),
                     name,
                     client,
+                    location,
                     budget,
+                    deadline,
+                    foremanId,
+                    createForemanAccount,
                     progress,
                     status,
                     category,
@@ -870,6 +894,42 @@ function setupAdminInteractions(currentUser) {
             setStored('portalProjects', projects);
             renderAdminProjectsTable();
             projectModal.classList.remove('open');
+            
+            // Handle foreman account creation if requested
+            if (createForemanAccount && foremanId && foremanId && foremanId.value) {
+                const foremanData = {
+                    name: document.getElementById('foremanName').value,
+                    id: document.getElementById('foremanId').value,
+                    password: document.getElementById('foremanPassword').value,
+                    email: `${foremanId.value.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
+                    role: 'foreman',
+                    status: 'active',
+                    assignedProjects: [name],
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Store foreman data and create account
+                fetch(`${window.API_BASE}/api/foreman/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(foremanData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
+                    } else {
+                        alert(`Error: ${data.error || 'Failed to create project and foreman account'}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error creating project and foreman:', error);
+                    alert('Failed to create project and foreman account');
+                });
+            }
         });
     }
     document.querySelectorAll('[data-close="adminViewProjectModal"]').forEach(el => {
@@ -944,16 +1004,73 @@ function setupAdminInteractions(currentUser) {
         document.getElementById('adminViewProjectContent').innerHTML = `
             <p><strong>Name:</strong> ${project.name}</p>
             <p><strong>Client:</strong> ${project.client}</p>
-            <p><strong>Budget:</strong> ${project.budget}</p>
+            <p><strong>Location:</strong> ${project.location || '-'}</p>
+            <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
+            <p><strong>Budget:</strong> ${project.budget || '-'}</p>
             <p><strong>Progress:</strong> ${project.progress}%</p>
-            <p><strong>Deadline:</strong> ${project.deadline || project.completionDate || '-'}</p>
+            <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
             <p><strong>Status:</strong> ${project.status}</p>
-            <p><strong>Money Paid:</strong> ${project.moneyPaid || '-'}</p>
-            <p><strong>Money Used:</strong> ${project.moneyUsed || '-'}</p>
-            <p><strong>Money Remaining:</strong> ${project.moneyRemaining || '-'}</p>
-            <p><strong>Money Owed:</strong> ${project.moneyOwed || '-'}</p>
+            <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
+            <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
         `;
         document.getElementById('adminViewProjectModal').classList.add('open');
+    };
+
+window.viewProjectWorkers = function(projectId) {
+        const projects = getStored('portalProjects', []);
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        
+        // Fetch workers for this project
+        fetch(`${window.API_BASE}/api/projects/${projectId}/workers`, {
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('authToken')}` }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const workers = data.workers || [];
+            const totalPayroll = workers.reduce((sum, worker) => sum + (parseFloat(worker.dailyRate || 0)), 0);
+            
+            document.getElementById('adminViewProjectContent').innerHTML = `
+                <h3>Workers for ${project.name}</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Phone</th>
+                                <th>Daily Rate</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${workers.map(worker => `
+                                <tr>
+                                    <td>${worker.name || '-'}</td>
+                                    <td>${worker.nationalId || '-'}</td>
+                                    <td>${worker.phone || '-'}</td>
+                                    <td>$${worker.dailyRate || '0'}</td>
+                                    <td><span class="status-badge status-${worker.status || 'active'}">${worker.status || 'Active'}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm" onclick="editWorker('${worker._id}')">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWorker('${worker._id}')">Remove</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px;">
+                        <p><strong>Total Workers:</strong> ${workers.length}</p>
+                        <p><strong>Total Daily Payroll:</strong> $${totalPayroll.toFixed(2)}</p>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching workers:', error);
+            document.getElementById('adminViewProjectContent').innerHTML = '<p>Error loading workers data.</p>';
+        });
     };
 }
 
@@ -1851,13 +1968,20 @@ window.renderAdminProjectsTable = function () {
                 (project.client || '') +
                 '</td>' +
                 '<td>' +
-                (project.budget || '-') +
+                (project.location || '') +
+                '</td>' +
+                '<td>' +
+                (project.foremanName || 'Not Assigned') +
+                '</td>' +
+                '<td>' +
+                '<a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + 
+                (project.workerCount || 0) + ' workers</a>' +
                 '</td>' +
                 '<td><div style="width: 100px;"><div class="progress-bar"><div class="progress-fill" style="width: ' +
                 (project.progress || 0) +
                 '%"></div></div></div></td>' +
                 '<td>' +
-                (adminPortalProjectGroup(project) === 'completed' ? '-' : escapeHtml(dl)) +
+                (adminPortalProjectGroup(project) === 'completed' ? '-' : escapeHtml(project.deadline || '')) +
                 '</td>' +
                 '<td><span class="status-badge status-' +
                 st +
@@ -1870,20 +1994,9 @@ window.renderAdminProjectsTable = function () {
                 '\',\'' +
                 clientEsc +
                 '\')"><i class="fas fa-user-plus"></i></button> ' +
-                '<button type="button" class="btn-icon" title="Invoice" onclick="adminInvoicePrefill(\'' +
-                clientEsc +
-                '\',\'' +
-                nameEsc +
-                '\')"><i class="fas fa-file-invoice"></i></button> ' +
-                '<button type="button" class="btn-icon" title="Update client" onclick="openAdminBroadcastModal(' +
+                '<button type="button" class="btn-icon" title="View Details" onclick="viewProjectDetails(\'' +
                 idStr +
-                ')"><i class="fas fa-bullhorn"></i></button> ' +
-                '<button class="btn-icon" onclick="editProject(' +
-                idStr +
-                ')"><i class="fas fa-edit"></i></button> ' +
-                '<button class="btn-icon" onclick="viewProject(' +
-                idStr +
-                ')"><i class="fas fa-eye"></i></button>' +
+                '\')"><i class="fas fa-eye"></i></button> ' +
                 '</td>' +
                 '</tr>'
             );
