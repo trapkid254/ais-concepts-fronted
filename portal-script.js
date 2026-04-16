@@ -860,6 +860,21 @@ function setupAdminInteractions(currentUser) {
             document.getElementById('adminProjectModalTitle').textContent = 'New Project';
             document.getElementById('adminProjectId').value = '';
             if (projectForm) projectForm.reset();
+            
+            // Reset selected foreman
+            selectedForeman = null;
+            if (selectedForemanDisplay) {
+                selectedForemanDisplay.style.display = 'none';
+            }
+            if (selectedForemanName) {
+                selectedForemanName.textContent = '';
+            }
+            
+            // Reset location fields
+            document.getElementById('projectLocationName').value = '';
+            document.getElementById('projectLatitude').value = '';
+            document.getElementById('projectLongitude').value = '';
+            
             projectModal.classList.add('open');
         });
     }
@@ -2271,10 +2286,10 @@ window.renderAdminProjectsTable = function () {
                 (project.client || '') +
                 '</td>' +
                 '<td>' +
-                (project.location || '') +
+                (project.location && project.location.name ? project.location.name : project.location || '') +
                 '</td>' +
                 '<td>' +
-                (project.foremanName || 'Not Assigned') +
+                (project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned') +
                 '</td>' +
                 '<td>' +
                 '<a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + 
@@ -2300,6 +2315,9 @@ window.renderAdminProjectsTable = function () {
                 '<button type="button" class="btn-icon" title="View Details" onclick="viewProjectDetails(\'' +
                 idStr +
                 '\')"><i class="fas fa-eye"></i></button> ' +
+                '<button type="button" class="btn-icon" title="Edit Project" onclick="editProject(\'' +
+                idStr +
+                '\')"><i class="fas fa-edit"></i></button> ' +
                 '</td>' +
                 '</tr>'
             );
@@ -2331,6 +2349,146 @@ window.adminInvoicePrefill = function (client, projectName) {
     if (invClient) invClient.value = client || '';
     if (invProject) invProject.value = projectName || '';
     if (modal) modal.classList.add('open');
+};
+
+window.editProject = function(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => String(p.id) === projectId);
+    if (!project) return;
+    
+    // Populate form with existing data
+    document.getElementById('adminProjectId').value = project.id || '';
+    document.getElementById('adminProjectName').value = project.name || '';
+    document.getElementById('adminProjectClient').value = project.client || '';
+    document.getElementById('adminProjectBudget').value = project.budget || '';
+    document.getElementById('adminProjectProgress').value = project.progress || 0;
+    document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
+    document.getElementById('adminProjectStatus').value = project.status || 'Active';
+    document.getElementById('adminProjectDeadline').value = project.deadline || '';
+    
+    // Handle location fields
+    if (project.location && typeof project.location === 'object') {
+        document.getElementById('projectLocationName').value = project.location.name || '';
+        document.getElementById('projectLatitude').value = project.location.latitude || '';
+        document.getElementById('projectLongitude').value = project.location.longitude || '';
+    } else {
+        document.getElementById('projectLocationName').value = project.location || '';
+        document.getElementById('projectLatitude').value = '';
+        document.getElementById('projectLongitude').value = '';
+    }
+    
+    // Handle assigned foreman
+    if (project.assignedForeman) {
+        selectedForeman = project.assignedForeman;
+        updateSelectedForemanDisplay(project.assignedForeman);
+    } else {
+        selectedForeman = null;
+        if (selectedForemanDisplay) {
+            selectedForemanDisplay.style.display = 'none';
+        }
+    }
+    
+    // Handle financial fields
+    document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
+    document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
+    document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
+    document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
+    
+    // Update modal title
+    document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
+    
+    // Show modal
+    document.getElementById('adminProjectModal').classList.add('open');
+};
+
+window.viewProjectDetails = function(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => String(p.id) === projectId);
+    if (!project) return;
+    
+    const modal = document.getElementById('adminViewProjectModal');
+    const content = document.getElementById('adminViewProjectContent');
+    
+    if (!modal || !content) return;
+    
+    // Build project details HTML
+    let detailsHTML = `
+        <div class="project-details">
+            <h3>${project.name || 'Unnamed Project'}</h3>
+            <div class="project-info-grid">
+                <div class="info-item">
+                    <label>Client:</label>
+                    <span>${project.client || 'Not specified'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Location:</label>
+                    <span>${project.location && project.location.name ? project.location.name : project.location || 'Not specified'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Foreman:</label>
+                    <span>${project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Budget:</label>
+                    <span>${project.budget || 'Not specified'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Progress:</label>
+                    <span>${project.progress || 0}%</span>
+                </div>
+                <div class="info-item">
+                    <label>Status:</label>
+                    <span class="status-badge status-${(project.status || 'Active').toLowerCase().replace(/\s+/g, '-')}">${project.status || 'Active'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Deadline:</label>
+                    <span>${project.deadline || 'Not specified'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Category:</label>
+                    <span>${project.category || 'Commercial'}</span>
+                </div>
+    `;
+    
+    // Add location coordinates if available
+    if (project.location && project.location.latitude && project.location.longitude) {
+        detailsHTML += `
+                <div class="info-item">
+                    <label>Coordinates:</label>
+                    <span>${project.location.latitude}, ${project.location.longitude}</span>
+                </div>
+        `;
+    }
+    
+    // Add financial information
+    if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+        detailsHTML += `
+                <div class="info-item">
+                    <label>Money Paid:</label>
+                    <span>${project.moneyPaid || 'KSH 0'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Money Used:</label>
+                    <span>${project.moneyUsed || 'KSH 0'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Money Remaining:</label>
+                    <span>${project.moneyRemaining || 'KSH 0'}</span>
+                </div>
+                <div class="info-item">
+                    <label>Money Owed:</label>
+                    <span>${project.moneyOwed || 'KSH 0'}</span>
+                </div>
+        `;
+    }
+    
+    detailsHTML += `
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = detailsHTML;
+    modal.classList.add('open');
 };
 
 window.openAdminBroadcastModal = function (projectId) {
