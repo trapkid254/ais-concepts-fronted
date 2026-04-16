@@ -687,13 +687,43 @@ function setupAdminInteractions(currentUser) {
     window.deleteForeman = function(foremanId) {
         if (!confirm('Are you sure you want to delete this foreman?')) return;
         
+        // Get foreman data before deletion for backend API
         const users = getStored('portalUsers', []);
-        const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
+        const foremanToDelete = users.find(u => u.id === foremanId && u.role === 'foreman');
         
-        store('portalUsers', filteredUsers);
-        renderAdminForemenTable();
-        
-        alert('Foreman deleted successfully!');
+        if (foremanToDelete) {
+            // Call backend API to delete foreman
+            fetch(`${window.API_BASE}/api/foreman/${foremanId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete foreman from backend');
+                }
+                return response.json();
+            })
+            .then(() => {
+                // Remove from local storage only after successful backend deletion
+                const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
+                setStored('portalUsers', filteredUsers);
+                renderAdminForemenTable();
+                
+                alert('Foreman deleted successfully!');
+            })
+            .catch(error => {
+                console.error('Error deleting foreman:', error);
+                // Still remove from local storage on error to prevent UI inconsistency
+                const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
+                setStored('portalUsers', filteredUsers);
+                renderAdminForemenTable();
+                
+                alert('Foreman deleted from frontend (backend sync failed)');
+            });
+        }
     };
     
     const assignments = getStored('assignments', []);
@@ -1218,9 +1248,9 @@ function setupAdminInteractions(currentUser) {
             // Handle foreman account creation if requested
             if (createForemanAccount && foremanId) {
                 const foremanData = {
-                    name: document.getElementById('foremanName').value,
-                    id: document.getElementById('foremanId').value,
-                    password: document.getElementById('foremanPassword').value,
+                    name: document.getElementById('projectForemanName').value,
+                    id: document.getElementById('projectForemanId').value,
+                    password: document.getElementById('projectForemanPassword').value,
                     email: `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
