@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foreman Registration | AIS Concepts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../portal-styles.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-wrap">
+            <a class="back-home" href="../index.html"><i class="fas fa-arrow-left"></i> Back to home</a>
+            <div class="auth-card">
+                <div class="auth-card-watermark" aria-hidden="true"></div>
+                <h1>Foreman Registration</h1>
+                <p class="sub">Register your foreman account to manage projects and workers</p>
+                
+                <form id="foremanRegistrationForm">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" required autocomplete="tel">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" required autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="assignedProjects">Initial Projects (Optional)</label>
+                        <textarea id="assignedProjects" placeholder="List any projects you'll be managing..."></textarea>
+                    </div>
+                    <div class="form-group form-group-action">
+                        <button type="submit" class="btn-auth">Register as Foreman</button>
+                    </div>
+                </form>
+                
+                <div class="auth-links">
+                    <a href="../staff/login.html">Already have an account? Login here</a>
+                    <a href="../index.html">Back to home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../api-config.js"></script>
+    <script src="../api-client.js"></script>
+    <script>
+        (function() {
+            const form = document.getElementById('foremanRegistrationForm');
+            const API_BASE = window.API_BASE || '';
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const data = {
+                    name: formData.get('fullName'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    password: formData.get('password'),
+                    confirmPassword: formData.get('confirmPassword'),
+                    assignedProjects: formData.get('assignedProjects').split(',').map(p => p.trim()).filter(p => p)
+                };
+                
+                // Validation
+                if (!data.name || !data.email || !data.phone || !data.password || !data.confirmPassword) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                if (data.password !== data.confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/foreman/create`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Foreman registration successful! You can now login to manage your projects.');
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(result.error || 'Registration failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    alert('Registration failed. Please try again.');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

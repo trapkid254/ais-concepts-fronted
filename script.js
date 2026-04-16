@@ -60,10 +60,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const isHome = /index\.html?$|\/$/.test(window.location.pathname) || window.location.pathname === '' || window.location.pathname === '/';
         const referrer = document.referrer || '';
         const fromOtherPage = referrer.indexOf(window.location.origin) >= 0 && referrer.indexOf('index') === -1 && referrer.indexOf('/') !== referrer.length - 1;
+        
+        // Always hide splash if not on home page or coming from another page
         if (!isHome || fromOtherPage) {
             splash.style.display = 'none';
             return;
         }
+        
+        // Show splash and start animation
+        splash.style.display = 'flex';
         const bar = document.getElementById('splashLoadingBar');
         const pctEl = document.getElementById('splashLoadingPct');
         const duration = 3200;
@@ -109,11 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
         var max = heroScrollSpacer.offsetHeight || 1;
         var y = window.scrollY || window.pageYOffset;
         var p = Math.min(1, y / max);
-        var opacity = Math.max(0, 1 - p * 1.12);
-        var ty = -p * 22;
-        var sc = 1 - p * 0.06;
-        heroFixedWrap.style.opacity = String(opacity);
-        heroFixedWrap.style.transform = 'translateY(' + ty + '%) scale(' + sc + ')';
+        var opacity = Math.max(0, 1 - p * 0.8);
+        var blur = p * 8; // Blur increases from 0 to 8px as user scrolls
+        heroFixedWrap.style.opacity = opacity;
+        heroFixedWrap.style.filter = 'blur(' + blur + 'px)';
         heroFixedWrap.style.visibility = p >= 0.97 ? 'hidden' : 'visible';
     }
 
@@ -234,66 +238,35 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 })
-                .catch(function () {
-                    alert('Could not subscribe right now. Please try again later.');
+                .catch(function (err) {
+                    console.error(err);
                 });
         });
     }
 
-    /* ===== TYPEWRITER EFFECT (all pages) ===== */
-    function runTypewriter() {
-        const els = document.querySelectorAll('[data-typewriter]');
-        let delay = 0;
-        els.forEach(function(el) {
-            if (el.closest('.careers-hero')) return;
-            const text = el.getAttribute('data-typewriter');
-            if (!text) return;
-            const speed = el.classList.contains('typewriter-text') ? 40 : 60;
-            setTimeout(function() {
-                el.textContent = '';
-                el.classList.remove('typed');
-                let i = 0;
-                function type() {
-                    if (i < text.length) {
-                        el.textContent += text.charAt(i);
-                        i++;
-                        setTimeout(type, speed);
-                    } else {
-                        el.classList.add('typed');
-                    }
-                }
-                type();
-            }, delay);
-            delay += 200;
-        });
-    }
-    runTypewriter();
-
-    /* ===== STATS COUNTER (index / about) ===== */
+    /* ===== STATS COUNTER ===== */
     function runStatsCounter() {
-        const statsSection = document.querySelector('.stats-section');
-        if (!statsSection) return;
-        const numbers = document.querySelectorAll('.stat-number[data-count]');
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (!entry.isIntersecting) return;
-                const el = entry.target;
-                const target = parseInt(el.getAttribute('data-count'), 10) || 0;
-                let start = 0;
-                const duration = 2000;
-                const startTime = performance.now();
-                function step(now) {
-                    const progress = Math.min((now - startTime) / duration, 1);
-                    const easeOut = 1 - Math.pow(1 - progress, 3);
-                    el.textContent = Math.floor(start + (target - start) * easeOut);
-                    if (progress < 1) requestAnimationFrame(step);
-                    else el.textContent = target;
-                }
-                requestAnimationFrame(step);
-                observer.unobserve(el);
-            });
-        }, { threshold: 0.3 });
-        numbers.forEach(function(n) { observer.observe(n); });
+        const numbers = document.querySelectorAll('.stat-number');
+        if (numbers.length > 0) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const target = entry.target;
+                        const count = parseInt(target.getAttribute('data-count'));
+                        let current = 0;
+                        const increment = () => {
+                            if (current <= count) {
+                                target.textContent = current;
+                                current++;
+                                setTimeout(increment, 50);
+                            }
+                        };
+                        increment();
+                    }
+                });
+            }, { threshold: 0.3 });
+            numbers.forEach(function(n) { observer.observe(n); });
+        }
     }
     runStatsCounter();
 
@@ -334,6 +307,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     }
+
+    /* ===== TYPWRITER EFFECT ===== */
+    function runTypewriter() {
+        const els = document.querySelectorAll('.typewriter');
+        let delay = 0;
+        els.forEach(function(el) {
+            if (el.closest('.careers-hero')) return;
+            const text = el.getAttribute('data-typewriter');
+            if (!text) return;
+            const speed = el.classList.contains('typewriter-text') ? 40 : 60;
+            setTimeout(function() {
+                el.textContent = '';
+                el.classList.remove('typed');
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        el.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(type, speed);
+                    } else {
+                        el.classList.add('typed');
+                    }
+                }
+                type();
+            }, delay);
+            delay += 200;
+        });
+    }
+    runTypewriter();
 
     /* ===== ACTIVE NAVIGATION HIGHLIGHTING ===== */
     const sections = document.querySelectorAll('section[id]');

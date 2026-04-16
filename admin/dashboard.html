@@ -33,6 +33,7 @@
                     <li><a href="#" data-section="admin-dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
                     <li><a href="#" data-section="admin-approvals"><i class="fas fa-user-check"></i> Pending approvals</a></li>
                     <li><a href="#" data-section="admin-users"><i class="fas fa-users"></i> User Management</a></li>
+                    <li><a href="#" data-section="admin-foremen"><i class="fas fa-hard-hat"></i> Foreman Management</a></li>
                     <li><a href="#" data-section="admin-clients"><i class="fas fa-handshake"></i> Client CRM</a></li>
                     <li><a href="#" data-section="admin-projects"><i class="fas fa-building"></i> Projects</a></li>
                     <li><a href="#" data-section="admin-tasks"><i class="fas fa-tasks"></i> Task Management</a></li>
@@ -140,6 +141,26 @@
                     </div>
                 </div>
                 
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-workers">
+                    <div class="stat-info">
+                        <h3>Total Workers</h3>
+                        <div class="stat-number" id="totalWorkers">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-clickable" data-nav-section="admin-attendance">
+                    <div class="stat-info">
+                        <h3>Today's Attendance</h3>
+                        <div class="stat-number" id="todayAttendance">0</div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+                
                 <div class="stat-card stat-card-clickable" data-nav-section="admin-site-management">
                     <div class="stat-info">
                         <h3>Active Sites</h3>
@@ -201,6 +222,34 @@
                     </thead>
                     <tbody>
                         <!-- Users will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- Foreman Management -->
+            <section id="admin-foremen" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Foreman Management</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAddForemanBtn">
+                            <i class="fas fa-user-plus"></i> Create Foreman Account
+                        </button>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Assigned Projects</th>
+                            <th>Status</th>
+                            <th>Created Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminForemenTableBody">
+                        <!-- Foremen will be loaded dynamically -->
                     </tbody>
                 </table>
             </section>
@@ -311,6 +360,135 @@
                     </thead>
                     <tbody id="assignmentsTableBody"></tbody>
                 </table>
+            </section>
+
+            <!-- Worker Management -->
+            <section id="admin-workers" class="portal-section table-container" style="display: none;">
+                <div class="table-header">
+                    <h2>Worker Management</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAddWorkerBtn">
+                            <i class="fas fa-user-plus"></i> Register Worker
+                        </button>
+                        <button class="btn btn-secondary" id="adminBulkImportBtn">
+                            <i class="fas fa-file-import"></i> Bulk Import
+                        </button>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>National ID</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Daily Rate</th>
+                            <th>Assigned Projects</th>
+                            <th>Registration Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminWorkersTableBody">
+                        <!-- Workers will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Attendance Overview -->
+            <section id="admin-attendance" class="portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Attendance Overview</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAttendanceReportBtn">
+                            <i class="fas fa-file-download"></i> Generate Report
+                        </button>
+                        <button class="btn btn-secondary" id="adminMarkAttendanceBtn">
+                            <i class="fas fa-check"></i> Mark Attendance
+                        </button>
+                    </div>
+                </div>
+                <div class="attendance-stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h4>Present Today</h4>
+                            <div class="stat-number" id="presentToday">0</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h4>Absent Today</h4>
+                            <div class="stat-number" id="absentToday">0</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h4>Late Today</h4>
+                            <div class="stat-number" id="lateToday">0</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Face Registration -->
+            <section id="admin-face-registration" class="portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Face Registration</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminFaceRegisterBtn">
+                            <i class="fas fa-camera"></i> Register Face
+                        </button>
+                    </div>
+                </div>
+                <div class="card profile-form-login-style">
+                    <h3>Register New Worker Face</h3>
+                    <form id="adminFaceRegistrationForm" class="portal-form-grid">
+                        <div class="form-group">
+                            <label for="workerName">Worker Name</label>
+                            <input type="text" id="workerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerNationalId">National ID</label>
+                            <input type="text" id="workerNationalId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerPhone">Phone Number</label>
+                            <input type="tel" id="workerPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerEmail">Email Address</label>
+                            <input type="email" id="workerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerDailyRate">Daily Rate ($)</label>
+                            <input type="number" id="workerDailyRate" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="faceImages">Face Images</label>
+                            <div class="face-upload-container">
+                                <input type="file" id="faceImagesInput" multiple accept="image/*">
+                                <button type="button" class="btn btn-secondary" id="captureFaceBtn">
+                                    <i class="fas fa-camera"></i> Capture Face
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group form-group-action">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Register Worker
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </section>
 
             <!-- Careers: applications from website -->
@@ -490,18 +668,6 @@
                         <tr><th>Preview</th><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="adminWebsiteProjectsBody"></tbody>
-                </table>
-                </div>
-
-                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
-                <h3 style="margin-top: 0;">Website Services (Homepage Services Section)</h3>
-                <p class="section-sub">Add or delete services shown on the frontend. Include category, image, and description.</p>
-                <button type="button" class="btn btn-primary" id="adminAddWebsiteServiceBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Service</button>
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Preview</th><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="adminWebsiteServicesBody"></tbody>
                 </table>
                 </div>
 
@@ -1350,7 +1516,6 @@
                             <select id="newFAQCategory" class="form-control" required>
                                 <option value="">Select Category</option>
                                 <option value="general">General</option>
-                                <option value="services">Services</option>
                                 <option value="process">Process</option>
                             </select>
                         </div>
@@ -1374,14 +1539,6 @@
                     <div class="faq-category-admin">
                         <h4>General Questions</h4>
                         <div id="adminGeneralFAQs"></div>
-                    </div>
-                    <div class="faq-category-admin">
-                        <h4>Services Questions</h4>
-                        <div id="adminServicesFAQs"></div>
-                    </div>
-                    <div class="faq-category-admin">
-                        <h4>Process Questions</h4>
-                        <div id="adminProcessFAQs"></div>
                     </div>
                 </div>
             </section>
@@ -1626,8 +1783,7 @@
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
     <script src="../projects-data.js"></script>
-    <script src="../services-data.js"></script>
-    <script src="../blog-data.js"></script>
+        <script src="../blog-data.js"></script>
     <script src="../portal-script.js"></script>
 </body>
 </html>
