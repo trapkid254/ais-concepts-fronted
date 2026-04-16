@@ -548,21 +548,7 @@ function setupAdminInteractions(currentUser) {
                 createdAt: new Date().toISOString()
             };
             
-            // Save to users
-            const foremanUsers = getStored('portalUsers', []);
-            foremanUsers.push(newForeman);
-            setStored('portalUsers', foremanUsers);
-            
-            // Refresh foremen table
-            renderAdminForemenTable();
-            
-            // Store to localStorage for immediate UI update
-            const users = getStored('portalUsers', []);
-            users.push(newForeman);
-            setStored('portalUsers', users);
-            renderAdminForemenTable();
-            
-            // Also save to backend
+            // Save directly to MongoDB
             fetch(`${window.API_BASE}/api/foreman/create`, {
                 method: 'POST',
                 headers: {
@@ -573,7 +559,7 @@ function setupAdminInteractions(currentUser) {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to save foreman to backend');
+                    throw new Error('Failed to save foreman to database');
                 }
                 return response.json();
             })
@@ -583,16 +569,14 @@ function setupAdminInteractions(currentUser) {
                 if (modal) modal.classList.remove('open');
                 adminForemanForm.reset();
                 
+                // Refresh foremen table from database
+                renderAdminForemenTable();
+                
                 alert('Foreman created successfully!');
             })
             .catch(error => {
                 console.error('Error creating foreman:', error);
-                // Still close modal and show success message
-                const modal = document.getElementById('adminForemanModal');
-                if (modal) modal.classList.remove('open');
-                adminForemanForm.reset();
-                
-                alert('Foreman created (backend sync failed)');
+                alert('Failed to create foreman. Please try again.');
             });
         });
     }
@@ -667,15 +651,39 @@ function setupAdminInteractions(currentUser) {
     
     // Function to render admin foremen table
     function renderAdminForemenTable() {
-        const users = getStored('portalUsers', []);
-        const foremen = users.filter(user => user.role === 'foreman');
         const tbody = document.getElementById('adminForemenTableBody');
         if (!tbody) return;
         
-        if (foremen.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
-            return;
-        }
+        // Load directly from MongoDB
+        fetch(`${window.API_BASE}/api/foremen`, {
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load foremen from database');
+            }
+            return response.json();
+        })
+        .then(foremen => {
+            if (foremen.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
+                return;
+            }
+            
+            // Render the table with MongoDB data
+            renderForemenTableData(foremen);
+        })
+        .catch(error => {
+            console.error('Error loading foremen from database:', error);
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error loading foremen. Please refresh the page.</td></tr>';
+        });
+    }
+    
+    function renderForemenTableData(foremen) {
+        const tbody = document.getElementById('adminForemenTableBody');
+        if (!tbody) return;
         
         tbody.innerHTML = foremen.map(foreman => `
             <tr>
@@ -719,43 +727,29 @@ function setupAdminInteractions(currentUser) {
     window.deleteForeman = function(foremanId) {
         if (!confirm('Are you sure you want to delete this foreman?')) return;
         
-        // Get foreman data before deletion for backend API
-        const users = getStored('portalUsers', []);
-        const foremanToDelete = users.find(u => u.id === foremanId && u.role === 'foreman');
-        
-        if (foremanToDelete) {
-            // Call backend API to delete foreman
-            fetch(`${window.API_BASE}/api/foreman/${foremanId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to delete foreman from backend');
-                }
-                return response.json();
-            })
-            .then(() => {
-                // Remove from local storage only after successful backend deletion
-                const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
-                setStored('portalUsers', filteredUsers);
-                renderAdminForemenTable();
-                
-                alert('Foreman deleted successfully!');
-            })
-            .catch(error => {
-                console.error('Error deleting foreman:', error);
-                // Still remove from local storage on error to prevent UI inconsistency
-                const filteredUsers = users.filter(u => !(u.id === foremanId && u.role === 'foreman'));
-                setStored('portalUsers', filteredUsers);
-                renderAdminForemenTable();
-                
-                alert('Foreman deleted from frontend (backend sync failed)');
-            });
-        }
+        // Call MongoDB API to delete foreman
+        fetch(`${window.API_BASE}/api/foreman/${foremanId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to delete foreman from database');
+            }
+            return response.json();
+        })
+        .then(() => {
+            // Refresh foremen table from database
+            renderAdminForemenTable();
+            alert('Foreman deleted successfully!');
+        })
+        .catch(error => {
+            console.error('Error deleting foreman:', error);
+            alert('Failed to delete foreman. Please try again.');
+        });
     };
     
     const assignments = getStored('assignments', []);
@@ -1196,6 +1190,16 @@ function setupAdminInteractions(currentUser) {
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Manual validation for required fields
+            const projectName = document.getElementById('adminProjectName').value;
+            const projectClient = document.getElementById('adminProjectClient').value;
+            const projectLocationName = document.getElementById('projectLocationName').value;
+            
+            if (!projectName || !projectClient || !projectLocationName) {
+                alert('Please fill in all required fields: Project Name, Client, and Location Name.');
+                return;
+            }
+            
             // Validate foreman credentials if checkbox is checked
             const shouldCreateForemanAccount = document.getElementById('createForemanAccount').checked;
             if (shouldCreateForemanAccount) {
@@ -1286,11 +1290,7 @@ function setupAdminInteractions(currentUser) {
                     completionDate: deadline || ''
                 });
             }
-            // First save to localStorage for immediate UI update
-            setStored('portalProjects', projects);
-            renderAdminProjectsTable();
-            
-            // Then save to backend
+            // Save directly to MongoDB
             const projectData = id ? {
                 id: id,
                 name,
@@ -1337,18 +1337,19 @@ function setupAdminInteractions(currentUser) {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to save project to backend');
+                    throw new Error('Failed to save project to database');
                 }
                 return response.json();
             })
             .then(() => {
                 projectModal.classList.remove('open');
+                // Refresh projects table from database
+                renderAdminProjectsTable();
                 alert('Project saved successfully!');
             })
             .catch(error => {
                 console.error('Error saving project:', error);
-                projectModal.classList.remove('open');
-                alert('Project saved to frontend (backend sync failed)');
+                alert('Failed to save project. Please try again.');
             });
             
             // Handle foreman account creation if requested
@@ -2391,24 +2392,50 @@ function renderAdminProjects(tbody, projects) {
 window.renderAdminProjectsTable = function () {
     var tbody = document.querySelector('.admin-projects tbody');
     if (!tbody) return;
-    var list = getStored('portalProjects', []) || [];
-    var f = window._adminProjectFilter || 'all';
-    var filtered =
-        f === 'all'
-            ? list
-            : list.filter(function (p) {
-                  return adminPortalProjectGroup(p) === f;
-              });
-    if (!list.length) {
-        tbody.innerHTML =
-            '<tr><td colspan="7">No portal projects yet. Add one with <strong>New Project</strong> or they will sync from saved data.</td></tr>';
-        return;
-    }
-    if (!filtered.length) {
+    
+    // Load projects directly from MongoDB
+    fetch(`${window.API_BASE}/api/projects`, {
+        headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load projects from database');
+        }
+        return response.json();
+    })
+    .then(projects => {
+        var f = window._adminProjectFilter || 'all';
+        var filtered =
+            f === 'all'
+                ? projects
+                : projects.filter(function (p) {
+                      return adminPortalProjectGroup(p) === f;
+                  });
+        if (!projects.length) {
+            tbody.innerHTML =
+                '<tr><td colspan="7">No portal projects yet. Add one with <strong>New Project</strong>.</td></tr>';
+            return;
+        }
+        
+        // Render projects from MongoDB data
+        renderProjectsFromDatabase(tbody, filtered);
+    })
+    .catch(error => {
+        console.error('Error loading projects from database:', error);
+        tbody.innerHTML = '<tr><td colspan="7" style="color: #ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
+    });
+};
+
+function renderProjectsFromDatabase(tbody, projects) {
+    if (!tbody) return;
+    
+    if (!projects.length) {
         tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</td></tr>';
         return;
     }
-    tbody.innerHTML = filtered
+    tbody.innerHTML = projects
         .map(function (project) {
             var st = (project.status || 'Active').toLowerCase().replace(/\s+/g, '-');
             var dl = project.deadline || project.completionDate || '-';
