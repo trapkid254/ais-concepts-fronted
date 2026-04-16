@@ -216,6 +216,8 @@ body {
     flex: 1;
     margin-left: 280px;
     padding: 30px;
+    width: calc(100% - 280px);
+    min-height: calc(100vh - 60px);
 }
 
 /* ===== Top Bar ===== */

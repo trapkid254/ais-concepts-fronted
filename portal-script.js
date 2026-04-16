@@ -549,19 +549,51 @@ function setupAdminInteractions(currentUser) {
             };
             
             // Save to users
-            const users = getStored('portalUsers', []);
-            users.push(newForeman);
-            setStored('portalUsers', users);
+            const foremanUsers = getStored('portalUsers', []);
+            foremanUsers.push(newForeman);
+            setStored('portalUsers', foremanUsers);
             
             // Refresh foremen table
             renderAdminForemenTable();
             
-            // Close modal and reset form
-            const modal = document.getElementById('adminForemanModal');
-            if (modal) modal.classList.remove('open');
-            adminForemanForm.reset();
+            // Store to localStorage for immediate UI update
+            const users = getStored('portalUsers', []);
+            users.push(newForeman);
+            setStored('portalUsers', users);
+            renderAdminForemenTable();
             
-            alert('Foreman created successfully!');
+            // Also save to backend
+            fetch(`${window.API_BASE}/api/foreman/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(newForeman)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save foreman to backend');
+                }
+                return response.json();
+            })
+            .then(() => {
+                // Close modal and reset form
+                const modal = document.getElementById('adminForemanModal');
+                if (modal) modal.classList.remove('open');
+                adminForemanForm.reset();
+                
+                alert('Foreman created successfully!');
+            })
+            .catch(error => {
+                console.error('Error creating foreman:', error);
+                // Still close modal and show success message
+                const modal = document.getElementById('adminForemanModal');
+                if (modal) modal.classList.remove('open');
+                adminForemanForm.reset();
+                
+                alert('Foreman created (backend sync failed)');
+            });
         });
     }
     
@@ -1241,16 +1273,77 @@ function setupAdminInteractions(currentUser) {
                     completionDate: deadline || ''
                 });
             }
+            // First save to localStorage for immediate UI update
             setStored('portalProjects', projects);
             renderAdminProjectsTable();
-            projectModal.classList.remove('open');
+            
+            // Then save to backend
+            const projectData = id ? {
+                id: id,
+                name,
+                client,
+                location,
+                budget,
+                deadline,
+                assignedForeman,
+                createForemanAccount,
+                progress,
+                status,
+                category,
+                moneyPaid,
+                moneyUsed,
+                moneyRemaining,
+                moneyOwed,
+                completionDate: deadline || ''
+            } : {
+                id: Date.now(),
+                name,
+                client,
+                location,
+                budget,
+                deadline,
+                assignedForeman,
+                createForemanAccount,
+                progress,
+                status,
+                category,
+                moneyPaid,
+                moneyUsed,
+                moneyRemaining,
+                moneyOwed,
+                completionDate: deadline || ''
+            };
+            
+            fetch(`${window.API_BASE}/api/projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(projectData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save project to backend');
+                }
+                return response.json();
+            })
+            .then(() => {
+                projectModal.classList.remove('open');
+                alert('Project saved successfully!');
+            })
+            .catch(error => {
+                console.error('Error saving project:', error);
+                projectModal.classList.remove('open');
+                alert('Project saved to frontend (backend sync failed)');
+            });
             
             // Handle foreman account creation if requested
             if (createForemanAccount && foremanId) {
                 const foremanData = {
-                    name: document.getElementById('projectForemanName').value,
-                    id: document.getElementById('projectForemanId').value,
-                    password: document.getElementById('projectForemanPassword').value,
+                    name: document.getElementById('projectForemanName2').value,
+                    id: document.getElementById('projectForemanId2').value,
+                    password: document.getElementById('projectForemanPassword2').value,
                     email: `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
