@@ -838,7 +838,7 @@ function setupAdminInteractions(currentUser) {
             const client = document.getElementById('adminProjectClient').value;
             const location = document.getElementById('projectLocation').value;
             const budget = document.getElementById('projectBudget').value || '$0';
-            const deadline = document.getElementById('projectDeadline').value;
+            let deadline = document.getElementById('projectDeadline').value;
             const foremanId = document.getElementById('projectForeman').value;
             const createForemanAccount = document.getElementById('createForemanAccount').checked;
             const status = document.getElementById('adminProjectStatus').value;
@@ -896,12 +896,12 @@ function setupAdminInteractions(currentUser) {
             projectModal.classList.remove('open');
             
             // Handle foreman account creation if requested
-            if (createForemanAccount && foremanId && foremanId && foremanId.value) {
+            if (createForemanAccount && foremanId) {
                 const foremanData = {
                     name: document.getElementById('foremanName').value,
                     id: document.getElementById('foremanId').value,
                     password: document.getElementById('foremanPassword').value,
-                    email: `${foremanId.value.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
+                    email: `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
                     assignedProjects: [name],

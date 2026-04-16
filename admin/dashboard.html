@@ -111,16 +111,6 @@
                     </div>
                 </div>
                 
-                <div class="stat-card stat-card-clickable" data-nav-section="admin-financial">
-                    <div class="stat-info">
-                        <h3>Total Revenue</h3>
-                        <div class="stat-number" id="totalRevenue">$0</div>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="fas fa-dollar-sign"></i>
-                    </div>
-                </div>
-                
                 <div class="stat-card stat-card-clickable" data-nav-section="admin-documents">
                     <div class="stat-info">
                         <h3>Documents</h3>
@@ -758,8 +748,38 @@
                             <input type="text" id="adminProjectClient" required>
                         </div>
                         <div class="form-group">
+                            <label>Assign Foreman (Optional)</label>
+                            <select id="projectForeman">
+                                <option value="">No foreman assigned</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="foremanCredentialsSection" style="display: none;">
+                            <label>Foreman Login Credentials</label>
+                            <div class="form-group">
+                                <label for="foremanName">Foreman Name *</label>
+                                <input type="text" id="foremanName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="foremanId">ID Number *</label>
+                                <input type="text" id="foremanId" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="foremanPassword">Password *</label>
+                                <input type="password" id="foremanPassword" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="createForemanAccount"> Create foreman account with credentials above
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="projectLocation" required placeholder="Enter project location">
+                        </div>
+                        <div class="form-group">
                             <label>Budget</label>
-                            <input type="text" id="adminProjectBudget" placeholder="$0.0M">
+                            <input type="text" id="adminProjectBudget" placeholder="KSH 0.0M">
                         </div>
                         <div class="form-group">
                             <label>Progress %</label>
@@ -776,19 +796,19 @@
                         </div>
                         <div class="form-group">
                             <label>Money Paid (client view)</label>
-                            <input type="text" id="adminProjectMoneyPaid" placeholder="e.g. $10,000">
+                            <input type="text" id="adminProjectMoneyPaid" placeholder="e.g. KSH 10,000">
                         </div>
                         <div class="form-group">
                             <label>Money Used</label>
-                            <input type="text" id="adminProjectMoneyUsed" placeholder="e.g. $8,000">
+                            <input type="text" id="adminProjectMoneyUsed" placeholder="e.g. KSH 8,000">
                         </div>
                         <div class="form-group">
                             <label>Money Remaining</label>
-                            <input type="text" id="adminProjectMoneyRemaining" placeholder="e.g. $2,000">
+                            <input type="text" id="adminProjectMoneyRemaining" placeholder="e.g. KSH 2,000">
                         </div>
                         <div class="form-group">
                             <label>Money Owed</label>
-                            <input type="text" id="adminProjectMoneyOwed" placeholder="e.g. $0">
+                            <input type="text" id="adminProjectMoneyOwed" placeholder="e.g. KSH 0">
                         </div>
                         <div class="form-group">
                             <label>Deadline / est. completion</label>
@@ -897,7 +917,7 @@
                         </div>
                         <div class="form-group">
                             <label>Amount</label>
-                            <input type="text" id="invAmount" required placeholder="$0">
+                            <input type="text" id="invAmount" required placeholder="KSH 0">
                         </div>
                         <div class="form-group">
                             <label>Due Date</label>
@@ -937,7 +957,7 @@
                         </div>
                         <div class="form-group">
                             <label>Amount</label>
-                            <input type="text" id="invEditAmount" required placeholder="$0">
+                            <input type="text" id="invEditAmount" required placeholder="KSH 0">
                         </div>
                         <div class="form-group">
                             <label>Due Date</label>
@@ -1095,18 +1115,42 @@
                     </button>
                 </div>
                 <div class="crm-overview">
-                    <div class="crm-stats">
-                        <div class="crm-stat">
-                            <h4>Total Clients</h4>
-                            <span id="totalClientsCount">0</span>
+                    <div class="crm-stats-grid">
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="crm-stat-info">
+                                <h4>Total Clients</h4>
+                                <span id="totalClientsCount">0</span>
+                            </div>
                         </div>
-                        <div class="crm-stat">
-                            <h4>Active Projects</h4>
-                            <span id="clientActiveProjects">0</span>
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="crm-stat-info">
+                                <h4>Active Projects</h4>
+                                <span id="clientActiveProjects">0</span>
+                            </div>
                         </div>
-                        <div class="crm-stat">
-                            <h4>Pending Invoices</h4>
-                            <span id="pendingInvoices">0</span>
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-icon">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                            <div class="crm-stat-info">
+                                <h4>Pending Invoices</h4>
+                                <span id="pendingInvoices">0</span>
+                            </div>
+                        </div>
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="crm-stat-info">
+                                <h4>Total Revenue</h4>
+                                <span id="clientTotalRevenue">KSH 0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1320,15 +1364,15 @@
                     <div class="financial-summary">
                         <div class="summary-card">
                             <h4>Total Revenue</h4>
-                            <span id="totalRevenueAmount">$0</span>
+                            <span id="totalRevenueAmount">KSH 0</span>
                         </div>
                         <div class="summary-card">
                             <h4>Pending Invoices</h4>
-                            <span id="pendingInvoiceAmount">$0</span>
+                            <span id="pendingInvoiceAmount">KSH 0</span>
                         </div>
                         <div class="summary-card">
                             <h4>Expenses</h4>
-                            <span id="totalExpenses">$0</span>
+                            <span id="totalExpenses">KSH 0</span>
                         </div>
                     </div>
                 </div>
