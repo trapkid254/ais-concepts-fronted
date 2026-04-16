@@ -2241,3 +2241,28 @@ body > .modal.open {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
+
+/* ===== Navigation Logo Styling ===== */
+.nav-logo {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.nav-logo:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-nav a i {
+    font-size: 1rem;
+    width: 16px;
+    text-align: center;
+}
