@@ -1195,6 +1195,19 @@ function setupAdminInteractions(currentUser) {
         
         projectForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Validate foreman credentials if checkbox is checked
+            const shouldCreateForemanAccount = document.getElementById('createForemanAccount').checked;
+            if (shouldCreateForemanAccount) {
+                const foremanName = document.getElementById('projectForemanName2').value;
+                const foremanId = document.getElementById('projectForemanId2').value;
+                const foremanPassword = document.getElementById('projectForemanPassword2').value;
+                
+                if (!foremanName || !foremanId || !foremanPassword) {
+                    alert('Please fill in all foreman credentials when creating a foreman account.');
+                    return;
+                }
+            }
             const id = document.getElementById('adminProjectId').value;
             const projects = getStored('portalProjects', []);
             const name = document.getElementById('adminProjectName').value;
@@ -1222,7 +1235,7 @@ function setupAdminInteractions(currentUser) {
                 email: selectedForeman.email
             } : null;
             
-            const createForemanAccount = document.getElementById('createForemanAccount').checked;
+            const createForemanAccount = shouldCreateForemanAccount;
             const status = document.getElementById('adminProjectStatus').value;
             const category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
             const moneyPaid = document.getElementById('adminProjectMoneyPaid') ? document.getElementById('adminProjectMoneyPaid').value : '';
