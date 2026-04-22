@@ -1333,7 +1333,7 @@ function setupAdminInteractions(currentUser) {
                     deadline,
                     assignedForeman,
                     createForemanAccount,
-                    progress: project.progress || 0,
+                    progress: progress || 0,
                     status,
                     category,
                     moneyPaid,
@@ -1982,9 +1982,13 @@ window.applyClientProjectFilter = function () {
                 escapeHtml(project.nextMilestone || '-') +
                 '</p>' +
                 upHtml +
+                '<div class="project-actions">' +
                 '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(' +
                 (project._id || project.id) +
                 ')">View Details</button>' +
+                '<button type="button" class="btn btn-secondary" onclick="openProjectInquiryModal(\'' +
+                (project._id || project.id) + '\', \'' + escapeHtml(project.name).replace(/'/g, "\\'") + '\')">Inquire</button>' +
+                '</div>' +
                 '</div></div>'
             );
         })
@@ -2131,64 +2135,7 @@ function loadClientDashboard() {
     // Call update stats after projects are loaded
     updateClientStats();
 
-    var addBtn = document.getElementById('clientAddProjectBtn');
-    var addModal = document.getElementById('clientAddProjectModal');
-    var addForm = document.getElementById('clientAddProjectForm');
-    if (addBtn && addModal && !window._clientAddProjectBound) {
-        window._clientAddProjectBound = true;
-        addBtn.addEventListener('click', function () {
-            addModal.classList.add('open');
-        });
-        document.querySelectorAll('[data-close="clientAddProjectModal"]').forEach(function (el) {
-            el.addEventListener('click', function () {
-                addModal.classList.remove('open');
-            });
-        });
-        addModal.addEventListener('click', function (e) {
-            if (e.target === addModal) addModal.classList.remove('open');
-        });
-        if (addForm) {
-            addForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                var nm = document.getElementById('clientNewProjectName').value;
-                var ds = document.getElementById('clientNewProjectDesc').value;
-                var dl = document.getElementById('clientNewProjectDeadline').value;
-                var token = sessionStorage.getItem('authToken');
-                fetch((window.API_BASE || '') + '/api/portal/client-project', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ name: nm, description: ds, deadline: dl })
-                })
-                    .then(function (r) {
-                        if (!r.ok) throw new Error('fail');
-                        return r.json();
-                    })
-                    .then(function () {
-                        addModal.classList.remove('open');
-                        addForm.reset();
-                        return fetch((window.API_BASE || '') + '/api/portal/bootstrap', {
-                            headers: { Authorization: 'Bearer ' + token }
-                        });
-                    })
-                    .then(function (r) {
-                        if (r && r.ok) return r.json();
-                    })
-                    .then(function (data) {
-                        if (data && data.portalProjects) __portalCache.portalProjects = data.portalProjects;
-                        loadClientDashboard();
-                        refreshNotificationsBadge();
-                        alert('Project submitted for review.');
-                    })
-                    .catch(function () {
-                        alert('Could not add project.');
-                    });
-            });
-        }
-    }
-
+    
     // Load documents from database
     function loadClientDocuments() {
         if (!authToken || !currentUser) {
@@ -2322,6 +2269,60 @@ function loadClientDashboard() {
         }
     }
     
+    // Setup project inquiry modal
+    const inquiryModal = document.getElementById('clientProjectInquiryModal');
+    const inquiryForm = document.getElementById('clientProjectInquiryForm');
+    
+    if (inquiryForm) {
+        inquiryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+            if (!currentUser) {
+                alert('Please log in to send inquiries.');
+                return;
+            }
+            
+            const inquiryData = {
+                projectId: document.getElementById('inquiryProjectId').value,
+                projectName: document.getElementById('inquiryProjectName').value,
+                clientEmail: currentUser.email,
+                clientName: currentUser.name,
+                subject: document.getElementById('inquirySubject').value,
+                message: document.getElementById('inquiryMessage').value,
+                priority: document.getElementById('inquiryPriority').value,
+                createdAt: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            // Send inquiry to backend
+            fetch(`${window.API_BASE}/api/inquiries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(inquiryData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to send inquiry');
+                }
+                return response.json();
+            })
+            .then(() => {
+                alert('Your inquiry has been sent successfully! We will respond within 24 hours.');
+                inquiryForm.reset();
+                inquiryModal.classList.remove('open');
+            })
+            .catch(error => {
+                console.error('Error sending inquiry:', error);
+                alert('Failed to send inquiry. Please try again.');
+            });
+        });
+    }
+    
+    loadClientInquiries();
     loadClientInvoices();
 
     const timelineList = document.getElementById('clientTimelineList');
@@ -2593,6 +2594,9 @@ window.renderAdminProjectsTable = function () {
         return response.json();
     })
     .then(projects => {
+        console.log('Loaded projects from database:', projects);
+        console.log('Sample project structure:', projects[0]);
+        
         var f = window._adminProjectFilter || 'all';
         var filtered =
             f === 'all'
@@ -2601,8 +2605,7 @@ window.renderAdminProjectsTable = function () {
                       return adminPortalProjectGroup(p) === f;
                   });
         if (!projects.length) {
-            tbody.innerHTML =
-                '<tr><td colspan="7">No portal projects yet. Add one with <strong>New Project</strong>.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</td></tr>';
             return;
         }
         
@@ -2707,19 +2710,34 @@ window.adminInvoicePrefill = function (client, projectName) {
 };
 
 window.editProject = function(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => String(p.id) === projectId);
-    if (!project) return;
-    
-    // Populate form with existing data
-    document.getElementById('adminProjectId').value = project._id || project.id || '';
-    document.getElementById('adminProjectName').value = project.name || '';
-    document.getElementById('adminProjectClient').value = project.client || '';
-    document.getElementById('adminProjectBudget').value = project.budget || '';
-    document.getElementById('adminProjectProgress').value = project.progress || 0;
-    document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
-    document.getElementById('adminProjectStatus').value = project.status || 'Active';
-    document.getElementById('adminProjectDeadline').value = project.deadline || '';
+    // Load projects from database to find the project to edit
+    fetch(`${window.API_BASE}/api/projects`, {
+        headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load projects');
+        }
+        return response.json();
+    })
+    .then(projects => {
+        const project = projects.find(p => String(p._id || p.id) === projectId);
+        if (!project) {
+            console.error('Project not found:', projectId);
+            return;
+        }
+        
+        // Populate form with existing data
+        document.getElementById('adminProjectId').value = project._id || project.id || '';
+        document.getElementById('adminProjectName').value = project.name || '';
+        document.getElementById('adminProjectClient').value = project.client || '';
+        document.getElementById('adminProjectBudget').value = project.budget || '';
+        document.getElementById('adminProjectProgress').value = project.progress || 0;
+        document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
+        document.getElementById('adminProjectStatus').value = project.status || 'Active';
+        document.getElementById('adminProjectDeadline').value = project.deadline || '';
     
     // Handle location fields
     if (project.location && typeof project.location === 'object') {
@@ -2753,13 +2771,33 @@ window.editProject = function(projectId) {
     document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
     
     // Show modal
-    document.getElementById('adminProjectModal').classList.add('open');
+        document.getElementById('adminProjectModal').classList.add('open');
+    })
+    .catch(error => {
+        console.error('Error loading project for edit:', error);
+        alert('Failed to load project details. Please try again.');
+    });
 };
 
 window.viewProjectDetails = function(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => String(p.id) === projectId);
-    if (!project) return;
+    // Load projects from database to find the project to view
+    fetch(`${window.API_BASE}/api/projects`, {
+        headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load projects');
+        }
+        return response.json();
+    })
+    .then(projects => {
+        const project = projects.find(p => String(p._id || p.id) === projectId);
+        if (!project) {
+            console.error('Project not found:', projectId);
+            return;
+        }
     
     const modal = document.getElementById('adminViewProjectModal');
     const content = document.getElementById('adminViewProjectContent');
@@ -2848,14 +2886,24 @@ window.viewProjectDetails = function(projectId) {
     `;
     
     content.innerHTML = detailsHTML;
-    modal.classList.add('open');
+        modal.classList.add('open');
+    })
+    .catch(error => {
+        console.error('Error loading project details:', error);
+        alert('Failed to load project details. Please try again.');
+    });
 };
 
 window.deleteProject = function(projectId) {
+    console.log('Delete project called with projectId:', projectId);
+    console.log('Type of projectId:', typeof projectId);
+    
     if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
     
     // Call MongoDB API to delete project
     const authToken = sessionStorage.getItem('authToken');
+    
+    console.log('Making DELETE request to:', `${window.API_BASE}/api/projects/${projectId}`);
     
     fetch(`${window.API_BASE}/api/projects/${projectId}`, {
         method: 'DELETE',
@@ -2885,6 +2933,18 @@ window.deleteProject = function(projectId) {
         console.error('Error deleting project:', error);
         alert('Failed to delete project. Please try again.');
     });
+};
+
+window.openProjectInquiryModal = function(projectId, projectName) {
+    const modal = document.getElementById('clientProjectInquiryModal');
+    if (!modal) return;
+    
+    // Set project information
+    document.getElementById('inquiryProjectId').value = projectId;
+    document.getElementById('inquiryProjectName').value = projectName;
+    
+    // Open the modal
+    modal.classList.add('open');
 };
 
 window.openRequestFundsModal = function(projectId) {

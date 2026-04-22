@@ -125,11 +125,10 @@
             <!-- My Projects: only projects list -->
             <section id="client-projects" class="portal-section" style="display: none;">
                 <div class="table-container">
-                    <div class="table-header" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+                    <div class="table-header">
                         <h2 style="margin:0;">My Projects</h2>
-                        <button type="button" class="btn btn-primary" id="clientAddProjectBtn"><i class="fas fa-plus"></i> Add project</button>
                     </div>
-                    <p class="section-sub" style="margin-bottom:12px;">Filter by status. Projects you add are reviewed by the team.</p>
+                    <p class="section-sub" style="margin-bottom:12px;">Filter by status. Projects are assigned by the admin team. Contact support for project inquiries.</p>
                     <div class="project-filter-tabs" id="clientProjectFilterTabs">
                         <button type="button" class="filter-btn active" data-filter="all">All</button>
                         <button type="button" class="filter-btn" data-filter="ongoing">Ongoing</button>
@@ -360,29 +359,37 @@
             </div>
         </div>
 
-        <div class="modal" id="clientAddProjectModal">
+        <div class="modal" id="clientProjectInquiryModal">
             <div class="modal-content">
-                <span class="close-modal" data-close="clientAddProjectModal">&times;</span>
-                <h2>Request a new project</h2>
-                <p class="modal-subtitle">Describe your project. Our team will review and follow up.</p>
-                <form id="clientAddProjectForm">
+                <span class="close-modal" data-close="clientProjectInquiryModal">&times;</span>
+                <h2>Project Inquiry</h2>
+                <p class="modal-subtitle">Send a message about this project</p>
+                <form id="clientProjectInquiryForm">
+                    <input type="hidden" id="inquiryProjectId">
+                    <input type="hidden" id="inquiryProjectName">
                     <div class="form-group">
-                        <label>Project name</label>
-                        <input type="text" id="clientNewProjectName" required placeholder="e.g. Residential tower">
+                        <label>Subject</label>
+                        <input type="text" id="inquirySubject" required placeholder="Enter inquiry subject">
                     </div>
                     <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="clientNewProjectDesc" rows="4" placeholder="Scope, location, and goals…"></textarea>
+                        <label>Message</label>
+                        <textarea id="inquiryMessage" rows="4" required placeholder="Describe your inquiry or question about this project"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Preferred deadline (optional)</label>
-                        <input type="date" id="clientNewProjectDeadline">
+                        <label>Priority</label>
+                        <select id="inquiryPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
                     </div>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary">Send Inquiry</button>
                 </form>
             </div>
         </div>
-    </div>
+
+            </div>
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
     <script src="../portal-script.js"></script>
