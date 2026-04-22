@@ -1247,22 +1247,22 @@ function setupAdminInteractions(currentUser) {
             console.log('Should create foreman account:', shouldCreateForemanAccount);
             
             if (shouldCreateForemanAccount) {
-                const foremanNameEl = document.getElementById('projectForemanName2');
-                const foremanIdEl = document.getElementById('projectForemanId');
-                const foremanPasswordEl = document.getElementById('projectForemanPassword');
+                // Use selected foreman data instead of manual input fields
+                if (!selectedForeman) {
+                    alert('Please select a foreman before creating a foreman account.');
+                    return;
+                }
                 
-                console.log('Foreman name element:', foremanNameEl);
-                console.log('Foreman ID element:', foremanIdEl);
-                console.log('Foreman password element:', foremanPasswordEl);
+                console.log('Using selected foreman:', selectedForeman);
                 
-                const foremanName = foremanNameEl ? foremanNameEl.value : '';
-                const foremanId = foremanIdEl ? foremanIdEl.value : '';
-                const foremanPassword = foremanPasswordEl ? foremanPasswordEl.value : '';
+                const foremanName = selectedForeman.name || '';
+                const foremanId = selectedForeman.id || '';
+                const foremanPassword = selectedForeman.password || '';
                 
                 console.log('Foreman values:', { foremanName, foremanId, foremanPassword });
                 
-                if (!foremanName || !foremanId || !foremanPassword) {
-                    alert('Please fill in all foreman credentials when creating a foreman account.');
+                if (!foremanName || !foremanId) {
+                    alert('Selected foreman is missing required information.');
                     return;
                 }
             }
@@ -1407,12 +1407,12 @@ function setupAdminInteractions(currentUser) {
             });
             
             // Handle foreman account creation if requested
-            if (createForemanAccount && foremanId) {
+            if (createForemanAccount && selectedForeman) {
                 const foremanData = {
-                    name: document.getElementById('projectForemanName2').value,
-                    id: document.getElementById('projectForemanId').value,
-                    password: document.getElementById('projectForemanPassword').value,
-                    email: `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
+                    name: selectedForeman.name,
+                    id: selectedForeman.id,
+                    password: selectedForeman.password || 'temp123', // Default password if not provided
+                    email: selectedForeman.email || `${selectedForeman.id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
                     assignedProjects: [name],
@@ -1482,50 +1482,55 @@ function setupAdminInteractions(currentUser) {
         } catch (e) {
             alert('Could not delete user.');
         }
-    };
-    window.editProject = function(projectId) {
-        const projects = getStored('portalProjects', []);
-        const project = projects.find(p => p.id === projectId);
-        if (!project) return;
-        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-        document.getElementById('adminProjectId').value = project.id;
-        document.getElementById('adminProjectName').value = project.name;
-        document.getElementById('adminProjectClient').value = project.client;
-        document.getElementById('adminProjectBudget').value = project.budget || '';
-        document.getElementById('adminProjectProgress').value = project.progress || 0;
-        document.getElementById('adminProjectStatus').value = project.status || 'Active';
-        const catEl = document.getElementById('adminProjectCategory');
-        if (catEl) catEl.value = project.category || 'Commercial';
-        const moneyPaidEl = document.getElementById('adminProjectMoneyPaid');
-        const moneyUsedEl = document.getElementById('adminProjectMoneyUsed');
-        const moneyRemainingEl = document.getElementById('adminProjectMoneyRemaining');
-        const moneyOwedEl = document.getElementById('adminProjectMoneyOwed');
-        if (moneyPaidEl) moneyPaidEl.value = project.moneyPaid || '';
-        if (moneyUsedEl) moneyUsedEl.value = project.moneyUsed || '';
-        if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
-        if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
-        document.getElementById('adminProjectModal').classList.add('open');
-        var dlEl = document.getElementById('adminProjectDeadline');
-        if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
-    };
-    window.viewProject = function(projectId) {
-        const projects = getStored('portalProjects', []);
-        const project = projects.find(p => p.id === projectId);
-        if (!project) return;
-        document.getElementById('adminViewProjectContent').innerHTML = `
-            <p><strong>Name:</strong> ${project.name}</p>
-            <p><strong>Client:</strong> ${project.client}</p>
-            <p><strong>Location:</strong> ${project.location || '-'}</p>
-            <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
-            <p><strong>Budget:</strong> ${project.budget || '-'}</p>
-            <p><strong>Progress:</strong> ${project.progress}%</p>
-            <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
-            <p><strong>Status:</strong> ${project.status}</p>
-            <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
-            <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
-        `;
-        document.getElementById('adminViewProjectModal').classList.add('open');
-    };
+        __portalCache.portalUsers = (__portalCache.portalUsers || []).filter(function (u) {
+            return String(u.id) !== String(userId);
+        });
+        renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
+};
+
+window.editProject = function(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => String(p._id || p.id) === projectId);
+    if (!project) return;
+    document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
+    document.getElementById('adminProjectId').value = project._id || project.id;
+    document.getElementById('adminProjectName').value = project.name;
+    document.getElementById('adminProjectClient').value = project.client;
+    document.getElementById('adminProjectBudget').value = project.budget || '';
+    document.getElementById('adminProjectProgress').value = project.progress || 0;
+    document.getElementById('adminProjectStatus').value = project.status || 'Active';
+    const catEl = document.getElementById('adminProjectCategory');
+    if (catEl) catEl.value = project.category || 'Commercial';
+    const moneyPaidEl = document.getElementById('adminProjectMoneyPaid');
+    const moneyUsedEl = document.getElementById('adminProjectMoneyUsed');
+    const moneyRemainingEl = document.getElementById('adminProjectMoneyRemaining');
+    const moneyOwedEl = document.getElementById('adminProjectMoneyOwed');
+    if (moneyPaidEl) moneyPaidEl.value = project.moneyPaid || '';
+    if (moneyUsedEl) moneyUsedEl.value = project.moneyUsed || '';
+    if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
+    if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
+    document.getElementById('adminProjectModal').classList.add('open');
+    var dlEl = document.getElementById('adminProjectDeadline');
+    if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
+};
+window.viewProject = function(projectId) {
+    const projects = getStored('portalProjects', []);
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    document.getElementById('adminViewProjectContent').innerHTML = `
+        <p><strong>Name:</strong> ${project.name}</p>
+        <p><strong>Client:</strong> ${project.client}</p>
+        <p><strong>Location:</strong> ${project.location || '-'}</p>
+        <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
+        <p><strong>Budget:</strong> ${project.budget || '-'}</p>
+        <p><strong>Progress:</strong> ${project.progress}%</p>
+        <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
+        <p><strong>Status:</strong> ${project.status}</p>
+        <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
+        <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
+    `;
+    document.getElementById('adminViewProjectModal').classList.add('open');
+};
 
 window.viewProjectWorkers = function(projectId) {
         const projects = getStored('portalProjects', []);
@@ -1924,7 +1929,7 @@ window.applyClientProjectFilter = function () {
             var deadline = project.deadline || project.completionDate || '-';
             var ups = adminUpdates.filter(function (u) {
                 return (
-                    String(u.projectId) === String(project.id) ||
+                    String(u.projectId) === String(project._id || project.id) ||
                     (u.projectName && u.projectName === project.name)
                 );
             });
@@ -1978,7 +1983,7 @@ window.applyClientProjectFilter = function () {
                 '</p>' +
                 upHtml +
                 '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(' +
-                project.id +
+                (project._id || project.id) +
                 ')">View Details</button>' +
                 '</div></div>'
             );
@@ -2069,6 +2074,7 @@ function loadClientDashboard() {
             window._clientProjectsList = formattedProjects;
             window._clientProjectFilter = window._clientProjectFilter || 'all';
             window.applyClientProjectFilter();
+            updateClientStats();
         })
         .catch(error => {
             console.error('Error loading client projects:', error);
@@ -2076,12 +2082,14 @@ function loadClientDashboard() {
             window._clientProjectsList = [];
             window._clientProjectFilter = window._clientProjectFilter || 'all';
             window.applyClientProjectFilter();
+            updateClientStats();
         });
     } else {
         // No auth token or user, show empty projects
         window._clientProjectsList = [];
         window._clientProjectFilter = window._clientProjectFilter || 'all';
         window.applyClientProjectFilter();
+        updateClientStats();
     }
     var clientProjTabs = document.querySelectorAll('#clientProjectFilterTabs .filter-btn');
     if (clientProjTabs.length && !window._clientProjectsFilterBound) {
@@ -2097,24 +2105,31 @@ function loadClientDashboard() {
             });
         });
     }
-    var pendingInv = (getStored('clientInvoices', []) || []).filter(function (i) {
-        return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
-    }).length;
-    var docCount = (getStored('clientDocuments', []) || []).length;
-    var ongoing = projects.filter(function (p) {
-        return clientPortalProjectGroup(p) !== 'completed';
-    }).length;
-    var elP = document.getElementById('clientStatProjects');
-    var elD = document.getElementById('clientStatDocs');
-    var elI = document.getElementById('clientStatInvoices');
-    var elM = document.getElementById('clientStatMilestones');
-    if (elP) elP.textContent = String(projects.length);
-    if (elD) elD.textContent = String(docCount);
-    if (elI) elI.textContent = String(pendingInv);
-    if (elM) elM.textContent = String(ongoing);
+    // Update statistics after projects are loaded
+    function updateClientStats() {
+        const projects = window._clientProjectsList || [];
+        var pendingInv = (getStored('clientInvoices', []) || []).filter(function (i) {
+            return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
+        }).length;
+        var docCount = (getStored('clientDocuments', []) || []).length;
+        var ongoing = projects.filter(function (p) {
+            return clientPortalProjectGroup(p) !== 'completed';
+        }).length;
+        var elP = document.getElementById('clientStatProjects');
+        var elD = document.getElementById('clientStatDocs');
+        var elI = document.getElementById('clientStatInvoices');
+        var elM = document.getElementById('clientStatMilestones');
+        if (elP) elP.textContent = String(projects.length);
+        if (elD) elD.textContent = String(docCount);
+        if (elI) elI.textContent = String(pendingInv);
+        if (elM) elM.textContent = String(ongoing);
 
-    // Update money overview cards
-    updateMoneyOverview(projects);
+        // Update money overview cards
+        updateMoneyOverview(projects);
+    }
+    
+    // Call update stats after projects are loaded
+    updateClientStats();
 
     var addBtn = document.getElementById('clientAddProjectBtn');
     var addModal = document.getElementById('clientAddProjectModal');
@@ -2613,7 +2628,7 @@ function renderProjectsFromDatabase(tbody, projects) {
             var dl = project.deadline || project.completionDate || '-';
             var clientEsc = String(project.client || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             var nameEsc = String(project.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            var idStr = project.id;
+            var idStr = project._id || project.id;
             return (
                 '<tr>' +
                 '<td>' +
@@ -2697,7 +2712,7 @@ window.editProject = function(projectId) {
     if (!project) return;
     
     // Populate form with existing data
-    document.getElementById('adminProjectId').value = project.id || '';
+    document.getElementById('adminProjectId').value = project._id || project.id || '';
     document.getElementById('adminProjectName').value = project.name || '';
     document.getElementById('adminProjectClient').value = project.client || '';
     document.getElementById('adminProjectBudget').value = project.budget || '';
@@ -3889,7 +3904,7 @@ function populateTaskDropdowns() {
     if (projectSelect) {
         projectSelect.innerHTML = '<option value="">Select project</option>' +
             projects.map(project => 
-                `<option value="${project.id}">${project.name}</option>`
+                `<option value="${project._id || project.id}">${project.name}</option>`
             ).join('');
     }
 }
@@ -4049,7 +4064,7 @@ function populateProjectDropdown(selectId) {
     if (select) {
         select.innerHTML = '<option value="">Select project</option>' +
             projects.map(project => 
-                `<option value="${project.id}">${project.name}</option>`
+                `<option value="${project._id || project.id}">${project.name}</option>`
             ).join('');
     }
 }
