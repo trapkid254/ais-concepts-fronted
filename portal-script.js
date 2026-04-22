@@ -1464,21 +1464,52 @@ function setupAdminInteractions(currentUser) {
                 completionDate: deadline || ''
             };
             
-            // Use the correct endpoint for admin project creation
-            const endpoint = id ? `${window.API_BASE}/api/admin/projects/${id}` : `${window.API_BASE}/api/admin/projects`;
-            const method = id ? 'PUT' : 'POST';
+            // Use the same pattern as projects-data.js - update the entire projects array
+            // First get existing projects, then add/update the new one
+            const authToken = sessionStorage.getItem('authToken');
             
-            fetch(endpoint, {
-                method: method,
+            fetch(`${window.API_BASE}/api/projects`, {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify(projectData)
+                    'Authorization': `Bearer ${authToken}`
+                }
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Failed to save project to database: ${response.status} ${response.statusText}`);
+                    throw new Error('Failed to fetch existing projects');
+                }
+                return response.json();
+            })
+            .then(existingProjects => {
+                // Ensure we have an array
+                const projectsArray = Array.isArray(existingProjects) ? existingProjects : [];
+                
+                // Add or update the project
+                if (id) {
+                    // Update existing project
+                    const index = projectsArray.findIndex(p => String(p.id) === id);
+                    if (index >= 0) {
+                        projectsArray[index] = projectData;
+                    } else {
+                        projectsArray.push(projectData);
+                    }
+                } else {
+                    // Add new project
+                    projectsArray.push(projectData);
+                }
+                
+                // Save the entire projects array
+                return fetch(`${window.API_BASE}/api/admin/projects`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(projectsArray)
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to save projects: ${response.status} ${response.statusText}`);
                 }
                 return response.json();
             })
@@ -1513,18 +1544,50 @@ function setupAdminInteractions(currentUser) {
                 
                 console.log('Creating foreman account with data:', foremanData);
                 
-                // Use the users endpoint to create foreman account
+                // Use the same pattern as user management - get existing users, then add the new one
+                const authToken = sessionStorage.getItem('authToken');
+                
                 fetch(`${window.API_BASE}/api/admin/users`, {
-                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-                    },
-                    body: JSON.stringify(foremanData)
+                        'Authorization': `Bearer ${authToken}`
+                    }
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
+                        throw new Error('Failed to fetch existing users');
+                    }
+                    return response.json();
+                })
+                .then(existingUsers => {
+                    // Ensure we have an array
+                    const usersArray = Array.isArray(existingUsers) ? existingUsers : [];
+                    
+                    // Check if user already exists
+                    const existingIndex = usersArray.findIndex(u => 
+                        u.username === foremanData.username || u.email === foremanData.email
+                    );
+                    
+                    if (existingIndex >= 0) {
+                        // Update existing user
+                        usersArray[existingIndex] = { ...usersArray[existingIndex], ...foremanData };
+                    } else {
+                        // Add new user
+                        usersArray.push(foremanData);
+                    }
+                    
+                    // Save the entire users array
+                    return fetch(`${window.API_BASE}/api/admin/users`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(usersArray)
+                    });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to save users: ${response.status} ${response.statusText}`);
                     }
                     return response.json();
                 })
