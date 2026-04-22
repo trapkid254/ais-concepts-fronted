@@ -1934,10 +1934,10 @@ window.applyClientProjectFilter = function () {
                 '<div class="project-card">' +
                 '<div class="project-image">' +
                 '<img src="' +
-                (project.image || '../images/project1.jpg') +
+                (project.image || '/images/project1.jpg') +
                 '" alt="' +
                 escapeHtml(project.name) +
-                '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Project\'">' +
+                '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbT0iYmFzZWxpbmUiPlByb2plY3Q8L3RleHQ+PC9zdmc+\'">' +
                 '</div>' +
                 '<div class="project-details">' +
                 '<h3>' +
@@ -1970,6 +1970,42 @@ window.applyClientProjectFilter = function () {
         .join('');
 };
 
+// Money Overview Function
+function updateMoneyOverview(projects) {
+    var totalPaid = 0;
+    var totalUsed = 0;
+    var totalBudget = 0;
+    
+    projects.forEach(function(project) {
+        var paid = parseFloat(project.moneyPaid) || 0;
+        var used = parseFloat(project.moneyUsed) || 0;
+        var remaining = parseFloat(project.moneyRemaining) || 0;
+        
+        totalPaid += paid;
+        totalUsed += used;
+        totalBudget += (paid + remaining);
+    });
+    
+    var totalLeft = totalBudget - totalUsed;
+    
+    // Update the DOM elements
+    var totalPaidEl = document.getElementById('totalPaid');
+    var moneyUsedEl = document.getElementById('moneyUsed');
+    var moneyLeftEl = document.getElementById('moneyLeft');
+    
+    if (totalPaidEl) {
+        totalPaidEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    
+    if (moneyUsedEl) {
+        moneyUsedEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+    
+    if (moneyLeftEl) {
+        moneyLeftEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    }
+}
+
 function loadClientDashboard() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
     var portalProjects = getStored('portalProjects', []);
@@ -1985,7 +2021,7 @@ function loadClientDashboard() {
             return {
                 id: p.id,
                 name: p.name,
-                image: p.image || '../images/project1.jpg',
+                image: p.image || '/images/project1.jpg',
                 progress: p.progress || 0,
                 status: p.status || 'Active',
                 nextMilestone: p.nextMilestone || '-',
@@ -3377,42 +3413,6 @@ function editTimeEntry(entryId) {
     if (modal) modal.classList.add('open');
 }
 
-// Money Overview Function
-function updateMoneyOverview(projects) {
-    var totalPaid = 0;
-    var totalUsed = 0;
-    var totalBudget = 0;
-    
-    projects.forEach(function(project) {
-        var paid = parseFloat(project.moneyPaid) || 0;
-        var used = parseFloat(project.moneyUsed) || 0;
-        var remaining = parseFloat(project.moneyRemaining) || 0;
-        
-        totalPaid += paid;
-        totalUsed += used;
-        totalBudget += (paid + remaining);
-    });
-    
-    var totalLeft = totalBudget - totalUsed;
-    
-    // Update the DOM elements
-    var totalPaidEl = document.getElementById('totalPaid');
-    var moneyUsedEl = document.getElementById('moneyUsed');
-    var moneyLeftEl = document.getElementById('moneyLeft');
-    
-    if (totalPaidEl) {
-        totalPaidEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyUsedEl) {
-        moneyUsedEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyLeftEl) {
-        moneyLeftEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const addFundsBtn = document.getElementById('addFundsBtn');
     const addFundsModal = document.getElementById('clientAddFundsModal');
@@ -4703,6 +4703,13 @@ function setupFAQManagement() {
             if (faqForm) {
                 faqForm.style.display = 'none';
                 addNewFAQForm.reset();
+                document.getElementById('editFAQId').value = '';
+                
+                // Reset form title back to "Add New FAQ"
+                const formTitle = faqForm.querySelector('h3');
+                if (formTitle) {
+                    formTitle.innerHTML = '<i class="fas fa-question-circle"></i> Add New FAQ';
+                }
             }
         });
     }
@@ -4751,6 +4758,12 @@ function setupFAQManagement() {
                 if (editId) editId.value = '';
                 if (faqForm) {
                     faqForm.style.display = 'none';
+                    
+                    // Reset form title back to "Add New FAQ"
+                    const formTitle = faqForm.querySelector('h3');
+                    if (formTitle) {
+                        formTitle.innerHTML = '<i class="fas fa-question-circle"></i> Add New FAQ';
+                    }
                 }
                 
                 alert(isEdit ? 'FAQ updated successfully!' : 'FAQ added successfully!');
@@ -4838,9 +4851,16 @@ function editFAQ(category, id) {
         const faqForm = document.getElementById('adminFAQForm');
         if (faqForm) {
             faqForm.style.display = 'block';
+            document.getElementById('editFAQId').value = faq.id;
             document.getElementById('newFAQCategory').value = category;
             document.getElementById('newFAQQuestion').value = faq.question;
             document.getElementById('newFAQAnswer').value = faq.answer;
+            
+            // Change form title to indicate editing
+            const formTitle = faqForm.querySelector('h3');
+            if (formTitle) {
+                formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit FAQ';
+            }
         }
     })
     .catch(function(err) {

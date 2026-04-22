@@ -258,7 +258,7 @@
             const tableBody = document.getElementById('foremanWorkersTableBody');
             tableBody.innerHTML = workers.map(worker => `
                 <tr>
-                    <td><img src="${worker.faceData?.faceImage || '../images/default-avatar.png'}" alt="${worker.name}" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                    <td><img src="${worker.faceData?.faceImage || '/images/default-avatar.png'}" alt="${worker.name}" style="width: 40px; height: 40px; border-radius: 50%;"></td>
                     <td>${worker.name}</td>
                     <td>${worker.nationalId}</td>
                     <td>${worker.phone}</td>
