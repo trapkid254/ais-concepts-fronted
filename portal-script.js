@@ -1317,7 +1317,7 @@ function setupAdminInteractions(currentUser) {
                     deadline,
                     assignedForeman,
                     createForemanAccount,
-                    progress,
+                    progress: project.progress || 0,
                     status,
                     category,
                     moneyPaid,
@@ -4705,10 +4705,19 @@ function setupFAQManagement() {
                 addNewFAQForm.reset();
                 document.getElementById('editFAQId').value = '';
                 
-                // Reset form title back to "Add New FAQ"
-                const formTitle = faqForm.querySelector('h3');
+                // Reset form title and button text back to "Add New FAQ"
+                const formTitle = document.getElementById('faqFormTitle');
+                const submitBtn = document.getElementById('submitFAQBtn');
+                const submitBtnText = document.getElementById('submitFAQText');
+                
                 if (formTitle) {
-                    formTitle.innerHTML = '<i class="fas fa-question-circle"></i> Add New FAQ';
+                    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Add New FAQ';
+                }
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> <span id="submitFAQText">Add FAQ</span>';
+                }
+                if (submitBtnText) {
+                    submitBtnText.textContent = 'Add FAQ';
                 }
             }
         });
@@ -4788,22 +4797,56 @@ function renderAdminFAQs() {
         });
     })
     .then(function(faqs) {
+        const generalFAQs = faqs.general || [];
+        const servicesFAQs = faqs.services || [];
+        const processFAQs = faqs.process || [];
+        
+        // Update statistics
+        updateFAQStatistics(generalFAQs, servicesFAQs, processFAQs);
+        
         // Render General FAQs
         const generalContainer = document.getElementById('adminGeneralFAQs');
         if (generalContainer) {
-            generalContainer.innerHTML = (faqs.general || []).map(faq => createAdminFAQItem(faq, 'general')).join('');
+            if (generalFAQs.length === 0) {
+                generalContainer.innerHTML = `
+                    <div class="faq-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        No general FAQs available. Add your first FAQ to get started.
+                    </div>
+                `;
+            } else {
+                generalContainer.innerHTML = generalFAQs.map(faq => createAdminFAQItem(faq, 'general')).join('');
+            }
         }
         
         // Render Services FAQs
         const servicesContainer = document.getElementById('adminServicesFAQs');
         if (servicesContainer) {
-            servicesContainer.innerHTML = (faqs.services || []).map(faq => createAdminFAQItem(faq, 'services')).join('');
+            if (servicesFAQs.length === 0) {
+                servicesContainer.innerHTML = `
+                    <div class="faq-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        No service FAQs available. Add your first FAQ to get started.
+                    </div>
+                `;
+            } else {
+                servicesContainer.innerHTML = servicesFAQs.map(faq => createAdminFAQItem(faq, 'services')).join('');
+            }
         }
         
         // Render Process FAQs
         const processContainer = document.getElementById('adminProcessFAQs');
         if (processContainer) {
-            processContainer.innerHTML = (faqs.process || []).map(faq => createAdminFAQItem(faq, 'process')).join('');
+            if (processFAQs.length === 0) {
+                processContainer.innerHTML = `
+                    <div class="faq-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        No process FAQs available. Add your first FAQ to get started.
+                    </div>
+                `;
+            } else {
+                processContainer.innerHTML = processFAQs.map(faq => createAdminFAQItem(faq, 'process')).join('');
+            }
         }
     })
     .catch(function(err) {
@@ -4812,26 +4855,56 @@ function renderAdminFAQs() {
         ['adminGeneralFAQs', 'adminServicesFAQs', 'adminProcessFAQs'].forEach(function(id) {
             const container = document.getElementById(id);
             if (container) {
-                container.innerHTML = '<p style="color: red;">Error loading FAQs. Please try again.</p>';
+                container.innerHTML = `
+                    <div class="faq-empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Error loading FAQs. Please try again.
+                    </div>
+                `;
             }
         });
     });
 }
 
+// Update FAQ statistics
+function updateFAQStatistics(generalFAQs, servicesFAQs, processFAQs) {
+    // Update individual category counts
+    const generalCount = document.getElementById('generalCount');
+    const servicesCount = document.getElementById('servicesCount');
+    const processCount = document.getElementById('processCount');
+    
+    if (generalCount) generalCount.textContent = generalFAQs.length;
+    if (servicesCount) servicesCount.textContent = servicesFAQs.length;
+    if (processCount) processCount.textContent = processFAQs.length;
+    
+    // Update total counts
+    const totalGeneral = document.getElementById('totalGeneralFAQs');
+    const totalServices = document.getElementById('totalServicesFAQs');
+    const totalProcess = document.getElementById('totalProcessFAQs');
+    const totalAll = document.getElementById('totalAllFAQs');
+    
+    if (totalGeneral) totalGeneral.textContent = generalFAQs.length;
+    if (totalServices) totalServices.textContent = servicesFAQs.length;
+    if (totalProcess) totalProcess.textContent = processFAQs.length;
+    if (totalAll) totalAll.textContent = generalFAQs.length + servicesFAQs.length + processFAQs.length;
+}
+
 function createAdminFAQItem(faq, category) {
     return `
-        <div class="faq-item-admin">
-            <div class="faq-content-admin">
-                <div class="faq-question-admin">${faq.question}</div>
-                <div class="faq-answer-admin">${faq.answer.substring(0, 100)}${faq.answer.length > 100 ? '...' : ''}</div>
-            </div>
-            <div class="faq-actions-admin">
-                <button class="btn-faq btn-faq-edit" onclick="editFAQ(${category}, ${faq.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-faq btn-faq-delete" onclick="deleteFAQ(${category}, ${faq.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
+        <div class="faq-item">
+            <div class="faq-item-content">
+                <div class="faq-item-main">
+                    <div class="faq-item-question">${faq.question}</div>
+                    <div class="faq-item-answer">${faq.answer}</div>
+                </div>
+                <div class="faq-item-actions">
+                    <button class="faq-action-btn edit" onclick="editFAQ('${category}', '${faq.id}')" title="Edit FAQ">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="faq-action-btn delete" onclick="deleteFAQ('${category}', '${faq.id}')" title="Delete FAQ">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -4856,10 +4929,19 @@ function editFAQ(category, id) {
             document.getElementById('newFAQQuestion').value = faq.question;
             document.getElementById('newFAQAnswer').value = faq.answer;
             
-            // Change form title to indicate editing
-            const formTitle = faqForm.querySelector('h3');
+            // Change form title and button text to indicate editing
+            const formTitle = document.getElementById('faqFormTitle');
+            const submitBtn = document.getElementById('submitFAQBtn');
+            const submitBtnText = document.getElementById('submitFAQText');
+            
             if (formTitle) {
                 formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit FAQ';
+            }
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Update FAQ';
+            }
+            if (submitBtnText) {
+                submitBtnText.textContent = 'Update FAQ';
             }
         }
     })

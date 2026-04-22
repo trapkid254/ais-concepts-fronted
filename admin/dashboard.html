@@ -1668,62 +1668,137 @@
                             <th>Featured</th>
                             <th>Actions</th>
                         </tr>
-                    </thead>
                     <tbody id="adminMarketingTableBody"></tbody>
                 </table>
             </section>
 
             <!-- FAQ Management Section -->
-            <section id="admin-faq" class="table-container portal-section" style="display: none;">
-                <div class="table-header">
-                    <h2>FAQ Management</h2>
-                    <button class="btn btn-primary" id="adminAddFAQBtn">
-                        <i class="fas fa-plus"></i> Add New FAQ
-                    </button>
-                </div>
-                
-                <!-- Add FAQ Form -->
-                <div class="card profile-form-login-style" id="adminFAQForm" style="display: none; margin-bottom: 24px;">
-                    <h3><i class="fas fa-question-circle"></i> Add New FAQ</h3>
-                    <form id="addNewFAQForm" class="portal-form-grid">
-                        <input type="hidden" id="editFAQId" value="">
-                        <div class="form-group">
-                            <label for="newFAQCategory">Category</label>
-                            <select id="newFAQCategory" class="form-control" >
-                                <option value="">Select Category</option>
-                                <option value="general">General</option>
-                                <option value="services">Services</option>
-                                <option value="process">Process</option>
-                            </select>
+            <section id="admin-faq" class="portal-section" style="display: none;">
+                <div class="faq-admin-container">
+                    <div class="faq-admin-header">
+                        <h2><i class="fas fa-question-circle"></i> FAQ Management</h2>
+                        <button class="btn btn-primary" id="adminAddFAQBtn">
+                            <i class="fas fa-plus"></i> Add New FAQ
+                        </button>
+                    </div>
+                    
+                    <!-- Statistics Row -->
+                    <div class="faq-stats-row">
+                        <div class="faq-stat-card">
+                            <div class="faq-stat-number" id="totalGeneralFAQs">0</div>
+                            <div class="faq-stat-label">General FAQs</div>
                         </div>
-                        <div class="form-group">
-                            <label for="newFAQQuestion">Question</label>
-                            <input type="text" id="newFAQQuestion" class="form-control" placeholder="Enter question" >
+                        <div class="faq-stat-card">
+                            <div class="faq-stat-number" id="totalServicesFAQs">0</div>
+                            <div class="faq-stat-label">Services FAQs</div>
                         </div>
-                        <div class="form-group full-width">
-                            <label for="newFAQAnswer">Answer</label>
-                            <textarea id="newFAQAnswer" class="form-control" rows="4" placeholder="Enter detailed answer" ></textarea>
+                        <div class="faq-stat-card">
+                            <div class="faq-stat-number" id="totalProcessFAQs">0</div>
+                            <div class="faq-stat-label">Process FAQs</div>
                         </div>
-                        <div class="form-group form-group-action full-width">
-                            <button type="submit" class="btn btn-primary">Add FAQ</button>
-                            <button type="button" class="btn btn-secondary" id="cancelFAQBtn">Cancel</button>
+                        <div class="faq-stat-card">
+                            <div class="faq-stat-number" id="totalAllFAQs">0</div>
+                            <div class="faq-stat-label">Total FAQs</div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <!-- Add FAQ Form -->
+                    <div class="faq-admin-form" id="adminFAQForm" style="display: none;">
+                        <h3 id="faqFormTitle"><i class="fas fa-plus-circle"></i> Add New FAQ</h3>
+                        <form id="addNewFAQForm" class="faq-form-grid">
+                            <input type="hidden" id="editFAQId" value="">
+                            <div class="faq-form-group">
+                                <label for="newFAQCategory" class="faq-form-label">
+                                    <i class="fas fa-tag"></i> Category
+                                </label>
+                                <select id="newFAQCategory" class="faq-form-control">
+                                    <option value="">Select Category</option>
+                                    <option value="general">General</option>
+                                    <option value="services">Services</option>
+                                    <option value="process">Process</option>
+                                </select>
+                            </div>
+                            <div class="faq-form-group">
+                                <label for="newFAQQuestion" class="faq-form-label">
+                                    <i class="fas fa-question"></i> Question
+                                </label>
+                                <input type="text" id="newFAQQuestion" class="faq-form-control" placeholder="Enter your question" >
+                            </div>
+                            <div class="faq-form-group full-width">
+                                <label for="newFAQAnswer" class="faq-form-label">
+                                    <i class="fas fa-comment-alt"></i> Answer
+                                </label>
+                                <textarea id="newFAQAnswer" class="faq-form-control" rows="4" placeholder="Provide a detailed and helpful answer" ></textarea>
+                            </div>
+                            <div class="faq-form-actions">
+                                <button type="submit" class="btn btn-primary" id="submitFAQBtn">
+                                    <i class="fas fa-save"></i> <span id="submitFAQText">Add FAQ</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelFAQBtn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
 
-                <!-- FAQ List -->
-                <div class="faq-admin-list">
-                    <div class="faq-category-admin">
-                        <h4>General Questions</h4>
-                        <div id="adminGeneralFAQs"></div>
-                    </div>
-                    <div class="faq-category-admin">
-                        <h4>Services Questions</h4>
-                        <div id="adminServicesFAQs"></div>
-                    </div>
-                    <div class="faq-category-admin">
-                        <h4>Process Questions</h4>
-                        <div id="adminProcessFAQs"></div>
+                    <!-- FAQ Categories -->
+                    <div class="faq-categories-container">
+                        <!-- General Questions -->
+                        <div class="faq-category-section">
+                            <div class="faq-category-header">
+                                <h3 class="faq-category-title">
+                                    <div class="faq-category-icon general">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    General Questions
+                                    <span class="faq-category-count" id="generalCount">0</span>
+                                </h3>
+                            </div>
+                            <div class="faq-items-container" id="adminGeneralFAQs">
+                                <div class="faq-empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    No general FAQs available. Add your first FAQ to get started.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Services Questions -->
+                        <div class="faq-category-section">
+                            <div class="faq-category-header">
+                                <h3 class="faq-category-title">
+                                    <div class="faq-category-icon services">
+                                        <i class="fas fa-cogs"></i>
+                                    </div>
+                                    Services Questions
+                                    <span class="faq-category-count" id="servicesCount">0</span>
+                                </h3>
+                            </div>
+                            <div class="faq-items-container" id="adminServicesFAQs">
+                                <div class="faq-empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    No service FAQs available. Add your first FAQ to get started.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Process Questions -->
+                        <div class="faq-category-section">
+                            <div class="faq-category-header">
+                                <h3 class="faq-category-title">
+                                    <div class="faq-category-icon process">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
+                                    Process Questions
+                                    <span class="faq-category-count" id="processCount">0</span>
+                                </h3>
+                            </div>
+                            <div class="faq-items-container" id="adminProcessFAQs">
+                                <div class="faq-empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    No process FAQs available. Add your first FAQ to get started.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
