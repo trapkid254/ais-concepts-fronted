@@ -1479,47 +1479,139 @@
             </section>
 
             <!-- Financial & Billing Section -->
-            <section id="admin-financial" class="table-container portal-section" style="display: none;">
-                <div class="table-header">
-                    <h2>Financial & Billing</h2>
-                    <div class="table-actions">
-                        <button class="btn btn-primary" id="adminAddFinancialBtn">
-                            <i class="fas fa-plus"></i> Add Entry
-                        </button>
-                        <button class="btn btn-secondary" id="adminExportFinancialBtn">
-                            <i class="fas fa-download"></i> Export
-                        </button>
+            <section id="admin-financial" class="portal-section" style="display: none;">
+                <div class="financial-admin-container">
+                    <div class="financial-header">
+                        <h2><i class="fas fa-chart-line"></i> Financial & Billing</h2>
+                        <div class="financial-actions">
+                            <button class="btn btn-primary" id="adminAddFinancialBtn">
+                                <i class="fas fa-plus"></i> Add Entry
+                            </button>
+                            <button class="btn btn-secondary" id="adminExportFinancialBtn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
                     </div>
-                    <div class="financial-summary">
-                        <div class="summary-card">
-                            <h4>Total Revenue</h4>
-                            <span id="totalRevenueAmount">KSH 0</span>
+                    
+                    <div class="financial-overview">
+                        <div class="financial-stats-grid">
+                            <div class="financial-stat-card revenue">
+                                <div class="financial-stat-icon revenue">
+                                    <i class="fas fa-arrow-trend-up"></i>
+                                </div>
+                                <div class="financial-stat-value" id="totalRevenueAmount">KSH 0</div>
+                                <div class="financial-stat-label">Total Revenue</div>
+                                <div class="financial-stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +12.5% from last month
+                                </div>
+                            </div>
+                            
+                            <div class="financial-stat-card pending">
+                                <div class="financial-stat-icon pending">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="financial-stat-value" id="pendingInvoiceAmount">KSH 0</div>
+                                <div class="financial-stat-label">Pending Invoices</div>
+                                <div class="financial-stat-change">
+                                    <i class="fas fa-minus"></i> 3 invoices awaiting payment
+                                </div>
+                            </div>
+                            
+                            <div class="financial-stat-card expenses">
+                                <div class="financial-stat-icon expenses">
+                                    <i class="fas fa-arrow-trend-down"></i>
+                                </div>
+                                <div class="financial-stat-value" id="totalExpenses">KSH 0</div>
+                                <div class="financial-stat-label">Total Expenses</div>
+                                <div class="financial-stat-change negative">
+                                    <i class="fas fa-arrow-up"></i> +8.2% from last month
+                                </div>
+                            </div>
+                            
+                            <div class="financial-stat-card">
+                                <div class="financial-stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #fff;">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div class="financial-stat-value" id="netProfitAmount">KSH 0</div>
+                                <div class="financial-stat-label">Net Profit</div>
+                                <div class="financial-stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +15.3% from last month
+                                </div>
+                            </div>
                         </div>
-                        <div class="summary-card">
-                            <h4>Pending Invoices</h4>
-                            <span id="pendingInvoiceAmount">KSH 0</span>
+                    </div>
+                    
+                    <div class="financial-filters">
+                        <div class="financial-filter-group">
+                            <label class="financial-filter-label">Type</label>
+                            <select class="financial-filter-select" id="financialTypeFilter">
+                                <option value="">All Types</option>
+                                <option value="revenue">Revenue</option>
+                                <option value="expense">Expense</option>
+                                <option value="invoice">Invoice</option>
+                            </select>
                         </div>
-                        <div class="summary-card">
-                            <h4>Expenses</h4>
-                            <span id="totalExpenses">KSH 0</span>
+                        
+                        <div class="financial-filter-group">
+                            <label class="financial-filter-label">Status</label>
+                            <select class="financial-filter-select" id="financialStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="pending">Pending</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
                         </div>
+                        
+                        <div class="financial-filter-group">
+                            <label class="financial-filter-label">Date Range</label>
+                            <select class="financial-filter-select" id="financialDateFilter">
+                                <option value="">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="financial-filter-group">
+                            <label class="financial-filter-label">Search</label>
+                            <input type="text" class="financial-filter-select" id="financialSearchFilter" placeholder="Search transactions...">
+                        </div>
+                    </div>
+                    
+                    <div class="financial-table-container">
+                        <table class="financial-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Client/Project</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Category</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminFinancialTableBody">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="financial-empty-state">
+                                            <i class="fas fa-receipt"></i>
+                                            <h3>No financial entries yet</h3>
+                                            <p>Add your first financial entry to start tracking revenue and expenses</p>
+                                            <button class="btn btn-primary" onclick="document.getElementById('adminAddFinancialBtn').click()">
+                                                <i class="fas fa-plus"></i> Add First Entry
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Client/Project</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Category</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminFinancialTableBody"></tbody>
-                </table>
             </section>
 
             <!-- Communication Section -->
@@ -1563,39 +1655,145 @@
             </section>
 
             <!-- Approvals Workflow Section -->
-            <section id="admin-approvals-workflow" class="table-container portal-section" style="display: none;">
-                <div class="table-header">
-                    <h2>Approvals Workflow</h2>
-                    <div class="approval-stats">
-                        <div class="approval-stat">
-                            <h4>Pending Client</h4>
-                            <span id="pendingClientApprovals">5</span>
-                        </div>
-                        <div class="approval-stat">
-                            <h4>Pending Authority</h4>
-                            <span id="pendingAuthorityApprovals">3</span>
-                        </div>
-                        <div class="approval-stat">
-                            <h4>Approved This Month</h4>
-                            <span id="approvedThisMonth">12</span>
+            <section id="admin-approvals-workflow" class="portal-section" style="display: none;">
+                <div class="approvals-admin-container">
+                    <div class="approvals-header">
+                        <h2><i class="fas fa-check-circle"></i> Approvals Workflow</h2>
+                        <div class="approvals-actions">
+                            <button class="btn btn-primary" id="adminAddApprovalBtn">
+                                <i class="fas fa-plus"></i> New Approval Request
+                            </button>
+                            <button class="btn btn-secondary" id="adminExportApprovalsBtn">
+                                <i class="fas fa-download"></i> Export Report
+                            </button>
                         </div>
                     </div>
+                    
+                    <div class="approvals-overview">
+                        <div class="approvals-stats-grid">
+                            <div class="approvals-stat-card pending">
+                                <div class="approvals-stat-icon pending">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="approvals-stat-value" id="pendingClientApprovals">5</div>
+                                <div class="approvals-stat-label">Pending Client Approval</div>
+                                <div class="approvals-stat-change">
+                                    <i class="fas fa-info-circle"></i> Awaiting client review
+                                </div>
+                            </div>
+                            
+                            <div class="approvals-stat-card authority">
+                                <div class="approvals-stat-icon authority">
+                                    <i class="fas fa-gavel"></i>
+                                </div>
+                                <div class="approvals-stat-value" id="pendingAuthorityApprovals">3</div>
+                                <div class="approvals-stat-label">Pending Authority Approval</div>
+                                <div class="approvals-stat-change">
+                                    <i class="fas fa-exclamation-triangle"></i> Requires authority review
+                                </div>
+                            </div>
+                            
+                            <div class="approvals-stat-card approved">
+                                <div class="approvals-stat-icon approved">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="approvals-stat-value" id="approvedThisMonth">12</div>
+                                <div class="approvals-stat-label">Approved This Month</div>
+                                <div class="approvals-stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> +20% from last month
+                                </div>
+                            </div>
+                            
+                            <div class="approvals-stat-card">
+                                <div class="approvals-stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff;">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="approvals-stat-value" id="avgApprovalTime">2.3</div>
+                                <div class="approvals-stat-label">Avg. Approval Time (days)</div>
+                                <div class="approvals-stat-change positive">
+                                    <i class="fas fa-arrow-down"></i> -0.5 days improvement
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="approvals-filters">
+                        <div class="approvals-filter-group">
+                            <label class="approvals-filter-label">Status</label>
+                            <select class="approvals-filter-select" id="approvalStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="pending-client">Pending Client</option>
+                                <option value="pending-authority">Pending Authority</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        
+                        <div class="approvals-filter-group">
+                            <label class="approvals-filter-label">Type</label>
+                            <select class="approvals-filter-select" id="approvalTypeFilter">
+                                <option value="">All Types</option>
+                                <option value="client">Client Approval</option>
+                                <option value="authority">Authority Approval</option>
+                                <option value="internal">Internal Review</option>
+                            </select>
+                        </div>
+                        
+                        <div class="approvals-filter-group">
+                            <label class="approvals-filter-label">Priority</label>
+                            <select class="approvals-filter-select" id="approvalPriorityFilter">
+                                <option value="">All Priorities</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        
+                        <div class="approvals-filter-group">
+                            <label class="approvals-filter-label">Project</label>
+                            <select class="approvals-filter-select" id="approvalProjectFilter">
+                                <option value="">All Projects</option>
+                            </select>
+                        </div>
+                        
+                        <div class="approvals-filter-group">
+                            <label class="approvals-filter-label">Search</label>
+                            <input type="text" class="approvals-filter-select" id="approvalSearchFilter" placeholder="Search approvals...">
+                        </div>
+                    </div>
+                    
+                    <div class="approvals-table-container">
+                        <table class="approvals-table">
+                            <thead>
+                                <tr>
+                                    <th>Document</th>
+                                    <th>Type</th>
+                                    <th>Project</th>
+                                    <th>Submitted By</th>
+                                    <th>Approval Type</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Priority</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminApprovalsWorkflowTableBody">
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="approvals-empty-state">
+                                            <i class="fas fa-clipboard-check"></i>
+                                            <h3>No approval requests</h3>
+                                            <p>There are currently no approval requests in the system</p>
+                                            <button class="btn btn-primary" onclick="document.getElementById('adminAddApprovalBtn').click()">
+                                                <i class="fas fa-plus"></i> Create First Approval Request
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Document</th>
-                            <th>Type</th>
-                            <th>Project</th>
-                            <th>Submitted By</th>
-                            <th>Approval Type</th>
-                            <th>Status</th>
-                            <th>Submitted</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminApprovalsWorkflowTableBody"></tbody>
-                </table>
             </section>
 
             <!-- Site Management Section -->
@@ -1871,10 +2069,10 @@
                         <div class="form-group">
                             <label>Status</label>
                             <select id="designStatus" >
-                                <option value="draft">Draft</option>
+                                <option value="planning">Planning</option>
                                 <option value="in-progress">In Progress</option>
                                 <option value="review">Review</option>
-                                <option value="approved">Approved</option>
+                                <option value="completed">Completed</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1886,6 +2084,75 @@
                             <textarea id="designDescription" rows="3" placeholder="Design description"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Design</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Portfolio Item Modal -->
+            <div class="modal" id="adminAddPortfolioModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminAddPortfolioModal">&times;</span>
+                    <h2>Add Portfolio Item</h2>
+                    <form id="adminAddPortfolioForm">
+                        <div class="form-group">
+                            <label>Project Title</label>
+                            <input type="text" id="portfolioTitle" required placeholder="Enter project title">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="portfolioCategory" required>
+                                <option value="">Select category</option>
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="industrial">Industrial</option>
+                                <option value="institutional">Institutional</option>
+                                <option value="landscape">Landscape</option>
+                                <option value="interior">Interior Design</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Client Name</label>
+                            <input type="text" id="portfolioClient" placeholder="Enter client name">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="portfolioLocation" placeholder="Enter project location">
+                        </div>
+                        <div class="form-group">
+                            <label>Completion Date</label>
+                            <input type="date" id="portfolioCompletionDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Project Value</label>
+                            <input type="text" id="portfolioValue" placeholder="e.g. KSH 5,000,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="portfolioDescription" rows="4" placeholder="Describe the project, challenges, and solutions"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Key Features</label>
+                            <textarea id="portfolioFeatures" rows="3" placeholder="List key features (one per line)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Images</label>
+                            <input type="file" id="portfolioImages" multiple accept="image/*">
+                            <small>Upload multiple project images (JPG, PNG)</small>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="portfolioFeatured"> Feature on homepage
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Status</label>
+                            <select id="portfolioStatus">
+                                <option value="completed">Completed</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="planned">Planned</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Portfolio Item</button>
                     </form>
                 </div>
             </div>

@@ -720,10 +720,10 @@ function setupAdminInteractions(currentUser) {
                 <td><span class="status-badge status-${foreman.status || 'active'}">${foreman.status || 'Active'}</span></td>
                 <td>${new Date(foreman.createdAt).toLocaleDateString()}</td>
                 <td>
-                    <button class="btn-icon" onclick="editForeman('${foreman.id}')" title="Edit foreman">
+                    <button class="btn-icon" onclick="editForeman('${foreman._id || foreman.id}')" title="Edit foreman">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon" onclick="deleteForeman('${foreman.id}')" title="Delete foreman">
+                    <button class="btn-icon" onclick="deleteForeman('${foreman._id || foreman.id}')" title="Delete foreman">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -733,20 +733,36 @@ function setupAdminInteractions(currentUser) {
     
     // Function to edit foreman
     window.editForeman = function(foremanId) {
-        const users = getStored('portalUsers', []);
-        const foreman = users.find(u => u.id === foremanId && u.role === 'foreman');
-        if (!foreman) return;
+        // Load foreman data from MongoDB
+        const authToken = sessionStorage.getItem('authToken');
         
-        // Populate form with existing data
-        document.getElementById('adminForemanName').value = foreman.name || '';
-        document.getElementById('adminForemanId').value = foreman.id || '';
-        document.getElementById('adminForemanEmail').value = foreman.email || '';
-        document.getElementById('adminForemanPhone').value = foreman.phone || '';
-        document.getElementById('adminForemanPassword').value = foreman.password || '';
-        document.getElementById('adminForemanConfirmPassword').value = foreman.password || '';
-        
-        // Show modal
-        document.getElementById('adminForemanModal').classList.add('open');
+        fetch(`${window.API_BASE}/api/users/${foremanId}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load foreman data');
+            }
+            return response.json();
+        })
+        .then(foreman => {
+            // Populate form with existing data
+            document.getElementById('adminForemanName').value = foreman.name || '';
+            document.getElementById('adminForemanId').value = foreman._id || foreman.id || '';
+            document.getElementById('adminForemanEmail').value = foreman.email || '';
+            document.getElementById('adminForemanPhone').value = foreman.phone || '';
+            document.getElementById('adminForemanPassword').value = '';
+            document.getElementById('adminForemanConfirmPassword').value = '';
+            
+            // Show modal
+            document.getElementById('adminForemanModal').classList.add('open');
+        })
+        .catch(error => {
+            console.error('Error loading foreman data:', error);
+            alert('Failed to load foreman data. Please try again.');
+        });
     };
     
     // Function to delete foreman
@@ -2008,18 +2024,34 @@ function updateMoneyOverview(projects) {
 
 function loadClientDashboard() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    var portalProjects = getStored('portalProjects', []);
-    var clientEmail = currentUser && (currentUser.email || '').toLowerCase();
-    var clientName = (currentUser && currentUser.name) || '';
-    var fromPortal = portalProjects.filter(function(p) {
-        var c = (p.client || '').toLowerCase();
-        return c === clientEmail || c === clientName.toLowerCase() || (p.client && currentUser && p.client.indexOf('@') !== -1 && p.client === currentUser.email);
-    });
-    var projects;
-    if (fromPortal.length) {
-        projects = fromPortal.map(function(p, i) {
-            return {
-                id: p.id,
+    
+    // Load projects from database instead of static data
+    const authToken = sessionStorage.getItem('authToken');
+    
+    if (authToken && currentUser) {
+        fetch(`${window.API_BASE}/api/projects?client=${encodeURIComponent(currentUser.email)}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load projects');
+            }
+            return response.json();
+        })
+        .then(projects => {
+            // Filter projects for this client
+            const clientProjects = projects.filter(p => {
+                const clientEmail = (p.client || '').toLowerCase();
+                const userEmail = currentUser.email.toLowerCase();
+                const userName = (currentUser.name || '').toLowerCase();
+                return clientEmail === userEmail || clientEmail === userName;
+            });
+            
+            // Format projects for client display
+            const formattedProjects = clientProjects.map(p => ({
+                id: p._id || p.id,
                 name: p.name,
                 image: p.image || '/images/project1.jpg',
                 progress: p.progress || 0,
@@ -2032,15 +2064,25 @@ function loadClientDashboard() {
                 moneyUsed: p.moneyUsed || '-',
                 moneyRemaining: p.moneyRemaining || '-',
                 moneyOwed: p.moneyOwed || '-'
-            };
+            }));
+            
+            window._clientProjectsList = formattedProjects;
+            window._clientProjectFilter = window._clientProjectFilter || 'all';
+            window.applyClientProjectFilter();
+        })
+        .catch(error => {
+            console.error('Error loading client projects:', error);
+            // Fallback to empty projects list
+            window._clientProjectsList = [];
+            window._clientProjectFilter = window._clientProjectFilter || 'all';
+            window.applyClientProjectFilter();
         });
-        setStored('clientProjects', projects);
     } else {
-        projects = getStored('clientProjects', []) || [];
+        // No auth token or user, show empty projects
+        window._clientProjectsList = [];
+        window._clientProjectFilter = window._clientProjectFilter || 'all';
+        window.applyClientProjectFilter();
     }
-    window._clientProjectsList = projects;
-    window._clientProjectFilter = window._clientProjectFilter || 'all';
-    window.applyClientProjectFilter();
     var clientProjTabs = document.querySelectorAll('#clientProjectFilterTabs .filter-btn');
     if (clientProjTabs.length && !window._clientProjectsFilterBound) {
         window._clientProjectsFilterBound = true;
@@ -2132,27 +2174,54 @@ function loadClientDashboard() {
         }
     }
 
-    const defaultDocs = [];
-    let documents = getStored('clientDocuments', null);
-    if (!documents || !documents.length) {
-        setStored('clientDocuments', defaultDocs);
-        documents = defaultDocs;
+    // Load documents from database
+    function loadClientDocuments() {
+        if (!authToken || !currentUser) {
+            renderClientDocuments([]);
+            return;
+        }
+        
+        fetch(`${window.API_BASE}/api/documents?client=${encodeURIComponent(currentUser.email)}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load documents');
+            }
+            return response.json();
+        })
+        .then(documents => {
+            renderClientDocuments(documents);
+        })
+        .catch(error => {
+            console.error('Error loading client documents:', error);
+            renderClientDocuments([]);
+        });
     }
-    function renderClientDocuments() {
-        const docs = getStored('clientDocuments', defaultDocs);
+    
+    function renderClientDocuments(docs) {
         const documentsList = document.getElementById('clientDocumentsBody');
         if (documentsList) {
-            documentsList.innerHTML = docs.map(doc => `
-                <tr>
-                    <td><i class="fas fa-file-pdf" style="color: #ff6b6b;"></i> ${doc.name}</td>
-                    <td>${doc.date}</td>
-                    <td>${doc.size}</td>
-                    <td><button class="btn-icon" onclick="downloadDocument('${doc.name.replace(/'/g, "\\'")}')"><i class="fas fa-download"></i></button></td>
-                </tr>
-            `).join('');
+            if (docs.length === 0) {
+                documentsList.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No documents available</td></tr>';
+            } else {
+                documentsList.innerHTML = docs.map(doc => `
+                    <tr>
+                        <td>${doc.name}</td>
+                        <td>${new Date(doc.createdAt).toLocaleDateString()}</td>
+                        <td>${doc.size || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="downloadDocument('${doc._id || doc.id}')">Download</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         }
     }
-    renderClientDocuments();
+    
+    loadClientDocuments();
     const uploadDocBtn = document.getElementById('clientUploadDocBtn');
     const uploadDocModal = document.getElementById('clientUploadDocModal');
     const uploadDocForm = document.getElementById('clientUploadDocForm');
@@ -2192,24 +2261,53 @@ function loadClientDashboard() {
         });
     }
 
-    const defaultClientInvoices = [];
-    let clientInvoices = getStored('clientInvoices', null);
-    if (!clientInvoices || !clientInvoices.length) {
-        setStored('clientInvoices', defaultClientInvoices);
-        clientInvoices = defaultClientInvoices;
+    // Load invoices from database
+    function loadClientInvoices() {
+        if (!authToken || !currentUser) {
+            renderClientInvoices([]);
+            return;
+        }
+        
+        fetch(`${window.API_BASE}/api/invoices?client=${encodeURIComponent(currentUser.email)}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load invoices');
+            }
+            return response.json();
+        })
+        .then(invoices => {
+            renderClientInvoices(invoices);
+        })
+        .catch(error => {
+            console.error('Error loading client invoices:', error);
+            renderClientInvoices([]);
+        });
     }
-    const invoicesList = document.getElementById('clientInvoicesBody');
-    if (invoicesList) {
-        invoicesList.innerHTML = clientInvoices.map(invoice => `
-            <tr>
-                <td>${invoice.number}</td>
-                <td>${invoice.amount}</td>
-                <td>${invoice.date}</td>
-                <td><span class="status-badge status-${(invoice.status || '').toLowerCase()}">${invoice.status}</span></td>
-                <td><button class="btn-icon" onclick="viewInvoice('${invoice.number}')" title="View"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="downloadClientInvoice('${invoice.number}')" title="Download"><i class="fas fa-download"></i></button></td>
-            </tr>
-        `).join('');
+    
+    function renderClientInvoices(invoices) {
+        const invoicesList = document.getElementById('clientInvoicesBody');
+        if (invoicesList) {
+            if (invoices.length === 0) {
+                invoicesList.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No invoices available</td></tr>';
+            } else {
+                invoicesList.innerHTML = invoices.map(invoice => `
+                    <tr>
+                        <td>${invoice.number}</td>
+                        <td>${invoice.amount}</td>
+                        <td>${new Date(invoice.createdAt).toLocaleDateString()}</td>
+                        <td><span class="status-badge status-${(invoice.status || '').toLowerCase()}">${invoice.status}</span></td>
+                        <td><button class="btn-icon" onclick="viewInvoice('${invoice._id || invoice.id}')" title="View"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="downloadClientInvoice('${invoice._id || invoice.id}')" title="Download"><i class="fas fa-download"></i></button></td>
+                    </tr>
+                `).join('');
+            }
+        }
     }
+    
+    loadClientInvoices();
 
     const timelineList = document.getElementById('clientTimelineList');
     if (timelineList) {
@@ -2741,13 +2839,37 @@ window.viewProjectDetails = function(projectId) {
 window.deleteProject = function(projectId) {
     if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
     
-    const projects = getStored('portalProjects', []);
-    const filteredProjects = projects.filter(p => String(p.id) !== projectId);
+    // Call MongoDB API to delete project
+    const authToken = sessionStorage.getItem('authToken');
     
-    setStored('portalProjects', filteredProjects);
-    renderAdminProjectsTable();
-    
-    alert('Project deleted successfully!');
+    fetch(`${window.API_BASE}/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to delete project from database');
+        }
+        return response.json();
+    })
+    .then(() => {
+        // Also remove from local storage for immediate UI update
+        const projects = getStored('portalProjects', []);
+        const filteredProjects = projects.filter(p => String(p.id) !== projectId);
+        setStored('portalProjects', filteredProjects);
+        
+        // Refresh the projects table
+        renderAdminProjectsTable();
+        
+        alert('Project deleted successfully!');
+    })
+    .catch(error => {
+        console.error('Error deleting project:', error);
+        alert('Failed to delete project. Please try again.');
+    });
 };
 
 window.openRequestFundsModal = function(projectId) {
@@ -4557,10 +4679,46 @@ function exportFinancialData() {
 function setupMarketingManagement() {
     const addPortfolioBtn = document.getElementById('adminAddPortfolioBtn');
     const marketingTableBody = document.getElementById('adminMarketingTableBody');
+    const portfolioModal = document.getElementById('adminAddPortfolioModal');
+    const portfolioForm = document.getElementById('adminAddPortfolioForm');
     
-    if (addPortfolioBtn) {
+    if (addPortfolioBtn && portfolioModal) {
         addPortfolioBtn.addEventListener('click', function() {
-            alert('Add Portfolio functionality would open portfolio creation form');
+            portfolioModal.classList.add('open');
+        });
+    }
+    
+    // Handle portfolio form submission
+    if (portfolioForm) {
+        portfolioForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const portfolioItem = {
+                id: Date.now(),
+                title: document.getElementById('portfolioTitle').value,
+                category: document.getElementById('portfolioCategory').value,
+                client: document.getElementById('portfolioClient').value,
+                location: document.getElementById('portfolioLocation').value,
+                completionDate: document.getElementById('portfolioCompletionDate').value,
+                value: document.getElementById('portfolioValue').value,
+                description: document.getElementById('portfolioDescription').value,
+                features: document.getElementById('portfolioFeatures').value,
+                featured: document.getElementById('portfolioFeatured').checked,
+                status: document.getElementById('portfolioStatus').value,
+                views: Math.floor(Math.random() * 1000) + 100, // Random initial views
+                inquiries: Math.floor(Math.random() * 50) + 5, // Random initial inquiries
+                createdAt: new Date().toISOString()
+            };
+            
+            const portfolioItems = getStored('adminPortfolio', []);
+            portfolioItems.push(portfolioItem);
+            setStored('adminPortfolio', portfolioItems);
+            
+            renderPortfolio(marketingTableBody, portfolioItems);
+            portfolioModal.classList.remove('open');
+            portfolioForm.reset();
+            
+            alert('Portfolio item added successfully!');
         });
     }
     
