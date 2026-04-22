@@ -151,13 +151,58 @@
             });
         }
 
-        // Menu toggle
+        // Mobile menu toggle with overlay
         const menuToggle = document.getElementById('menuToggle');
         if (menuToggle) {
             menuToggle.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('open');
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.sidebar-overlay') || createSidebarOverlay();
+                
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
             });
         }
+        
+        // Create sidebar overlay if it doesn't exist
+        function createSidebarOverlay() {
+            const overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            overlay.addEventListener('click', function() {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const menuToggle = document.getElementById('menuToggle');
+            
+            if (window.innerWidth <= 768 && 
+                sidebar && 
+                sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && 
+                !menuToggle.contains(e.target) &&
+                !overlay.contains(e.target)) {
+                sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            }
+        });
 
         // Add Project Button
         const addProjectBtn = document.getElementById('foremanAddProjectBtn');

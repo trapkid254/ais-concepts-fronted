@@ -258,13 +258,58 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-    // Mobile menu toggle
+    // Mobile menu toggle with overlay
     const menuToggle = document.getElementById('menuToggle');
     if (menuToggle) {
         menuToggle.addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('active');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay') || createSidebarOverlay();
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         });
     }
+    
+    // Create sidebar overlay if it doesn't exist
+    function createSidebarOverlay() {
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        overlay.addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        const menuToggle = document.getElementById('menuToggle');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar && 
+            sidebar.classList.contains('active') && 
+            !sidebar.contains(e.target) && 
+            !menuToggle.contains(e.target) &&
+            !overlay.contains(e.target)) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        }
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        }
+    });
 
     // Admin-specific forms and tables
     if (path.includes('/admin/')) {
@@ -1290,14 +1335,16 @@ function setupAdminInteractions(currentUser) {
                 
                 console.log('Using selected foreman:', selectedForeman);
                 
-                const foremanName = selectedForeman.name || '';
-                const foremanId = selectedForeman.id || '';
+                // Handle different foreman data structures from API vs local storage
+                const foremanName = selectedForeman.name || selectedForeman.fullName || '';
+                const foremanId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
+                const foremanEmail = selectedForeman.email || '';
                 const foremanPassword = selectedForeman.password || '';
                 
-                console.log('Foreman values:', { foremanName, foremanId, foremanPassword });
+                console.log('Foreman values:', { foremanName, foremanId, foremanEmail, foremanPassword });
                 
                 if (!foremanName || !foremanId) {
-                    alert('Selected foreman is missing required information.');
+                    alert('Selected foreman is missing required information (name and ID are required).');
                     return;
                 }
             }
@@ -1323,9 +1370,9 @@ function setupAdminInteractions(currentUser) {
             
             // Handle selected foreman
             const assignedForeman = selectedForeman ? {
-                name: selectedForeman.name,
-                id: selectedForeman.id,
-                email: selectedForeman.email
+                name: selectedForeman.name || selectedForeman.fullName || '',
+                id: selectedForeman.id || selectedForeman._id || selectedForeman.username || '',
+                email: selectedForeman.email || ''
             } : null;
             
             const progress = document.getElementById('adminProjectProgress') ? document.getElementById('adminProjectProgress').value : 0;
@@ -1417,8 +1464,12 @@ function setupAdminInteractions(currentUser) {
                 completionDate: deadline || ''
             };
             
-            fetch(`${window.API_BASE}/api/projects`, {
-                method: 'POST',
+            // Use the correct endpoint for admin project creation
+            const endpoint = id ? `${window.API_BASE}/api/admin/projects/${id}` : `${window.API_BASE}/api/admin/projects`;
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(endpoint, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
@@ -1427,7 +1478,7 @@ function setupAdminInteractions(currentUser) {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to save project to database');
+                    throw new Error(`Failed to save project to database: ${response.status} ${response.statusText}`);
                 }
                 return response.json();
             })
@@ -1444,19 +1495,26 @@ function setupAdminInteractions(currentUser) {
             
             // Handle foreman account creation if requested
             if (createForemanAccount && selectedForeman) {
+                // Handle different foreman data structures
+                const foremanName = selectedForeman.name || selectedForeman.fullName || '';
+                const foremanId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
+                const foremanEmail = selectedForeman.email || `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`;
+                
                 const foremanData = {
-                    name: selectedForeman.name,
-                    id: selectedForeman.id,
+                    name: foremanName,
+                    username: foremanId,
+                    email: foremanEmail,
                     password: selectedForeman.password || 'temp123', // Default password if not provided
-                    email: selectedForeman.email || `${selectedForeman.id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
                     role: 'foreman',
                     status: 'active',
                     assignedProjects: [name],
                     createdAt: new Date().toISOString()
                 };
                 
-                // Store foreman data and create account
-                fetch(`${window.API_BASE}/api/foreman/create`, {
+                console.log('Creating foreman account with data:', foremanData);
+                
+                // Use the users endpoint to create foreman account
+                fetch(`${window.API_BASE}/api/admin/users`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1464,17 +1522,19 @@ function setupAdminInteractions(currentUser) {
                     },
                     body: JSON.stringify(foremanData)
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
-                    } else {
-                        alert(`Error: ${data.error || 'Failed to create project and foreman account'}`);
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Foreman account created:', data);
+                    alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
                 })
                 .catch(error => {
-                    console.error('Error creating project and foreman:', error);
-                    alert('Failed to create project and foreman account');
+                    console.error('Error creating foreman account:', error);
+                    alert(`Project created but failed to create foreman account: ${error.message}`);
                 });
             }
         });
