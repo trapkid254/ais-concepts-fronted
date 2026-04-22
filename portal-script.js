@@ -1105,12 +1105,47 @@ function setupAdminInteractions(currentUser) {
         }
         
         // Load existing foremen
-        function loadExistingForemen() {
+        async function loadExistingForemen() {
             const foremenList = document.getElementById('existingForemenList');
             if (!foremenList) return;
             
-            const users = getStored('portalUsers', []);
-            const foremen = users.filter(user => user.role === 'foreman');
+            foremenList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading foremen...</p>';
+            
+            try {
+                // Try to load from MongoDB first
+                const authToken = sessionStorage.getItem('authToken');
+                if (authToken) {
+                    const response = await fetch(`${window.API_BASE}/api/users?role=foreman`, {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const foremen = data.users || data;
+                        displayForemen(foremen);
+                        return;
+                    }
+                }
+                
+                // Fallback to local storage
+                const users = getStored('portalUsers', []);
+                const foremen = users.filter(user => user.role === 'foreman');
+                displayForemen(foremen);
+                
+            } catch (error) {
+                console.error('Error loading foremen:', error);
+                // Fallback to local storage
+                const users = getStored('portalUsers', []);
+                const foremen = users.filter(user => user.role === 'foreman');
+                displayForemen(foremen);
+            }
+        }
+        
+        function displayForemen(foremen) {
+            const foremenList = document.getElementById('existingForemenList');
+            if (!foremenList) return;
             
             foremenList.innerHTML = '';
             
@@ -1293,6 +1328,7 @@ function setupAdminInteractions(currentUser) {
                 email: selectedForeman.email
             } : null;
             
+            const progress = document.getElementById('adminProjectProgress') ? document.getElementById('adminProjectProgress').value : 0;
             const createForemanAccount = shouldCreateForemanAccount;
             const status = document.getElementById('adminProjectStatus').value;
             const category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
