@@ -4720,39 +4720,44 @@ function setupFAQManagement() {
                 return;
             }
             
-            // Get existing FAQs
-            const faqs = getStored('faqs', {
-                general: [],
-                services: [],
-                process: []
+            // Check if we're editing an existing FAQ (hidden field for edit ID)
+            const editId = document.getElementById('editFAQId');
+            const isEdit = editId && editId.value;
+            
+            const url = isEdit ? '/api/faqs/' + category + '/' + editId.value : '/api/faqs';
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            apiFetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: category,
+                    question: question,
+                    answer: answer
+                })
+            })
+            .then(function(r) {
+                return r.json().then(function(data) {
+                    if (!r.ok) throw data;
+                    return data;
+                });
+            })
+            .then(function(data) {
+                // Update admin display
+                renderAdminFAQs();
+                
+                // Reset form and hide
+                addNewFAQForm.reset();
+                if (editId) editId.value = '';
+                if (faqForm) {
+                    faqForm.style.display = 'none';
+                }
+                
+                alert(isEdit ? 'FAQ updated successfully!' : 'FAQ added successfully!');
+            })
+            .catch(function(err) {
+                alert('Error ' + (isEdit ? 'updating' : 'adding') + ' FAQ: ' + (err.error || err.message || 'Unknown error'));
             });
-            
-            // Add new FAQ
-            faqs[category].push({
-                id: Date.now(),
-                question: question,
-                answer: answer,
-                date: new Date().toISOString()
-            });
-            
-            // Save FAQs
-            setStored('faqs', faqs);
-            
-            // Update admin display
-            renderAdminFAQs();
-            
-            // Update frontend display
-            if (typeof updateFrontendFAQs === 'function') {
-                updateFrontendFAQs(faqs);
-            }
-            
-            // Reset form and hide
-            addNewFAQForm.reset();
-            if (faqForm) {
-                faqForm.style.display = 'none';
-            }
-            
-            alert('FAQ added successfully!');
         });
     }
     
@@ -4761,29 +4766,43 @@ function setupFAQManagement() {
 }
 
 function renderAdminFAQs() {
-    const faqs = getStored('faqs', {
-        general: [],
-        services: [],
-        process: []
+    // Fetch FAQs from backend
+    apiFetch('/api/faqs')
+    .then(function(r) {
+        return r.json().then(function(data) {
+            if (!r.ok) throw data;
+            return data;
+        });
+    })
+    .then(function(faqs) {
+        // Render General FAQs
+        const generalContainer = document.getElementById('adminGeneralFAQs');
+        if (generalContainer) {
+            generalContainer.innerHTML = (faqs.general || []).map(faq => createAdminFAQItem(faq, 'general')).join('');
+        }
+        
+        // Render Services FAQs
+        const servicesContainer = document.getElementById('adminServicesFAQs');
+        if (servicesContainer) {
+            servicesContainer.innerHTML = (faqs.services || []).map(faq => createAdminFAQItem(faq, 'services')).join('');
+        }
+        
+        // Render Process FAQs
+        const processContainer = document.getElementById('adminProcessFAQs');
+        if (processContainer) {
+            processContainer.innerHTML = (faqs.process || []).map(faq => createAdminFAQItem(faq, 'process')).join('');
+        }
+    })
+    .catch(function(err) {
+        console.error('Error fetching FAQs:', err);
+        // Show error message in each container
+        ['adminGeneralFAQs', 'adminServicesFAQs', 'adminProcessFAQs'].forEach(function(id) {
+            const container = document.getElementById(id);
+            if (container) {
+                container.innerHTML = '<p style="color: red;">Error loading FAQs. Please try again.</p>';
+            }
+        });
     });
-    
-    // Render General FAQs
-    const generalContainer = document.getElementById('adminGeneralFAQs');
-    if (generalContainer) {
-        generalContainer.innerHTML = faqs.general.map(faq => createAdminFAQItem(faq, 'general')).join('');
-    }
-    
-    // Render Services FAQs
-    const servicesContainer = document.getElementById('adminServicesFAQs');
-    if (servicesContainer) {
-        servicesContainer.innerHTML = faqs.services.map(faq => createAdminFAQItem(faq, 'services')).join('');
-    }
-    
-    // Render Process FAQs
-    const processContainer = document.getElementById('adminProcessFAQs');
-    if (processContainer) {
-        processContainer.innerHTML = faqs.process.map(faq => createAdminFAQItem(faq, 'process')).join('');
-    }
 }
 
 function createAdminFAQItem(faq, category) {
@@ -4806,23 +4825,27 @@ function createAdminFAQItem(faq, category) {
 }
 
 function editFAQ(category, id) {
-    const faqs = getStored('faqs', {
-        general: [],
-        services: [],
-        process: []
+    // Fetch FAQ from backend
+    apiFetch('/api/faqs/' + category + '/' + id)
+    .then(function(r) {
+        return r.json().then(function(data) {
+            if (!r.ok) throw data;
+            return data;
+        });
+    })
+    .then(function(faq) {
+        // Show form and populate with existing data
+        const faqForm = document.getElementById('adminFAQForm');
+        if (faqForm) {
+            faqForm.style.display = 'block';
+            document.getElementById('newFAQCategory').value = category;
+            document.getElementById('newFAQQuestion').value = faq.question;
+            document.getElementById('newFAQAnswer').value = faq.answer;
+        }
+    })
+    .catch(function(err) {
+        alert('Error loading FAQ for editing: ' + (err.error || err.message || 'Unknown error'));
     });
-    
-    const faq = faqs[category].find(f => f.id === id);
-    if (!faq) return;
-    
-    // Show form and populate with existing data
-    const faqForm = document.getElementById('adminFAQForm');
-    if (faqForm) {
-        faqForm.style.display = 'block';
-        document.getElementById('newFAQCategory').value = category;
-        document.getElementById('newFAQQuestion').value = faq.question;
-        document.getElementById('newFAQAnswer').value = faq.answer;
-    }
 }
 
 function deleteFAQ(category, id) {
@@ -4837,18 +4860,24 @@ function deleteFAQ(category, id) {
     // Remove FAQ
     faqs[category] = faqs[category].filter(f => f.id !== id);
     
-    // Save FAQs
-    setStored('faqs', faqs);
-    
-    // Update displays
-    renderAdminFAQs();
-    
-    // Update frontend display
-    if (typeof updateFrontendFAQs === 'function') {
-        updateFrontendFAQs(faqs);
-    }
-    
-    alert('FAQ deleted successfully!');
+    // Delete FAQ from backend
+    apiFetch('/api/faqs/' + category + '/' + id, {
+        method: 'DELETE'
+    })
+    .then(function(r) {
+        return r.json().then(function(data) {
+            if (!r.ok) throw data;
+            return data;
+        });
+    })
+    .then(function(data) {
+        // Update displays
+        renderAdminFAQs();
+        alert('FAQ deleted successfully!');
+    })
+    .catch(function(err) {
+        alert('Error deleting FAQ: ' + (err.error || err.message || 'Unknown error'));
+    });
 }
 
 // Function to update CRM statistics

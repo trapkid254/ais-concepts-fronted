@@ -338,27 +338,37 @@
             process: []
         };
 
-        // Load FAQs from storage
+        // Load FAQs from backend
         function loadFAQs() {
-            const storedFAQs = localStorage.getItem('faqs');
-            if (storedFAQs) {
-                faqData = JSON.parse(storedFAQs);
-            }
+            fetch(API_BASE + '/api/faqs')
+                .then(function(r) {
+                    return r.json().then(function(data) {
+                        if (!r.ok) throw data;
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    faqData = data || { general: [], services: [], process: [] };
+                    renderFAQs();
+                })
+                .catch(function(err) {
+                    console.error('Error loading FAQs:', err);
+                    // Show error message
+                    ['general', 'services', 'process'].forEach(function(category) {
+                        const container = document.getElementById(category + 'FAQs');
+                        if (container) {
+                            container.innerHTML = '<p class="empty-state">Error loading FAQs. Please try again later.</p>';
+                        }
+                    });
+                });
         }
-
-        // Update frontend FAQs
-        window.updateFrontendFAQs = function(newFAQs) {
-            faqData = newFAQs;
-            localStorage.setItem('faqs', JSON.stringify(faqData));
-            renderFAQs();
-        };
 
         // Render FAQs
         function renderFAQs() {
             Object.keys(faqData).forEach(category => {
                 const container = document.getElementById(category + 'FAQs');
                 if (container) {
-                    if (faqData[category].length === 0) {
+                    if (!faqData[category] || faqData[category].length === 0) {
                         container.innerHTML = '<p class="empty-state">No FAQs available in this category yet.</p>';
                     } else {
                         container.innerHTML = faqData[category].map((item, index) => `
@@ -402,31 +412,40 @@
             const question = document.getElementById('faqQuestion').value;
             const answer = document.getElementById('faqAnswer').value;
             
-            // Add to data
-            faqData[category].push({ 
-                id: Date.now(),
-                question, 
-                answer,
-                date: new Date().toISOString()
+            // Send to backend
+            fetch(API_BASE + '/api/faqs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: category,
+                    question: question,
+                    answer: answer
+                })
+            })
+            .then(function(r) {
+                return r.json().then(function(data) {
+                    if (!r.ok) throw data;
+                    return data;
+                });
+            })
+            .then(function(data) {
+                // Reload FAQs from backend
+                loadFAQs();
+                
+                // Reset form
+                e.target.reset();
+                
+                // Show success message
+                alert('FAQ added successfully!');
+            })
+            .catch(function(err) {
+                alert('Error adding FAQ: ' + (err.error || err.message || 'Unknown error'));
             });
-            
-            // Save to localStorage
-            localStorage.setItem('faqs', JSON.stringify(faqData));
-            
-            // Re-render FAQs
-            renderFAQs();
-            
-            // Reset form
-            this.reset();
-            
-            // Show success message
-            alert('FAQ added successfully!');
         });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadFAQs();
-            renderFAQs();
             checkAdminAccess();
         });
     </script>
