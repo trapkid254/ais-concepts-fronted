@@ -1537,57 +1537,26 @@ function setupAdminInteractions(currentUser) {
                     email: foremanEmail,
                     password: selectedForeman.password || 'temp123', // Default password if not provided
                     role: 'foreman',
-                    status: 'active',
                     assignedProjects: [name],
-                    createdAt: new Date().toISOString()
+                    phone: selectedForeman.phone || ''
                 };
                 
                 console.log('Creating foreman account with data:', foremanData);
                 
-                // Use the same pattern as user management - get existing users, then add the new one
+                // Use the working registration endpoint pattern
                 const authToken = sessionStorage.getItem('authToken');
                 
-                fetch(`${window.API_BASE}/api/admin/users`, {
+                fetch(`${window.API_BASE}/api/auth/register-employee`, {
+                    method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authToken}`
-                    }
+                    },
+                    body: JSON.stringify(foremanData)
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Failed to fetch existing users');
-                    }
-                    return response.json();
-                })
-                .then(existingUsers => {
-                    // Ensure we have an array
-                    const usersArray = Array.isArray(existingUsers) ? existingUsers : [];
-                    
-                    // Check if user already exists
-                    const existingIndex = usersArray.findIndex(u => 
-                        u.username === foremanData.username || u.email === foremanData.email
-                    );
-                    
-                    if (existingIndex >= 0) {
-                        // Update existing user
-                        usersArray[existingIndex] = { ...usersArray[existingIndex], ...foremanData };
-                    } else {
-                        // Add new user
-                        usersArray.push(foremanData);
-                    }
-                    
-                    // Save the entire users array
-                    return fetch(`${window.API_BASE}/api/admin/users`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${authToken}`
-                        },
-                        body: JSON.stringify(usersArray)
-                    });
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to save users: ${response.status} ${response.statusText}`);
+                        throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
                     }
                     return response.json();
                 })
