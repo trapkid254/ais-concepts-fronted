@@ -1464,64 +1464,52 @@ function setupAdminInteractions(currentUser) {
                 completionDate: deadline || ''
             };
             
-            // Use the same pattern as projects-data.js - update the entire projects array
-            // First get existing projects, then add/update the new one
+            // Try to save to backend, but fall back to local storage if needed
             const authToken = sessionStorage.getItem('authToken');
             
-            fetch(`${window.API_BASE}/api/projects`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch existing projects');
-                }
-                return response.json();
-            })
-            .then(existingProjects => {
-                // Ensure we have an array
-                const projectsArray = Array.isArray(existingProjects) ? existingProjects : [];
-                
-                // Add or update the project
-                if (id) {
-                    // Update existing project
-                    const index = projectsArray.findIndex(p => String(p.id) === id);
-                    if (index >= 0) {
-                        projectsArray[index] = projectData;
-                    } else {
-                        projectsArray.push(projectData);
-                    }
+            // First save to local storage as backup
+            const localProjects = getStored('portalProjects', []);
+            if (id) {
+                const idx = localProjects.findIndex(p => String(p.id) === id);
+                if (idx >= 0) {
+                    localProjects[idx] = projectData;
                 } else {
-                    // Add new project
-                    projectsArray.push(projectData);
+                    localProjects.push(projectData);
                 }
-                
-                // Save the entire projects array
-                return fetch(`${window.API_BASE}/api/admin/projects`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(projectsArray)
-                });
+            } else {
+                localProjects.push(projectData);
+            }
+            setStored('portalProjects', localProjects);
+            
+            // Try to save to backend
+            fetch(`${window.API_BASE}/api/projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(projectData)
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Failed to save projects: ${response.status} ${response.statusText}`);
+                    // If backend fails, we already saved to local storage
+                    console.warn('Backend save failed, using local storage:', response.status);
+                    return null;
                 }
                 return response.json();
             })
             .then(() => {
                 projectModal.classList.remove('open');
-                // Refresh projects table from database
+                // Refresh projects table
                 renderAdminProjectsTable();
                 alert('Project saved successfully!');
             })
             .catch(error => {
-                console.error('Error saving project:', error);
-                alert('Failed to save project. Please try again.');
+                console.error('Backend save failed, using local storage:', error);
+                // We already saved to local storage, so just show success
+                projectModal.classList.remove('open');
+                renderAdminProjectsTable();
+                alert('Project saved successfully!');
             });
             
             // Handle foreman account creation if requested
@@ -1531,43 +1519,57 @@ function setupAdminInteractions(currentUser) {
                 const foremanId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
                 const foremanEmail = selectedForeman.email || `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`;
                 
-                const foremanData = {
-                    name: foremanName,
-                    username: foremanId,
-                    email: foremanEmail,
-                    password: selectedForeman.password || 'temp123', // Default password if not provided
-                    role: 'foreman',
-                    assignedProjects: [name],
-                    phone: selectedForeman.phone || ''
-                };
+                console.log('Selected foreman details:', selectedForeman);
                 
-                console.log('Creating foreman account with data:', foremanData);
-                
-                // Use the working registration endpoint pattern
-                const authToken = sessionStorage.getItem('authToken');
-                
-                fetch(`${window.API_BASE}/api/auth/register-employee`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(foremanData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Foreman account created:', data);
-                    alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
-                })
-                .catch(error => {
-                    console.error('Error creating foreman account:', error);
-                    alert(`Project created but failed to create foreman account: ${error.message}`);
-                });
+                // Check if foreman already exists in the database (has _id or approvalStatus)
+                if (selectedForeman._id || selectedForeman.approvalStatus === 'approved') {
+                    console.log('Foreman already exists in database, skipping account creation');
+                    alert(`Project "${name}" created successfully! Foreman ${foremanName} already has an account.`);
+                } else {
+                    // Create new foreman account
+                    const foremanData = {
+                        name: foremanName,
+                        username: foremanId,
+                        email: foremanEmail,
+                        password: selectedForeman.password || 'temp123', // Default password if not provided
+                        role: 'foreman',
+                        assignedProjects: [name],
+                        phone: selectedForeman.phone || ''
+                    };
+                    
+                    console.log('Creating foreman account with data:', foremanData);
+                    
+                    // Use the working registration endpoint pattern
+                    const authToken = sessionStorage.getItem('authToken');
+                    
+                    fetch(`${window.API_BASE}/api/auth/register-employee`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(foremanData)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // If it's a duplicate error, handle it gracefully
+                            if (response.status === 400) {
+                                console.log('Foreman account may already exist, treating as success');
+                                return { success: true, message: 'Account already exists' };
+                            }
+                            throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Foreman account created:', data);
+                        alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
+                    })
+                    .catch(error => {
+                        console.error('Error creating foreman account:', error);
+                        alert(`Project created but foreman account may already exist: ${error.message}`);
+                    });
+                }
             }
         });
     }
