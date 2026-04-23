@@ -1481,20 +1481,50 @@ function setupAdminInteractions(currentUser) {
             }
             setStored('portalProjects', localProjects);
             
-            // Try to save to backend
+            // Try to save to backend using the working admin endpoint pattern
+            // First fetch existing projects, then update the array
             fetch(`${window.API_BASE}/api/projects`, {
-                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify(projectData)
+                }
             })
             .then(response => {
                 if (!response.ok) {
-                    // If backend fails, we already saved to local storage
-                    console.warn('Backend save failed, using local storage:', response.status);
-                    return null;
+                    throw new Error('Failed to fetch existing projects');
+                }
+                return response.json();
+            })
+            .then(existingProjects => {
+                // Ensure we have an array
+                const projectsArray = Array.isArray(existingProjects) ? existingProjects : [];
+                
+                // Add or update the project
+                if (id) {
+                    // Update existing project
+                    const index = projectsArray.findIndex(p => String(p.id) === id);
+                    if (index >= 0) {
+                        projectsArray[index] = projectData;
+                    } else {
+                        projectsArray.push(projectData);
+                    }
+                } else {
+                    // Add new project
+                    projectsArray.push(projectData);
+                }
+                
+                // Save the entire projects array using the working endpoint
+                return fetch(`${window.API_BASE}/api/admin/projects`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(projectsArray)
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to save projects: ${response.status} ${response.statusText}`);
                 }
                 return response.json();
             })
