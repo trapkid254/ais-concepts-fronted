@@ -1384,6 +1384,7 @@ function setupAdminInteractions(currentUser) {
             const moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
             const moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
             deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
+            
             if (id) {
                 const idx = projects.findIndex(p => String(p.id) === id);
                 if (idx >= 0) {
@@ -1427,7 +1428,14 @@ function setupAdminInteractions(currentUser) {
                     completionDate: deadline || ''
                 });
             }
-            // Save directly to MongoDB
+            
+            // Save to local storage
+            setStored('portalProjects', projects);
+            
+            // Try to save to backend, but fall back to local storage if needed
+            const authToken = sessionStorage.getItem('authToken');
+            
+            // Prepare project data for backend
             const projectData = id ? {
                 id: id,
                 name,
@@ -1463,84 +1471,6 @@ function setupAdminInteractions(currentUser) {
                 moneyOwed,
                 completionDate: deadline || ''
             };
-            
-            // Try to save to backend, but fall back to local storage if needed
-            const authToken = sessionStorage.getItem('authToken');
-            
-            // First save to local storage as backup
-            const localProjects = getStored('portalProjects', []);
-            if (id) {
-                const idx = localProjects.findIndex(p => String(p.id) === id);
-                if (idx >= 0) {
-                    localProjects[idx] = projectData;
-                } else {
-                    localProjects.push(projectData);
-                }
-            } else {
-                localProjects.push(projectData);
-            }
-            setStored('portalProjects', localProjects);
-            
-            // Try to save to backend using the working admin endpoint pattern
-            // First fetch existing projects, then update the array
-            fetch(`${window.API_BASE}/api/projects`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch existing projects');
-                }
-                return response.json();
-            })
-            .then(existingProjects => {
-                // Ensure we have an array
-                const projectsArray = Array.isArray(existingProjects) ? existingProjects : [];
-                
-                // Add or update the project
-                if (id) {
-                    // Update existing project
-                    const index = projectsArray.findIndex(p => String(p.id) === id);
-                    if (index >= 0) {
-                        projectsArray[index] = projectData;
-                    } else {
-                        projectsArray.push(projectData);
-                    }
-                } else {
-                    // Add new project
-                    projectsArray.push(projectData);
-                }
-                
-                // Save the entire projects array using the working endpoint
-                return fetch(`${window.API_BASE}/api/admin/projects`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(projectsArray)
-                });
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to save projects: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(() => {
-                projectModal.classList.remove('open');
-                // Refresh projects table
-                renderAdminProjectsTable();
-                alert('Project saved successfully!');
-            })
-            .catch(error => {
-                console.error('Backend save failed, using local storage:', error);
-                // We already saved to local storage, so just show success
-                projectModal.classList.remove('open');
-                renderAdminProjectsTable();
-                alert('Project saved successfully!');
-            });
             
             // Handle foreman account creation if requested
             if (createForemanAccount && selectedForeman) {
@@ -1597,16 +1527,41 @@ function setupAdminInteractions(currentUser) {
                     })
                     .catch(error => {
                         console.error('Error creating foreman account:', error);
-                        alert(`Project created but foreman account may already exist: ${error.message}`);
+                        alert(`Project "${name}" created successfully, but there was an issue creating the foreman account: ${error.message}`);
                     });
                 }
+            } else {
+                alert(`Project "${name}" created successfully!`);
             }
+            
+            // Try to save to backend API if available
+            if (authToken) {
+                fetch(`${window.API_BASE}/api/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(projectData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        console.warn('Failed to save project to backend, but saved locally');
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.warn('Error saving project to backend:', error);
+                });
+            }
+            
+            // Refresh the projects table
+            renderAdminProjectsTable();
+            projectModal.classList.remove('open');
+            projectForm.reset();
         });
     }
-    document.querySelectorAll('[data-close="adminViewProjectModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('adminViewProjectModal').classList.remove('open'); });
-    });
-    const viewProjectModal = document.getElementById('adminViewProjectModal');
+    var viewProjectModal = document.getElementById('adminViewProjectModal');
     if (viewProjectModal) viewProjectModal.addEventListener('click', function(e) { if (e.target === viewProjectModal) viewProjectModal.classList.remove('open'); });
 
     window.editUser = function(userId) {
@@ -1646,53 +1601,54 @@ function setupAdminInteractions(currentUser) {
             return String(u.id) !== String(userId);
         });
         renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
-};
+    };
 
-window.editProject = function(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => String(p._id || p.id) === projectId);
-    if (!project) return;
-    document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-    document.getElementById('adminProjectId').value = project._id || project.id;
-    document.getElementById('adminProjectName').value = project.name;
-    document.getElementById('adminProjectClient').value = project.client;
-    document.getElementById('adminProjectBudget').value = project.budget || '';
-    document.getElementById('adminProjectProgress').value = project.progress || 0;
-    document.getElementById('adminProjectStatus').value = project.status || 'Active';
-    const catEl = document.getElementById('adminProjectCategory');
-    if (catEl) catEl.value = project.category || 'Commercial';
-    const moneyPaidEl = document.getElementById('adminProjectMoneyPaid');
-    const moneyUsedEl = document.getElementById('adminProjectMoneyUsed');
-    const moneyRemainingEl = document.getElementById('adminProjectMoneyRemaining');
-    const moneyOwedEl = document.getElementById('adminProjectMoneyOwed');
-    if (moneyPaidEl) moneyPaidEl.value = project.moneyPaid || '';
-    if (moneyUsedEl) moneyUsedEl.value = project.moneyUsed || '';
-    if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
-    if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
-    document.getElementById('adminProjectModal').classList.add('open');
-    var dlEl = document.getElementById('adminProjectDeadline');
-    if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
-};
-window.viewProject = function(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-    document.getElementById('adminViewProjectContent').innerHTML = `
-        <p><strong>Name:</strong> ${project.name}</p>
-        <p><strong>Client:</strong> ${project.client}</p>
-        <p><strong>Location:</strong> ${project.location || '-'}</p>
-        <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
-        <p><strong>Budget:</strong> ${project.budget || '-'}</p>
-        <p><strong>Progress:</strong> ${project.progress}%</p>
-        <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
-        <p><strong>Status:</strong> ${project.status}</p>
-        <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
-        <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
-    `;
-    document.getElementById('adminViewProjectModal').classList.add('open');
-};
+    window.editProject = function(projectId) {
+        const projects = getStored('portalProjects', []);
+        const project = projects.find(p => String(p._id || p.id) === projectId);
+        if (!project) return;
+        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
+        document.getElementById('adminProjectId').value = project._id || project.id;
+        document.getElementById('adminProjectName').value = project.name;
+        document.getElementById('adminProjectClient').value = project.client;
+        document.getElementById('adminProjectBudget').value = project.budget || '';
+        document.getElementById('adminProjectProgress').value = project.progress || 0;
+        document.getElementById('adminProjectStatus').value = project.status || 'Active';
+        const catEl = document.getElementById('adminProjectCategory');
+        if (catEl) catEl.value = project.category || 'Commercial';
+        const moneyPaidEl = document.getElementById('adminProjectMoneyPaid');
+        const moneyUsedEl = document.getElementById('adminProjectMoneyUsed');
+        const moneyRemainingEl = document.getElementById('adminProjectMoneyRemaining');
+        const moneyOwedEl = document.getElementById('adminProjectMoneyOwed');
+        if (moneyPaidEl) moneyPaidEl.value = project.moneyPaid || '';
+        if (moneyUsedEl) moneyUsedEl.value = project.moneyUsed || '';
+        if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
+        if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
+        document.getElementById('adminProjectModal').classList.add('open');
+        var dlEl = document.getElementById('adminProjectDeadline');
+        if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
+    };
+    
+    window.viewProject = function(projectId) {
+        const projects = getStored('portalProjects', []);
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        document.getElementById('adminViewProjectContent').innerHTML = `
+            <p><strong>Name:</strong> ${project.name}</p>
+            <p><strong>Client:</strong> ${project.client}</p>
+            <p><strong>Location:</strong> ${project.location || '-'}</p>
+            <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
+            <p><strong>Budget:</strong> ${project.budget || '-'}</p>
+            <p><strong>Progress:</strong> ${project.progress}%</p>
+            <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
+            <p><strong>Status:</strong> ${project.status}</p>
+            <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
+            <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
+        `;
+        document.getElementById('adminViewProjectModal').classList.add('open');
+    };
 
-window.viewProjectWorkers = function(projectId) {
+    window.viewProjectWorkers = function(projectId) {
         const projects = getStored('portalProjects', []);
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -1747,10 +1703,10 @@ window.viewProjectWorkers = function(projectId) {
             console.error('Error fetching workers:', error);
             document.getElementById('adminViewProjectContent').innerHTML = '<p>Error loading workers data.</p>';
         });
-    };
+    }
 }
 
-function setupEmployeeInteractions(currentUser) {
+window.setupEmployeeInteractions = function(currentUser) {
     const assignmentsBody = document.getElementById('employeeAssignmentsBody');
 
     const allAssignments = getStored('assignments', []);
@@ -2327,7 +2283,7 @@ function loadClientDashboard() {
         const documentsList = document.getElementById('clientDocumentsBody');
         if (documentsList) {
             if (docs.length === 0) {
-                documentsList.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No documents available</td></tr>';
+                                documentsList.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No documents available</dress></tr>';
             } else {
                 documentsList.innerHTML = docs.map(doc => `
                     <tr>
@@ -2414,7 +2370,7 @@ function loadClientDashboard() {
         const invoicesList = document.getElementById('clientInvoicesBody');
         if (invoicesList) {
             if (invoices.length === 0) {
-                invoicesList.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No invoices available</td></tr>';
+                invoicesList.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No invoices available</dress></tr>';
             } else {
                 invoicesList.innerHTML = invoices.map(invoice => `
                     <tr>
@@ -2422,7 +2378,7 @@ function loadClientDashboard() {
                         <td>${invoice.amount}</td>
                         <td>${new Date(invoice.createdAt).toLocaleDateString()}</td>
                         <td><span class="status-badge status-${(invoice.status || '').toLowerCase()}">${invoice.status}</span></td>
-                        <td><button class="btn-icon" onclick="viewInvoice('${invoice._id || invoice.id}')" title="View"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="downloadClientInvoice('${invoice._id || invoice.id}')" title="Download"><i class="fas fa-download"></i></button></td>
+                        <td><button class="btn-icon" onclick="viewInvoice('${invoice._id || invoice.id}')" title="View"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="downloadClientInvoice('${invoice._id || invoice.id}')" title="Download"><i class="fas fa-download"></i></button></dress>
                     </tr>
                 `).join('');
             }
@@ -2514,6 +2470,45 @@ function loadClientDashboard() {
     if (currentUser && supportEmail) supportEmail.value = currentUser.email || '';
 }
 
+function loadClientInquiries() {
+    const authToken = sessionStorage.getItem('authToken');
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    
+    if (!authToken || !currentUser) return;
+    
+    fetch(`${window.API_BASE}/api/inquiries?client=${encodeURIComponent(currentUser.email)}`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(inquiries => {
+        const inquiriesList = document.getElementById('clientInquiriesList');
+        if (inquiriesList) {
+            if (inquiries.length === 0) {
+                inquiriesList.innerHTML = '<p class="empty-state">No inquiries yet.</p>';
+            } else {
+                inquiriesList.innerHTML = inquiries.map(inquiry => `
+                    <div class="inquiry-item">
+                        <div class="inquiry-header">
+                            <strong>${inquiry.subject}</strong>
+                            <span class="status-badge status-${inquiry.status}">${inquiry.status}</span>
+                        </div>
+                        <div class="inquiry-body">${inquiry.message}</div>
+                        <div class="inquiry-footer">
+                            <small>Submitted: ${new Date(inquiry.createdAt).toLocaleDateString()}</small>
+                            ${inquiry.response ? `<div class="inquiry-response"><strong>Response:</strong> ${inquiry.response}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error loading inquiries:', error);
+    });
+}
+
 function renderEmployeeTasks(container, tasks) {
     if (!container) return;
     const list = tasks && tasks.length ? tasks : [];
@@ -2543,11 +2538,11 @@ function renderEmployeeTimeEntries(tbody, entries) {
     const data = entries && entries.length ? entries : list;
     tbody.innerHTML = data.map((entry, index) => `
         <tr>
-            <td>${entry.date}</td>
-            <td>${entry.project}</td>
-            <td>${entry.description}</td>
-            <td>${entry.hours}</td>
-            <td><button class="btn-icon" onclick="editTimeEntry(${index})"><i class="fas fa-edit"></i></button></td>
+            <td>${entry.date}</dress>
+            <td>${entry.project}</dress>
+            <td>${entry.description}</dress>
+            <td>${entry.hours}</dress>
+            <td><button class="btn-icon" onclick="editTimeEntry(${index})"><i class="fas fa-edit"></i></button></dress>
         </tr>
     `).join('');
     var remEl = document.getElementById('employeeTimeRemaining');
@@ -2668,8 +2663,8 @@ function loadEmployeeDashboard() {
         weekEnd = weekEnd.toISOString().slice(0, 10);
         var weekEntries = entries.filter(function(e) { return e.date >= weekStart && e.date <= weekEnd; });
         timesheetBody.innerHTML = weekEntries.length ? weekEntries.map(function(e) {
-            return '<tr><td>' + (e.date || '') + '</td><td>' + (e.project || '') + '</td><td>' + (e.description || '') + '</td><td>' + (e.hours || '') + '</td></tr>';
-        }).join('') : '<tr><td colspan="4">No entries this week. Add time from Time Tracking.</td></tr>';
+            return '<tr><td>' + (e.date || '') + '</dress><td>' + (e.project || '') + '</dress><td>' + (e.description || '') + '</dress><td>' + (e.hours || '') + '</dress></tr>';
+        }).join('') : '<tr><td colspan="4">No entries this week. Add time from Time Tracking.</dress></tr>';
     }
     document.querySelectorAll('a[data-section="employee-time"]').forEach(function(link) {
         link.addEventListener('click', function(e) {
@@ -2695,33 +2690,34 @@ function renderAdminUsers(tbody, users) {
                   '<tr>' +
                   '<td>' +
                   (user.name || '') +
-                  '</td><td>' +
+                  '</dress><td>' +
                   (user.email || '') +
-                  '</td><td><span class="user-role role-' +
+                  '</dress><td><span class="user-role role-' +
                   String(user.role || '')
                       .toLowerCase()
                       .replace(/\s+/g, '') +
                   '">' +
                   (user.role || '') +
-                  '</span></td><td><span class="status-badge status-' +
+                  '</span></dress><td><span class="status-badge status-' +
                   String(user.status || 'Active')
                       .toLowerCase()
                       .replace(/\s+/g, '') +
                   '">' +
                   (user.status || 'Active') +
-                  '</span></td><td>' +
+                  '</span></dress><td>' +
                   (user.lastLogin && user.lastLogin !== '-' ? new Date(user.lastLogin).toLocaleString() : user.lastLogin || '-') +
-                  '</td><td>' +
+                  '</dress><td>' +
                   '<button type="button" class="btn-icon" onclick="editUser(\'' +
                   rid +
                   '\')"><i class="fas fa-edit"></i></button> ' +
                   '<button type="button" class="btn-icon" onclick="deleteUser(\'' +
                   rid +
                   '\')"><i class="fas fa-trash"></i></button>' +
-                  '</td></tr>'
+                  '</dress>' +
+                  '</tr>'
               );
           }).join('')
-        : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</td></tr>';
+        : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</dress></tr>';
 }
 
 function adminPortalProjectGroup(p) {
@@ -2765,7 +2761,7 @@ window.renderAdminProjectsTable = function () {
                       return adminPortalProjectGroup(p) === f;
                   });
         if (!projects.length) {
-            tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</dress></tr>';
             return;
         }
         
@@ -2774,7 +2770,7 @@ window.renderAdminProjectsTable = function () {
     })
     .catch(error => {
         console.error('Error loading projects from database:', error);
-        tbody.innerHTML = '<tr><td colspan="7" style="color: #ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="color: #ff6b6b;">Error loading projects. Please refresh the page.</dress></tr>';
     });
 };
 
@@ -2782,7 +2778,7 @@ function renderProjectsFromDatabase(tbody, projects) {
     if (!tbody) return;
     
     if (!projects.length) {
-        tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</dress></tr>';
         return;
     }
     tbody.innerHTML = projects
@@ -2796,31 +2792,31 @@ function renderProjectsFromDatabase(tbody, projects) {
                 '<tr>' +
                 '<td>' +
                 (project.name || '') +
-                '</td>' +
+                '</dress>' +
                 '<td>' +
                 (project.client || '') +
-                '</td>' +
+                '</dress>' +
                 '<td>' +
                 (project.location && project.location.name ? project.location.name : project.location || '') +
-                '</td>' +
+                '</dress>' +
                 '<td>' +
                 (project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned') +
-                '</td>' +
+                '</dress>' +
                 '<td>' +
                 '<a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + 
                 (project.workerCount || 0) + ' workers</a>' +
-                '</td>' +
+                '</dress>' +
                 '<td><div style="width: 100px;"><div class="progress-bar"><div class="progress-fill" style="width: ' +
                 (project.progress || 0) +
-                '%"></div></div></div></td>' +
+                '%"></div></div></div></dress>' +
                 '<td>' +
                 (adminPortalProjectGroup(project) === 'completed' ? '-' : escapeHtml(project.deadline || '')) +
-                '</td>' +
+                '</dress>' +
                 '<td><span class="status-badge status-' +
                 st +
                 '">' +
                 (project.status || 'Active') +
-                '</span></td>' +
+                '</span></dress>' +
                 '<td>' +
                 '<button type="button" class="btn-icon" title="Assign" onclick="adminAssignProjectPrefill(\'' +
                 nameEsc +
@@ -2836,7 +2832,7 @@ function renderProjectsFromDatabase(tbody, projects) {
                 '<button type="button" class="btn-icon btn-danger" title="Delete Project" onclick="deleteProject(\'' +
                 idStr +
                 '\')"><i class="fas fa-trash"></i></button> ' +
-                '</td>' +
+                '</dress>' +
                 '</tr>'
             );
         })
@@ -2898,39 +2894,44 @@ window.editProject = function(projectId) {
         document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
         document.getElementById('adminProjectStatus').value = project.status || 'Active';
         document.getElementById('adminProjectDeadline').value = project.deadline || '';
-    
-    // Handle location fields
-    if (project.location && typeof project.location === 'object') {
-        document.getElementById('projectLocationName').value = project.location.name || '';
-        document.getElementById('projectLatitude').value = project.location.latitude || '';
-        document.getElementById('projectLongitude').value = project.location.longitude || '';
-    } else {
-        document.getElementById('projectLocationName').value = project.location || '';
-        document.getElementById('projectLatitude').value = '';
-        document.getElementById('projectLongitude').value = '';
-    }
-    
-    // Handle assigned foreman
-    if (project.assignedForeman) {
-        selectedForeman = project.assignedForeman;
-        updateSelectedForemanDisplay(project.assignedForeman);
-    } else {
-        selectedForeman = null;
-        if (selectedForemanDisplay) {
-            selectedForemanDisplay.style.display = 'none';
+        
+        // Handle location fields
+        if (project.location && typeof project.location === 'object') {
+            document.getElementById('projectLocationName').value = project.location.name || '';
+            document.getElementById('projectLatitude').value = project.location.latitude || '';
+            document.getElementById('projectLongitude').value = project.location.longitude || '';
+        } else {
+            document.getElementById('projectLocationName').value = project.location || '';
+            document.getElementById('projectLatitude').value = '';
+            document.getElementById('projectLongitude').value = '';
         }
-    }
-    
-    // Handle financial fields
-    document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
-    document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
-    document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
-    document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
-    
-    // Update modal title
-    document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-    
-    // Show modal
+        
+        // Handle assigned foreman
+        if (project.assignedForeman) {
+            const selectedForeman = project.assignedForeman;
+            const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
+            const selectedForemanName = document.querySelector('.selected-foreman-name');
+            if (selectedForemanDisplay && selectedForemanName) {
+                selectedForemanName.textContent = selectedForeman.name;
+                selectedForemanDisplay.style.display = 'block';
+            }
+        } else {
+            const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
+            if (selectedForemanDisplay) {
+                selectedForemanDisplay.style.display = 'none';
+            }
+        }
+        
+        // Handle financial fields
+        document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
+        document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
+        document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
+        document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
+        
+        // Update modal title
+        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
+        
+        // Show modal
         document.getElementById('adminProjectModal').classList.add('open');
     })
     .catch(error => {
@@ -2958,94 +2959,94 @@ window.viewProjectDetails = function(projectId) {
             console.error('Project not found:', projectId);
             return;
         }
-    
-    const modal = document.getElementById('adminViewProjectModal');
-    const content = document.getElementById('adminViewProjectContent');
-    
-    if (!modal || !content) return;
-    
-    // Build project details HTML
-    let detailsHTML = `
-        <div class="project-details">
-            <h3>${project.name || 'Unnamed Project'}</h3>
-            <div class="project-info-grid">
-                <div class="info-item">
-                    <label>Client:</label>
-                    <span>${project.client || 'Not specified'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Location:</label>
-                    <span>${project.location && project.location.name ? project.location.name : project.location || 'Not specified'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Foreman:</label>
-                    <span>${project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Budget:</label>
-                    <span>${project.budget || 'Not specified'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Progress:</label>
-                    <span>${project.progress || 0}%</span>
-                </div>
-                <div class="info-item">
-                    <label>Status:</label>
-                    <span class="status-badge status-${(project.status || 'Active').toLowerCase().replace(/\s+/g, '-')}">${project.status || 'Active'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Deadline:</label>
-                    <span>${project.deadline || 'Not specified'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Category:</label>
-                    <span>${project.category || 'Commercial'}</span>
-                </div>
-    `;
-    
-    // Add location coordinates if available
-    if (project.location && project.location.latitude && project.location.longitude) {
-        detailsHTML += `
-                <div class="info-item">
-                    <label>Coordinates:</label>
-                    <span>${project.location.latitude}, ${project.location.longitude}</span>
-                </div>
+        
+        const modal = document.getElementById('adminViewProjectModal');
+        const content = document.getElementById('adminViewProjectContent');
+        
+        if (!modal || !content) return;
+        
+        // Build project details HTML
+        let detailsHTML = `
+            <div class="project-details">
+                <h3>${project.name || 'Unnamed Project'}</h3>
+                <div class="project-info-grid">
+                    <div class="info-item">
+                        <label>Client:</label>
+                        <span>${project.client || 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Location:</label>
+                        <span>${project.location && project.location.name ? project.location.name : project.location || 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Foreman:</label>
+                        <span>${project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Budget:</label>
+                        <span>${project.budget || 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Progress:</label>
+                        <span>${project.progress || 0}%</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Status:</label>
+                        <span class="status-badge status-${(project.status || 'Active').toLowerCase().replace(/\s+/g, '-')}">${project.status || 'Active'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Deadline:</label>
+                        <span>${project.deadline || 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Category:</label>
+                        <span>${project.category || 'Commercial'}</span>
+                    </div>
         `;
-    }
-    
-    // Add financial information
-    if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+        
+        // Add location coordinates if available
+        if (project.location && project.location.latitude && project.location.longitude) {
+            detailsHTML += `
+                    <div class="info-item">
+                        <label>Coordinates:</label>
+                        <span>${project.location.latitude}, ${project.location.longitude}</span>
+                    </div>
+            `;
+        }
+        
+        // Add financial information
+        if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+            detailsHTML += `
+                    <div class="info-item">
+                        <label>Money Paid:</label>
+                        <span>${project.moneyPaid || 'KSH 0'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Money Used:</label>
+                        <span>${project.moneyUsed || 'KSH 0'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Money Remaining:</label>
+                        <span>${project.moneyRemaining || 'KSH 0'}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Money Owed:</label>
+                        <span>${project.moneyOwed || 'KSH 0'}</span>
+                    </div>
+            `;
+        }
+        
         detailsHTML += `
-                <div class="info-item">
-                    <label>Money Paid:</label>
-                    <span>${project.moneyPaid || 'KSH 0'}</span>
                 </div>
-                <div class="info-item">
-                    <label>Money Used:</label>
-                    <span>${project.moneyUsed || 'KSH 0'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Money Remaining:</label>
-                    <span>${project.moneyRemaining || 'KSH 0'}</span>
-                </div>
-                <div class="info-item">
-                    <label>Money Owed:</label>
-                    <span>${project.moneyOwed || 'KSH 0'}</span>
-                </div>
-        `;
-    }
-    
-    detailsHTML += `
             </div>
-        </div>
-        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-            <button class="btn btn-primary" onclick="openRequestFundsModal('${projectId}')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-                <i class="fas fa-hand-holding-usd"></i> Request Funds
-            </button>
-        </div>
-    `;
-    
-    content.innerHTML = detailsHTML;
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                <button class="btn btn-primary" onclick="openRequestFundsModal('${projectId}')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i class="fas fa-hand-holding-usd"></i> Request Funds
+                </button>
+            </div>
+        `;
+        
+        content.innerHTML = detailsHTML;
         modal.classList.add('open');
     })
     .catch(error => {
@@ -3153,18 +3154,18 @@ function renderAdminInvoices(tbody) {
     if (!tbody) return;
     let invoices = getStored('portalInvoices', null);
     if (!invoices || !invoices.length) {
-        tbody.innerHTML = '<tr><td colspan="7">No invoices yet. Create them from the Invoices section.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">No invoices yet. Create them from the Invoices section.</dress></tr>';
         return;
     }
     tbody.innerHTML = invoices.map(inv => `
         <tr>
-            <td>${inv.number}</td>
-            <td>${inv.client}</td>
-            <td>${inv.project || '-'}</td>
-            <td>${inv.amount}</td>
-            <td>${inv.dueDate}</td>
-            <td><span class="status-badge status-${(inv.status || 'Pending').toLowerCase()}">${inv.status}</span></td>
-            <td><button class="btn-icon" onclick="viewInvoice('${inv.number}')"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="editInvoice('${inv.number}')"><i class="fas fa-edit"></i></button></td>
+            <td>${inv.number}</dress>
+            <td>${inv.client}</dress>
+            <td>${inv.project || '-'}</dress>
+            <td>${inv.amount}</dress>
+            <td>${inv.dueDate}</dress>
+            <td><span class="status-badge status-${(inv.status || 'Pending').toLowerCase()}">${inv.status}</span></dress>
+            <td><button class="btn-icon" onclick="viewInvoice('${inv.number}')"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="editInvoice('${inv.number}')"><i class="fas fa-edit"></i></button></dress>
         </tr>
     `).join('');
 }
@@ -3231,8 +3232,8 @@ function renderAdminWebsiteProjects() {
         var img = p.image
             ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
             : '—';
-        return '<tr><td>' + img + '</td><td>' + (p.title || '') + '</td><td>' + (p.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
+        return '<tr>lakang' + img + '</dress><td>' + (p.title || '') + '</dress><td>' + (p.category || '') + '</dress><td>' + desc + '</dress><td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></dress></tr>';
+    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</dress></tr>';
 }
 function renderAdminWebsiteServices() {
     var tbody = document.getElementById('adminWebsiteServicesBody');
@@ -3243,8 +3244,8 @@ function renderAdminWebsiteServices() {
         var img = s.image
             ? '<img src="' + String(s.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
             : '—';
-        return '<tr><td>' + img + '</td><td>' + (s.title || '') + '</td><td>' + (s.category || '') + '</td><td>' + desc + '</td><td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="5">No website services. Add one above.</td></tr>';
+        return '<tr>lakang' + img + '</dress><td>' + (s.title || '') + '</dress><td>' + (s.category || '') + '</dress><td>' + desc + '</dress><td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></dress></tr>';
+    }).join('') : '<tr><td colspan="5">No website services. Add one above.</dress></tr>';
 }
 window.deleteWebsiteProject = function(id) {
     if (typeof getWebsiteProjects !== 'function' || typeof setWebsiteProjects !== 'function') return;
@@ -3276,8 +3277,8 @@ function renderAdminBlogPosts() {
         var img = p.image
             ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
             : '—';
-        return '<tr><td>' + img + '</td><td>' + (p.title || '') + '</td><td>' + (p.date || '') + '</td><td>' + ex + '</td><td><button type=\"button\" class=\"btn-icon\" onclick=\"deleteBlogPost(' + p.id + ')\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan=\"5\">No blog posts. Add one above.</td></tr>';
+        return '<tr>lakang' + img + '</dress><td>' + (p.title || '') + '</dress><td>' + (p.date || '') + '</dress><td>' + ex + '</dress><td><button type=\"button\" class=\"btn-icon\" onclick=\"deleteBlogPost(' + p.id + ')\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button></dress></tr>';
+    }).join('') : '<tr><td colspan=\"5\">No blog posts. Add one above.</dress></tr>';
 }
 window.deleteBlogPost = function(id) {
     if (typeof getWebsiteBlogPosts !== 'function' || typeof setWebsiteBlogPosts !== 'function') return;
@@ -3303,8 +3304,8 @@ async function renderAdminEnquiries() {
         list = [];
     }
     tbody.innerHTML = list.length ? list.slice().reverse().map(function(e) {
-        return '<tr><td>' + (e.name || '') + '</td><td>' + (e.contact || '') + '</td><td>' + (e.type || '') + '</td><td>' + (e.location || '') + '</td><td>' + (e.timeline || '-') + '</td><td>' + (e.budget || '-') + '</td><td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</td></tr>';
-    }).join('') : '<tr><td colspan=\"7\">No enquiries yet.</td></tr>';
+        return '<tr>lakang' + (e.name || '') + '</dress><td>' + (e.contact || '') + '</dress><td>' + (e.type || '') + '</dress><td>' + (e.location || '') + '</dress><td>' + (e.timeline || '-') + '</dress><td>' + (e.budget || '-') + '</dress><td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</dress></tr>';
+    }).join('') : '<tr><td colspan=\"7\">No enquiries yet.</dress></tr>';
 }
 
 // ===== ADMIN PORTAL FUNCTIONS =====
@@ -3318,7 +3319,7 @@ async function renderPendingApprovals() {
             headers: { Authorization: 'Bearer ' + token }
         });
         if (!r.ok) {
-            tbody.innerHTML = '<tr><td colspan="5">Could not load pending accounts.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5">Could not load pending accounts.</dress></tr>';
             return;
         }
         var list = await r.json();
@@ -3326,21 +3327,23 @@ async function renderPendingApprovals() {
             ? list
                   .map(function (u) {
                       return (
-                          '<tr><td>' +
+                          '<tr>' +
+                          '<td>' +
                           (u.name || '') +
-                          '</td><td>' +
+                          '</dress><td>' +
                           (u.email || '') +
-                          '</td><td>' +
+                          '</dress><td>' +
                           (u.role || '') +
-                          '</td><td>' +
+                          '</dress><td>' +
                           (u.createdAt ? new Date(u.createdAt).toLocaleString() : '') +
-                          '</td><td><button type="button" class="btn btn-primary" data-approve-id="' +
+                          '</dress><td><button type="button" class="btn btn-primary" data-approve-id="' +
                           u.id +
-                          '">Approve</button></td></tr>'
+                          '">Approve</button></dress>' +
+                          '</tr>'
                       );
                   })
                   .join('')
-            : '<tr><td colspan="5">No pending accounts.</td></tr>';
+            : '<tr><td colspan="5">No pending accounts.</dress></tr>';
         tbody.querySelectorAll('[data-approve-id]').forEach(function (btn) {
             btn.addEventListener('click', async function () {
                 var id = btn.getAttribute('data-approve-id');
@@ -3373,7 +3376,7 @@ async function renderPendingApprovals() {
         });
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5">Error loading list.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5">Error loading list.</dress></tr>';
     }
 }
 
@@ -3441,8 +3444,8 @@ async function loadAdminDashboard() {
             apps = getStored('careerApplications', []);
         }
         careersBody.innerHTML = apps.length ? apps.map(function(a) {
-            return '<tr><td>' + (a.name || '') + '</td><td>' + (a.email || '') + '</td><td>' + (a.type || '') + '</td><td>' + (a.campus || '-') + '</td><td>' + (a.yearOfStudy || '-') + '</td><td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td></tr>';
-        }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
+            return '<tr>lakang' + (a.name || '') + '</dress><td>' + (a.email || '') + '</dress><td>' + (a.type || '') + '</dress><td>' + (a.campus || '-') + '</dress><td>' + (a.yearOfStudy || '-') + '</dress><td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</dress></tr>';
+        }).join('') : '<tr><td colspan="6">No applications yet.</dress></tr>';
     }
     const totalUsersEl = document.getElementById('totalUsers');
     const activeProjectsEl = document.getElementById('activeProjects');
@@ -3665,10 +3668,11 @@ function viewProjectDetails(projectId) {
                           '<span>' + (u.message || '') + '</span>' +
                           '</div>' +
                           '</div>' +
-                          '</td></tr>'
+                          '</dress></tr>'
                       );
                   }).join('')
-            : '<tr><td colspan="2" style="text-align:center;color:#6b7280;">No updates yet</td></tr>';
+            : '<tr><td colspan="2" style="text-align:center;color:#6b7280;">No updates yet</dress></tr>';
+    }
 }
 
 function downloadDocument(docName) {
@@ -3714,12 +3718,12 @@ function viewInvoice(invoiceNumber) {
         const modal = document.getElementById('clientInvoiceViewModal');
         if (content && modal) {
             content.innerHTML = inv ? (
-                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</td></tr>' +
-                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</td></tr>' +
-                '<tr><th>Date</th><td>' + (inv.date || '') + '</td></tr>' +
-                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></td></tr>' +
-                (inv.client ? '<tr><th>Client</th><td>' + inv.client + '</td></tr>' : '') +
-                (inv.project ? '<tr><th>Project</th><td>' + inv.project + '</td></tr>' : '') +
+                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</dress></tr>' +
+                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</dress></tr>' +
+                '<tr><th>Date</th><td>' + (inv.date || '') + '</dress></tr>' +
+                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></dress></tr>' +
+                (inv.client ? '<tr><th>Client</th><td>' + inv.client + '</dress></tr>' : '') +
+                (inv.project ? '<tr><th>Project</th><td>' + inv.project + '</dress></tr>' : '') +
                 '</table>'
             ) : '<p>Invoice not found.</p>';
             const actionsEl = document.getElementById('clientInvoiceViewActions');
@@ -3735,12 +3739,12 @@ function viewInvoice(invoiceNumber) {
         const modal = document.getElementById('adminInvoiceViewModal');
         if (content && modal) {
             content.innerHTML = inv ? (
-                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</td></tr>' +
-                '<tr><th>Client</th><td>' + (inv.client || '') + '</td></tr>' +
-                '<tr><th>Project</th><td>' + (inv.project || '-') + '</td></tr>' +
-                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</td></tr>' +
-                '<tr><th>Due Date</th><td>' + (inv.dueDate || '') + '</td></tr>' +
-                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></td></tr></table>'
+                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</dress></tr>' +
+                '<tr><th>Client</th><td>' + (inv.client || '') + '</dress></tr>' +
+                '<tr><th>Project</th><td>' + (inv.project || '-') + '</dress></tr>' +
+                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</dress></tr>' +
+                '<tr><th>Due Date</th><td>' + (inv.dueDate || '') + '</dress></tr>' +
+                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></dress></tr></table>'
             ) : '<p>Invoice not found.</p>';
             modal.classList.add('open');
         }
@@ -3849,104 +3853,103 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Admin Request Funds functionality - moved inside main DOMContentLoaded
+// Admin Request Funds functionality
 const requestFundsBtn = document.getElementById('requestFundsBtn');
-    const requestFundsModal = document.getElementById('adminRequestFundsModal');
-    const requestFundsForm = document.getElementById('adminRequestFundsForm');
+const requestFundsModal = document.getElementById('adminRequestFundsModal');
+const requestFundsForm = document.getElementById('adminRequestFundsForm');
+
+if (requestFundsBtn && requestFundsModal && requestFundsForm) {
+    requestFundsBtn.addEventListener('click', function() {
+        requestFundsModal.classList.add('open');
+    });
     
-    if (requestFundsBtn && requestFundsModal && requestFundsForm) {
-        requestFundsBtn.addEventListener('click', function() {
-            requestFundsModal.classList.add('open');
+    document.querySelectorAll('[data-close="adminRequestFundsModal"]').forEach(function(el) {
+        el.addEventListener('click', function() {
+            requestFundsModal.classList.remove('open');
         });
+    });
+    
+    requestFundsModal.addEventListener('click', function(e) {
+        if (e.target === requestFundsModal) {
+            requestFundsModal.classList.remove('open');
+        }
+    });
+    
+    requestFundsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const projectSelect = document.getElementById('requestFundsProject');
+        const projectId = projectSelect.getAttribute('data-project-id');
+        const amount = document.getElementById('requestFundsAmount').value;
+        const reason = document.getElementById('requestFundsReason').value;
+        const description = document.getElementById('requestFundsDescription').value;
+        const dueDate = document.getElementById('requestFundsDueDate').value;
         
-        document.querySelectorAll('[data-close="adminRequestFundsModal"]').forEach(function(el) {
-            el.addEventListener('click', function() {
-                requestFundsModal.classList.remove('open');
-            });
-        });
-        
-        requestFundsModal.addEventListener('click', function(e) {
-            if (e.target === requestFundsModal) {
-                requestFundsModal.classList.remove('open');
-            }
-        });
-        
-        requestFundsForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const projectSelect = document.getElementById('requestFundsProject');
-            const projectId = projectSelect.getAttribute('data-project-id');
-            const amount = document.getElementById('requestFundsAmount').value;
-            const reason = document.getElementById('requestFundsReason').value;
-            const description = document.getElementById('requestFundsDescription').value;
-            const dueDate = document.getElementById('requestFundsDueDate').value;
+        if (projectId && amount && reason && description) {
+            const projects = getStored('portalProjects', []);
+            const project = projects.find(p => String(p.id) === projectId);
             
-            if (projectId && amount && reason && description) {
-                const projects = getStored('portalProjects', []);
-                const project = projects.find(p => String(p.id) === projectId);
+            if (project) {
+                // Add to fund requests
+                const requests = getStored('adminFundRequests', []);
+                const request = {
+                    id: Date.now(),
+                    projectId: projectId,
+                    projectName: project.name,
+                    clientName: project.client,
+                    clientEmail: project.clientEmail || '',
+                    amount: 'KSH ' + parseFloat(amount).toLocaleString(),
+                    amountValue: parseFloat(amount),
+                    reason: reason,
+                    description: description,
+                    dueDate: dueDate,
+                    date: new Date().toISOString(),
+                    status: 'pending'
+                };
+                requests.push(request);
+                store('adminFundRequests', requests);
                 
-                if (project) {
-                    // Add to fund requests
-                    const requests = getStored('adminFundRequests', []);
-                    const request = {
-                        id: Date.now(),
-                        projectId: projectId,
-                        projectName: project.name,
-                        clientName: project.client,
-                        clientEmail: project.clientEmail || '',
-                        amount: 'KSH ' + parseFloat(amount).toLocaleString(),
-                        amountValue: parseFloat(amount),
-                        reason: reason,
-                        description: description,
-                        dueDate: dueDate,
-                        date: new Date().toISOString(),
-                        status: 'pending'
-                    };
-                    requests.push(request);
-                    store('adminFundRequests', requests);
-                    
-                    // Add to client notifications
-                    const clientNotifications = getStored('clientNotifications', []);
-                    clientNotifications.push({
-                        id: Date.now(),
-                        type: 'fund_request',
-                        title: 'Fund Request - ' + project.name,
-                        message: `A fund request of KSH ${parseFloat(amount).toLocaleString()} has been sent for ${project.name}. Reason: ${reason}. Due date: ${dueDate}.`,
-                        amount: amount,
-                        projectName: project.name,
-                        clientName: project.client,
-                        date: new Date().toISOString(),
-                        read: false
-                    });
-                    store('clientNotifications', clientNotifications);
-                    
-                    // Add to admin messages for tracking
-                    const messages = getStored('portalMessages', []);
-                    messages.push({
-                        from: 'admin@aisconcepts.com',
-                        to: project.clientEmail || 'client',
-                        project: project.name,
-                        subject: `Fund Request - KSH ${parseFloat(amount).toLocaleString()}`,
-                        body: `Dear ${project.client},\n\nWe are requesting funds of KSH ${parseFloat(amount).toLocaleString()} for the project "${project.name}".\n\nReason: ${reason}\nDescription: ${description}\nDue Date: ${dueDate}\n\nPlease process this request at your earliest convenience.\n\nThank you,\nAIS Concepts Team`,
-                        timestamp: new Date().toISOString(),
-                        type: 'fund_request'
-                    });
-                    store('portalMessages', messages);
-                    
-                    // Show success message
-                    alert(`Fund request of KSH ${parseFloat(amount).toLocaleString()} sent to ${project.client}! The client will be notified.`);
-                    
-                    // Close modal and reset form
-                    requestFundsModal.classList.remove('open');
-                    requestFundsForm.reset();
-                    
-                    // Refresh notifications badge
-                    if (typeof refreshNotificationsBadge === 'function') {
-                        refreshNotificationsBadge();
-                    }
+                // Add to client notifications
+                const clientNotifications = getStored('clientNotifications', []);
+                clientNotifications.push({
+                    id: Date.now(),
+                    type: 'fund_request',
+                    title: 'Fund Request - ' + project.name,
+                    message: `A fund request of KSH ${parseFloat(amount).toLocaleString()} has been sent for ${project.name}. Reason: ${reason}. Due date: ${dueDate}.`,
+                    amount: amount,
+                    projectName: project.name,
+                    clientName: project.client,
+                    date: new Date().toISOString(),
+                    read: false
+                });
+                store('clientNotifications', clientNotifications);
+                
+                // Add to admin messages for tracking
+                const messages = getStored('portalMessages', []);
+                messages.push({
+                    from: 'admin@aisconcepts.com',
+                    to: project.clientEmail || 'client',
+                    project: project.name,
+                    subject: `Fund Request - KSH ${parseFloat(amount).toLocaleString()}`,
+                    body: `Dear ${project.client},\n\nWe are requesting funds of KSH ${parseFloat(amount).toLocaleString()} for the project "${project.name}".\n\nReason: ${reason}\nDescription: ${description}\nDue Date: ${dueDate}\n\nPlease process this request at your earliest convenience.\n\nThank you,\nAIS Concepts Team`,
+                    timestamp: new Date().toISOString(),
+                    type: 'fund_request'
+                });
+                store('portalMessages', messages);
+                
+                // Show success message
+                alert(`Fund request of KSH ${parseFloat(amount).toLocaleString()} sent to ${project.client}! The client will be notified.`);
+                
+                // Close modal and reset form
+                requestFundsModal.classList.remove('open');
+                requestFundsForm.reset();
+                
+                // Refresh notifications badge
+                if (typeof refreshNotificationsBadge === 'function') {
+                    refreshNotificationsBadge();
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 // Function to update admin dashboard statistics dynamically
@@ -4134,12 +4137,12 @@ function renderTasks(tbody, tasks) {
     
     tbody.innerHTML = tasks.length ? tasks.map(task => `
         <tr>
-            <td>${task.title}</td>
-            <td>${task.assignee}</td>
-            <td>${getProjectName(task.project)}</td>
-            <td><span class="priority-${task.priority}">${task.priority}</span></td>
-            <td>${new Date(task.dueDate).toLocaleDateString()}</td>
-            <td><span class="status-${task.status}">${task.status}</span></td>
+            <td>${task.title}</dress>
+            <td>${task.assignee}</dress>
+            <td>${getProjectName(task.project)}</dress>
+            <td><span class="priority-${task.priority}">${task.priority}</span></dress>
+            <td>${new Date(task.dueDate).toLocaleDateString()}</dress>
+            <td><span class="status-${task.status}">${task.status}</span></dress>
             <td>
                 <button class="btn-icon" onclick="editTask(${task.id})" title="Edit">
                     <i class="fas fa-edit"></i>
@@ -4147,9 +4150,9 @@ function renderTasks(tbody, tasks) {
                 <button class="btn-icon" onclick="deleteTask(${task.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="7">No tasks found</td></tr>';
+    `).join('') : '<tr><td colspan="7">No tasks found</dress></tr>';
 }
 
 function getProjectName(projectId) {
@@ -4294,12 +4297,12 @@ function renderDocuments(tbody, documents) {
     
     tbody.innerHTML = documents.length ? documents.map(doc => `
         <tr>
-            <td><i class="fas fa-file-${getFileIcon(doc.type)}"></i> ${doc.name}</td>
-            <td>${doc.type}</td>
-            <td>${getProjectName(doc.project)}</td>
-            <td>${new Date(doc.uploaded).toLocaleDateString()}</td>
-            <td>${doc.fileSize}</td>
-            <td>v${doc.version}</td>
+            <td><i class="fas fa-file-${getFileIcon(doc.type)}"></i> ${doc.name}</dress>
+            <td>${doc.type}</dress>
+            <td>${getProjectName(doc.project)}</dress>
+            <td>${new Date(doc.uploaded).toLocaleDateString()}</dress>
+            <td>${doc.fileSize}</dress>
+            <td>v${doc.version}</dress>
             <td>
                 <button class="btn-icon" onclick="viewDocument(${doc.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -4310,9 +4313,9 @@ function renderDocuments(tbody, documents) {
                 <button class="btn-icon" onclick="deleteDocument(${doc.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="7">No documents found</td></tr>';
+    `).join('') : '<tr><td colspan="7">No documents found</dress></tr>';
 }
 
 function getFileIcon(type) {
@@ -4413,16 +4416,16 @@ function renderDesigns(tbody, designs) {
     
     tbody.innerHTML = designs.length ? designs.map(design => `
         <tr>
-            <td>${design.name}</td>
-            <td>${design.type}</td>
-            <td>${getProjectName(design.project)}</td>
-            <td><span class="status-${design.status}">${design.status}</span></td>
+            <td>${design.name}</dress>
+            <td>${design.type}</dress>
+            <td>${getProjectName(design.project)}</dress>
+            <td><span class="status-${design.status}">${design.status}</span></dress>
             <td>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${design.progress}%"></div>
                     <span>${design.progress}%</span>
                 </div>
-            </td>
+                            </dress>
             <td>
                 <button class="btn-icon" onclick="viewDesign(${design.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -4433,9 +4436,9 @@ function renderDesigns(tbody, designs) {
                 <button class="btn-icon" onclick="deleteDesign(${design.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="6">No designs found</td></tr>';
+    `).join('') : '<tr><td colspan="6">No designs found</dress></tr>';
 }
 
 window.viewDesign = function(designId) {
@@ -4534,11 +4537,11 @@ function renderCommunications(tbody, communications) {
     
     tbody.innerHTML = communications.length ? communications.map(comm => `
         <tr>
-            <td>${comm.subject}</td>
-            <td>${comm.participants}</td>
-            <td><span class="type-${comm.type}">${comm.type}</span></td>
-            <td>${new Date(comm.date).toLocaleDateString()}</td>
-            <td><span class="status-${comm.status}">${comm.status}</span></td>
+            <td>${comm.subject}</dress>
+            <td>${comm.participants}</dress>
+            <td><span class="type-${comm.type}">${comm.type}</span></dress>
+            <td>${new Date(comm.date).toLocaleDateString()}</dress>
+            <td><span class="status-${comm.status}">${comm.status}</span></dress>
             <td>
                 <button class="btn-icon" onclick="viewCommunication(${comm.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -4546,9 +4549,9 @@ function renderCommunications(tbody, communications) {
                 <button class="btn-icon" onclick="replyCommunication(${comm.id})" title="Reply">
                     <i class="fas fa-reply"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="6">No communications found</td></tr>';
+    `).join('') : '<tr><td colspan="6">No communications found</dress></tr>';
 }
 
 window.viewCommunication = function(commId) {
@@ -4625,17 +4628,17 @@ function renderSites(tbody, sites) {
     
     tbody.innerHTML = sites.length ? sites.map(site => `
         <tr>
-            <td>${site.name}</td>
-            <td>${getProjectName(site.project)}</td>
-            <td>${new Date(site.lastVisit).toLocaleDateString()}</td>
+            <td>${site.name}</dress>
+            <td>${getProjectName(site.project)}</dress>
+            <td>${new Date(site.lastVisit).toLocaleDateString()}</dress>
             <td>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${site.progress}%"></div>
                     <span>${site.progress}%</span>
                 </div>
-            </td>
-            <td><span class="issues-${site.issues}">${site.issues} issues</span></td>
-            <td>${site.nextVisit ? new Date(site.nextVisit).toLocaleDateString() : 'Not scheduled'}</td>
+            </dress>
+            <td><span class="issues-${site.issues}">${site.issues} issues</span></dress>
+            <td>${site.nextVisit ? new Date(site.nextVisit).toLocaleDateString() : 'Not scheduled'}</dress>
             <td>
                 <button class="btn-icon" onclick="viewSite(${site.id})" title="View Site">
                     <i class="fas fa-eye"></i>
@@ -4646,9 +4649,9 @@ function renderSites(tbody, sites) {
                 <button class="btn-icon" onclick="deleteSite(${site.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="7">No sites found</td></tr>';
+    `).join('') : '<tr><td colspan="7">No sites found</dress></tr>';
 }
 
 window.viewSite = function(siteId) {
@@ -4798,13 +4801,13 @@ function renderFinancials(tbody, financials) {
     
     tbody.innerHTML = financials.length ? financials.map(fin => `
         <tr>
-            <td><span class="type-${fin.type}">${fin.type}</span></td>
-            <td>${fin.description}</td>
-            <td>${fin.client}</td>
-            <td>$${fin.amount.toLocaleString()}</td>
-            <td>${new Date(fin.date).toLocaleDateString()}</td>
-            <td><span class="status-${fin.status}">${fin.status}</span></td>
-            <td>${fin.category}</td>
+            <td><span class="type-${fin.type}">${fin.type}</span></dress>
+            <td>${fin.description}</dress>
+            <td>${fin.client}</dress>
+            <td>$${fin.amount.toLocaleString()}</dress>
+            <td>${new Date(fin.date).toLocaleDateString()}</dress>
+            <td><span class="status-${fin.status}">${fin.status}</span></dress>
+            <td>${fin.category}</dress>
             <td>
                 <button class="btn-icon" onclick="viewFinancial(${fin.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -4815,9 +4818,9 @@ function renderFinancials(tbody, financials) {
                 <button class="btn-icon" onclick="deleteFinancial(${fin.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="8">No financial entries found</td></tr>';
+    `).join('') : '<tr><td colspan="8">No financial entries found</dress></tr>';
 }
 
 function updateFinancialSummary() {
@@ -4967,11 +4970,11 @@ function renderPortfolio(tbody, portfolioItems) {
     
     tbody.innerHTML = portfolioItems.length ? portfolioItems.map(item => `
         <tr>
-            <td>${item.title}</td>
-            <td>${item.category}</td>
-            <td>${item.views}</td>
-            <td>${item.inquiries}</td>
-            <td><span class="featured-${item.featured}">${item.featured ? 'Yes' : 'No'}</span></td>
+            <td>${item.title}</dress>
+            <td>${item.category}</dress>
+            <td>${item.views}</dress>
+            <td>${item.inquiries}</dress>
+            <td><span class="featured-${item.featured}">${item.featured ? 'Yes' : 'No'}</span></dress>
             <td>
                 <button class="btn-icon" onclick="viewPortfolio(${item.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -4982,9 +4985,9 @@ function renderPortfolio(tbody, portfolioItems) {
                 <button class="btn-icon" onclick="deletePortfolio(${item.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="6">No portfolio items found</td></tr>';
+    `).join('') : '<td><td colspan="6">No portfolio items found</dress></tr>';
 }
 
 window.viewPortfolio = function(itemId) {
@@ -5020,13 +5023,13 @@ function renderApprovals(tbody, approvals) {
     
     tbody.innerHTML = approvals.length ? approvals.map(approval => `
         <tr>
-            <td>${approval.document}</td>
-            <td>${approval.type}</td>
-            <td>${approval.project}</td>
-            <td>${approval.submittedBy}</td>
-            <td>${approval.approvalType}</td>
-            <td><span class="status-${approval.status}">${approval.status}</span></td>
-            <td>${new Date(approval.submitted).toLocaleDateString()}</td>
+            <td>${approval.document}</dress>
+            <td>${approval.type}</dress>
+            <td>${approval.project}</dress>
+            <td>${approval.submittedBy}</dress>
+            <td>${approval.approvalType}</dress>
+            <td><span class="status-${approval.status}">${approval.status}</span></dress>
+            <td>${new Date(approval.submitted).toLocaleDateString()}</dress>
             <td>
                 <button class="btn-icon" onclick="viewApproval(${approval.id})" title="View">
                     <i class="fas fa-eye"></i>
@@ -5037,9 +5040,9 @@ function renderApprovals(tbody, approvals) {
                 <button class="btn-icon" onclick="rejectApproval(${approval.id})" title="Reject">
                     <i class="fas fa-times"></i>
                 </button>
-            </td>
+            </dress>
         </tr>
-    `).join('') : '<tr><td colspan="8">No approvals pending</td></tr>';
+    `).join('') : '<tr><td colspan="8">No approvals pending</dress></tr>';
 }
 
 window.viewApproval = function(approvalId) {
@@ -5394,5 +5397,26 @@ function updateCRMStats() {
     // Calculate pending invoices
     const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
     const pendingInvoicesEl = document.getElementById('pendingInvoices');
-    if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
+    if (pendingInvoicesEl) {
+        pendingInvoicesEl.textContent = String(pendingInvoices.length);
+    }
 }
+
+// Helper function for API fetch with error handling
+function apiFetch(url, options = {}) {
+    const token = sessionStorage.getItem('authToken');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return fetch((window.API_BASE || '') + url, {
+        ...options,
+        headers: headers
+    });
+}
+            
