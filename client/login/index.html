@@ -139,7 +139,7 @@
                     </form>
                 </div>
                 <div class="auth-links">
-                    <a href="../staff/login.html">Admin / employee login</a>
+                    <a href="../staff/login/">Admin / employee login</a>
                 </div>
             </div>
         </div>
@@ -191,7 +191,7 @@
                 .then(function (data) {
                     sessionStorage.setItem('authToken', data.token);
                     sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-                    window.location.href = 'dashboard.html';
+                    window.location.href = '../dashboard/';
                 })
                 .catch(function (err) {
                     if (err && err.error === 'account_pending') {

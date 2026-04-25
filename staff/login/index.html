@@ -137,7 +137,7 @@
                     </form>
                 </div>
                 <div class="auth-links">
-                    <a href="../client/login.html">Client login</a>
+                    <a href="../client/login/">Client login</a>
                 </div>
             </div>
         </div>
@@ -187,9 +187,9 @@
                     sessionStorage.setItem('currentUser', JSON.stringify(data.user));
                     
                     if (portalType === 'admin') {
-                        window.location.href = '../admin/dashboard.html';
+                        window.location.href = '../admin/dashboard/';
                     } else {
-                        window.location.href = '../employee/dashboard.html';
+                        window.location.href = '../employee/dashboard/';
                     }
                 })
                 .catch(function (err) {

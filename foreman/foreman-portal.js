@@ -9,12 +9,12 @@
         currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
         
         if (!authToken || !currentUser) {
-            window.location.href = '../staff/login.html';
+            window.location.href = '../staff/login/';
             return;
         }
 
         if (currentUser.role !== 'foreman') {
-            window.location.href = '../staff/login.html';
+            window.location.href = '../staff/login/';
             return;
         }
 
@@ -147,7 +147,7 @@
             logoutBtn.addEventListener('click', function() {
                 sessionStorage.removeItem('authToken');
                 sessionStorage.removeItem('currentUser');
-                window.location.href = '../staff/login.html';
+                window.location.href = '../staff/login/';
             });
         }
 
@@ -648,11 +648,11 @@
     }
 
     function viewProject(projectId) {
-        window.location.href = `project-detail.html?id=${projectId}`;
+        window.location.href = `../project-detail/?id=${projectId}`;
     }
 
     function editWorker(workerId) {
-        window.location.href = `worker-detail.html?id=${workerId}`;
+        window.location.href = `../worker-detail/?id=${workerId}`;
     }
 
     function removeWorker(workerId) {
