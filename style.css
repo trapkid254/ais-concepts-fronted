@@ -378,6 +378,7 @@ section {
     position: fixed;
     top: 72px;
     left: 0;
+    right: 0;
     width: 100%;
     height: calc(100dvh - 72px);
     z-index: 2;
@@ -489,18 +490,21 @@ section {
     z-index: 2;
     min-height: calc(100vh - 72px);
     height: 100%;
+    width: 100%;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 0 20px 48px;
+    padding: 0;
     box-sizing: border-box;
 }
 
 .hero-content {
-    max-width: 900px;
-    padding: 0 20px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 60px 20px 40px;
     animation: fadeInUp 1.2s ease;
     color: white;
+    text-align: center;
 }
 
 .hero .btn-primary {
@@ -519,6 +523,10 @@ section {
 .hero .typewriter-title,
 .hero .typewriter-text {
     border-right-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    display: block;
+    width: 100%;
+    white-space: normal;
 }
 
 .hero .typewriter-title.typed,
@@ -528,26 +536,33 @@ section {
 
 /* ===== Hero Stats ===== */
 .hero-stats {
-    margin: 40px 0;
+    margin: 25px 0 45px;
 }
 
 .hero-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 30px;
+    gap: 15px;
     text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 .hero-stat-item {
-    padding: 20px;
+    aspect-ratio: 1 / 1;
+    padding: 12px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .hero-stat-number {
-    font-size: 2.5rem;
+    font-size: 1.8rem;
     font-weight: 300;
     color: #20c4b4;
     letter-spacing: -0.02em;
@@ -555,27 +570,17 @@ section {
 }
 
 .hero-stat-suffix {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #20c4b4;
     font-weight: 300;
 }
 
 .hero-stat-label {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.9);
-    margin-top: 8px;
+    margin-top: 4px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* ===== Mobile Navbar ===== */
-.nav-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #111827;
-    cursor: pointer;
+    letter-spacing: 0.5px;
 }
 
 .nav-ticker {
@@ -627,13 +632,19 @@ section {
     line-height: 1.2;
     margin-bottom: 20px;
     letter-spacing: -0.02em;
+    text-align: center;
+    width: 100%;
+    display: block;
 }
 
 .hero-subtitle {
     font-size: clamp(1.1rem, 3vw, 1.5rem);
     font-weight: 300;
-    margin-bottom: 40px;
+    margin-bottom: 45px;
     opacity: 0.9;
+    text-align: center;
+    width: 100%;
+    display: block;
 }
 
 .btn-primary {
@@ -2419,5 +2430,35 @@ color: #e5e7eb;
     }
     .hero-inner {
         min-height: calc(100dvh - 72px);
+    }
+    .hero-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 320px;
+    }
+    .hero-content {
+        padding: 40px 20px 30px;
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        max-width: 280px;
+    }
+    .hero-stat-item {
+        padding: 8px;
+    }
+    .hero-stat-number {
+        font-size: 1.4rem;
+    }
+    .hero-stat-suffix {
+        font-size: 1rem;
+    }
+    .hero-stat-label {
+        font-size: 0.65rem;
+    }
+    .hero-content {
+        padding: 30px 15px 20px;
     }
 }
