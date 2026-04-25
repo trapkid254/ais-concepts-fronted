@@ -1,14 +1,17 @@
 // ===== portal-script.js =====
 
 var __portalCache = {};
+
 function getStored(key, fallback) {
     if (__portalCache[key] !== undefined) return __portalCache[key];
     return fallback;
 }
+
 function setStored(key, value) {
     __portalCache[key] = value;
     syncPortalKey(key, value);
 }
+
 function syncPortalKey(key, value) {
     var token = sessionStorage.getItem('authToken');
     if (!token) return;
@@ -74,7 +77,7 @@ async function openPortalNotificationsModal(modalId) {
     if (!modal) return;
     var listEl = modal.querySelector('.portal-notifications-list');
     if (!listEl) return;
-    listEl.innerHTML = '<p class="empty-state">Loading…</p>';
+    listEl.innerHTML = '<p class="empty-state">Loading\u2026</p>';
     try {
         var r = await fetch(API_BASE + '/api/notifications', {
             headers: { Authorization: 'Bearer ' + token }
@@ -129,7 +132,6 @@ function escapeHtml(s) {
 }
 
 function navigatePortalSection(sectionId, opts) {
-    var path = window.location.pathname || '';
     var sidebarLink = document.querySelector('.sidebar-nav a[data-section="' + sectionId + '"]');
     if (sidebarLink) {
         sidebarLink.click();
@@ -172,48 +174,159 @@ function navigatePortalSection(sectionId, opts) {
     if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    // Generic close modal: any .close-modal with data-close="modalId" closes that modal
-    document.body.addEventListener('click', function(e) {
-        const btn = e.target.closest('.close-modal');
+// ===== HELPER FUNCTIONS =====
+
+function escapeAttr(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function apiFetch(url, options) {
+    options = options || {};
+    var token = sessionStorage.getItem('authToken');
+    var headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    if (token) headers.Authorization = 'Bearer ' + token;
+    return fetch((window.API_BASE || '') + url, Object.assign({}, options, { headers: headers }));
+}
+
+function logout() {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('currentUser');
+    window.location.href = '../index.html';
+}
+
+function displayUserInfo(user) {
+    document.querySelectorAll('.user-avatar img').forEach(function (img) {
+        img.src = user.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name) + '&background=20c4b4&color=fff&size=128';
+    });
+    document.querySelectorAll('.user-name').forEach(function (el) {
+        el.textContent = user.name || user.email.split('@')[0];
+    });
+    document.querySelectorAll('.user-email').forEach(function (el) {
+        el.textContent = user.email;
+    });
+    document.querySelectorAll('.user-role').forEach(function (el) {
+        el.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+        el.className = 'user-role role-' + user.role;
+    });
+}
+
+function getProfileKey(email) {
+    return email ? 'portalProfile_' + email.replace(/[^a-z0-9]/gi, '_') : null;
+}
+
+function setupPortalProfile(portal, currentUser) {
+    if (!currentUser || !currentUser.email) return;
+    var key = getProfileKey(currentUser.email);
+    var prof = window.__portalUserProfile || {};
+    var profile = {
+        name: prof.name || currentUser.name,
+        email: prof.email || currentUser.email,
+        phone: prof.phone || '',
+        avatar: prof.avatar || currentUser.avatar,
+        password: prof.password || ''
+    };
+    var prefix = portal === 'client' ? 'client' : portal === 'admin' ? 'admin' : 'employee';
+    var nameEl = document.getElementById(prefix + 'ProfileName');
+    var emailEl = document.getElementById(prefix + 'ProfileEmail');
+    var phoneEl = document.getElementById(prefix + 'ProfilePhone');
+    var photoEl = document.getElementById(prefix + 'ProfilePhoto');
+    var photoInput = document.getElementById(prefix + 'ProfilePhotoInput');
+    var form = document.getElementById(prefix + 'ProfileForm');
+    if (nameEl) nameEl.value = profile.name || currentUser.name || '';
+    if (emailEl) emailEl.value = profile.email || currentUser.email || '';
+    if (phoneEl) phoneEl.value = profile.phone || '';
+    if (photoEl) photoEl.src = profile.avatar || currentUser.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile.name || currentUser.email) + '&background=20c4b4&color=fff&size=128';
+    if (photoInput && photoEl) {
+        photoInput.addEventListener('change', function () {
+            var f = this.files[0];
+            if (!f) return;
+            var reader = new FileReader();
+            reader.onload = function () {
+                photoEl.src = reader.result;
+                currentUser.avatar = reader.result;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                document.querySelectorAll('.user-avatar img').forEach(function (img) { img.src = reader.result; });
+            };
+            reader.readAsDataURL(f);
+        });
+    }
+    if (form && key) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var name = document.getElementById(prefix + 'ProfileName').value;
+            var email = document.getElementById(prefix + 'ProfileEmail').value;
+            var phone = document.getElementById(prefix + 'ProfilePhone').value;
+            var newPass = document.getElementById(prefix + 'ProfileNewPassword') ? document.getElementById(prefix + 'ProfileNewPassword').value : '';
+            var avatar = photoEl ? photoEl.src : profile.avatar;
+            var token = sessionStorage.getItem('authToken');
+            fetch((window.API_BASE || '') + '/api/user/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify({ name: name, email: email, phone: phone, avatar: avatar, password: newPass || undefined })
+            }).then(function (r) {
+                if (!r.ok) throw new Error('save failed');
+                window.__portalUserProfile = { name: name, email: email, phone: phone, avatar: avatar };
+                currentUser.name = name;
+                currentUser.email = email;
+                currentUser.avatar = avatar;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                displayUserInfo(currentUser);
+                alert('Profile saved.');
+            }).catch(function () {
+                alert('Could not save profile. Check your connection.');
+            });
+        });
+    }
+}
+
+// ===== DOMContentLoaded =====
+
+document.addEventListener('DOMContentLoaded', async function () {
+    // Generic close modal
+    document.body.addEventListener('click', function (e) {
+        var btn = e.target.closest('.close-modal');
         if (btn && btn.getAttribute('data-close')) {
-            const modal = document.getElementById(btn.getAttribute('data-close'));
+            var modal = document.getElementById(btn.getAttribute('data-close'));
             if (modal) modal.classList.remove('open');
         }
     });
-    // Click outside to close modals
-    ['clientInvoiceViewModal', 'adminInvoiceViewModal', 'employeeTimeEditModal', 'adminInvoiceEditModal', 'clientProjectViewModal', 'clientUploadDocModal', 'clientNotificationsModal', 'clientAddProjectModal', 'employeeTaskUpdateModal', 'employeeNotificationsModal', 'adminNotificationsModal', 'adminBroadcastModal', 'adminWebsiteProjectModal', 'adminWebsiteServiceModal', 'adminBlogPostModal'].forEach(function(id) {
-        const m = document.getElementById(id);
-        if (m) m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+
+    // Click-outside to close modals
+    ['clientInvoiceViewModal','adminInvoiceViewModal','employeeTimeEditModal','adminInvoiceEditModal',
+     'clientProjectViewModal','clientUploadDocModal','clientNotificationsModal','clientAddProjectModal',
+     'employeeTaskUpdateModal','employeeNotificationsModal','adminNotificationsModal','adminBroadcastModal',
+     'adminWebsiteProjectModal','adminWebsiteServiceModal','adminBlogPostModal'].forEach(function (id) {
+        var m = document.getElementById(id);
+        if (m) m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
     });
 
-    const path = window.location.pathname;
-    const token = sessionStorage.getItem('authToken');
-    const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    var path = window.location.pathname;
+    var token = sessionStorage.getItem('authToken');
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+
     if (!token || !currentUser) {
         var loginPage = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
         window.location.href = loginPage;
         return;
     }
+
     try {
-        const r = await fetch((window.API_BASE || '') + '/api/portal/bootstrap', {
+        var r = await fetch((window.API_BASE || '') + '/api/portal/bootstrap', {
             headers: { Authorization: 'Bearer ' + token }
         });
         if (r.status === 401) {
             sessionStorage.removeItem('authToken');
             sessionStorage.removeItem('currentUser');
-            var loginPage401 = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
-            window.location.href = loginPage401;
+            window.location.href = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
             return;
         }
         if (r.status === 403) {
             sessionStorage.removeItem('authToken');
             sessionStorage.removeItem('currentUser');
-            var loginPage403 = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
-            window.location.href = loginPage403 + '?pending=1';
+            window.location.href = (path.includes('/client/') ? '../client/login.html' : '../staff/login.html') + '?pending=1';
             return;
         }
-        const data = await r.json();
+        var data = await r.json();
         Object.keys(data).forEach(function (k) {
             if (k === 'profile') {
                 window.__portalUserProfile = data.profile || {};
@@ -225,10 +338,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error(e);
     }
 
-    // Display user info in sidebar
     displayUserInfo(currentUser);
-    
-    // Determine which portal we're in and load appropriate data
+
     if (path.includes('/client/')) {
         loadClientDashboard();
     } else if (path.includes('/employee/')) {
@@ -248,81 +359,57 @@ document.addEventListener('DOMContentLoaded', async function() {
         e.preventDefault();
         navigatePortalSection(section, filter ? { filter: filter } : {});
     });
-    
-    // Logout functionality
-    const logoutBtn = document.getElementById('logoutBtn');
+
+    var logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            logout();
-        });
+        logoutBtn.addEventListener('click', function (e) { e.preventDefault(); logout(); });
     }
-    
-    // Mobile menu toggle with overlay
-    const menuToggle = document.getElementById('menuToggle');
-    if (menuToggle) {
-        menuToggle.addEventListener('click', function() {
-            const sidebar = document.querySelector('.sidebar');
-            const overlay = document.querySelector('.sidebar-overlay') || createSidebarOverlay();
-            
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
-    }
-    
-    // Create sidebar overlay if it doesn't exist
+
     function createSidebarOverlay() {
-        const overlay = document.createElement('div');
+        var overlay = document.createElement('div');
         overlay.className = 'sidebar-overlay';
-        overlay.addEventListener('click', function() {
-            const sidebar = document.querySelector('.sidebar');
+        overlay.addEventListener('click', function () {
+            var sidebar = document.querySelector('.sidebar');
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
         document.body.appendChild(overlay);
         return overlay;
     }
-    
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(e) {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-        const menuToggle = document.getElementById('menuToggle');
-        
-        if (window.innerWidth <= 768 && 
-            sidebar && 
-            sidebar.classList.contains('active') && 
-            !sidebar.contains(e.target) && 
-            !menuToggle.contains(e.target) &&
-            !overlay.contains(e.target)) {
+
+    var menuToggle = document.getElementById('menuToggle');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function () {
+            var sidebar = document.querySelector('.sidebar');
+            var overlay = document.querySelector('.sidebar-overlay') || createSidebarOverlay();
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        var sidebar = document.querySelector('.sidebar');
+        var overlay = document.querySelector('.sidebar-overlay');
+        var toggle = document.getElementById('menuToggle');
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('active') &&
+            toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) &&
+            overlay && !overlay.contains(e.target)) {
             sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
+            overlay.classList.remove('active');
         }
     });
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-        
+
+    window.addEventListener('resize', function () {
+        var sidebar = document.querySelector('.sidebar');
+        var overlay = document.querySelector('.sidebar-overlay');
         if (window.innerWidth > 768) {
-            sidebar.classList.remove('active');
+            if (sidebar) sidebar.classList.remove('active');
             if (overlay) overlay.classList.remove('active');
         }
     });
 
-    // Admin-specific forms and tables
     if (path.includes('/admin/')) {
         setupAdminInteractions(currentUser);
-    }
-
-    // Employee-specific forms and views
-    if (path.includes('/employee/')) {
-        setupEmployeeInteractions(currentUser);
-    }
-    
-    // Admin-specific forms and views
-    if (path.includes('/admin/')) {
         setupTaskManagement();
         setupDocumentManagement();
         setupDesignManagement();
@@ -334,24 +421,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupFAQManagement();
     }
 
-    // Sidebar "pages" navigation (show one section at a time) – client, admin, employee
-    const sidebarLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
-    const portalSections = document.querySelectorAll('.portal-section');
+    if (path.includes('/employee/')) {
+        setupEmployeeInteractions(currentUser);
+    }
+
+    // Sidebar navigation
+    var sidebarLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
+    var portalSections = document.querySelectorAll('.portal-section');
 
     if (sidebarLinks.length && portalSections.length) {
-        // On load: show only first section (dashboard)
-        const firstSectionId = sidebarLinks[0] && sidebarLinks[0].getAttribute('data-section');
-        portalSections.forEach(sec => {
+        var firstSectionId = sidebarLinks[0] && sidebarLinks[0].getAttribute('data-section');
+        portalSections.forEach(function (sec) {
             sec.style.display = sec.id === firstSectionId ? '' : 'none';
         });
-
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
+        sidebarLinks.forEach(function (link) {
+            link.addEventListener('click', function (e) {
                 e.preventDefault();
-                const sectionId = this.getAttribute('data-section');
-                document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+                var sectionId = this.getAttribute('data-section');
+                document.querySelectorAll('.sidebar-nav a').forEach(function (a) { a.classList.remove('active'); });
                 this.classList.add('active');
-                portalSections.forEach(sec => {
+                portalSections.forEach(function (sec) {
                     sec.style.display = sec.id === sectionId ? '' : 'none';
                 });
                 if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
@@ -359,23 +448,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Client support form (in-portal)
+    // Client portal setup
     if (path.includes('/client/')) {
-        const supportForm = document.getElementById('clientSupportForm');
+        var supportForm = document.getElementById('clientSupportForm');
         if (supportForm) {
-            supportForm.addEventListener('submit', function(e) {
+            supportForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const name = document.getElementById('supportName').value;
-                const email = document.getElementById('supportEmail').value;
-                const subject = document.getElementById('supportSubject').value;
-                const message = document.getElementById('supportMessage').value;
-                const tickets = getStored('clientSupportTickets', []);
-                tickets.push({ name, email, subject, message, date: new Date().toISOString() });
+                var name = document.getElementById('supportName').value;
+                var email = document.getElementById('supportEmail').value;
+                var subject = document.getElementById('supportSubject').value;
+                var message = document.getElementById('supportMessage').value;
+                var tickets = getStored('clientSupportTickets', []);
+                tickets.push({ name: name, email: email, subject: subject, message: message, date: new Date().toISOString() });
                 setStored('clientSupportTickets', tickets);
                 supportForm.reset();
                 if (currentUser) {
-                    document.getElementById('supportName').value = currentUser.name || '';
-                    document.getElementById('supportEmail').value = currentUser.email || '';
+                    var sn = document.getElementById('supportName');
+                    var se = document.getElementById('supportEmail');
+                    if (sn) sn.value = currentUser.name || '';
+                    if (se) se.value = currentUser.email || '';
                 }
                 alert('Thank you. Your support request has been submitted. We will get back to you shortly.');
             });
@@ -411,451 +502,347 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         setupPortalProfile('employee', currentUser);
     }
+
+    // Add Funds modal (client)
+    var addFundsBtn = document.getElementById('addFundsBtn');
+    var addFundsModal = document.getElementById('clientAddFundsModal');
+    var addFundsForm = document.getElementById('clientAddFundsForm');
+    if (addFundsBtn && addFundsModal && addFundsForm) {
+        addFundsBtn.addEventListener('click', function () { addFundsModal.classList.add('open'); });
+        document.querySelectorAll('[data-close="clientAddFundsModal"]').forEach(function (el) {
+            el.addEventListener('click', function () { addFundsModal.classList.remove('open'); });
+        });
+        addFundsModal.addEventListener('click', function (e) {
+            if (e.target === addFundsModal) addFundsModal.classList.remove('open');
+        });
+        addFundsForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var amount = document.getElementById('fundsAmount').value;
+            var paymentMethod = document.getElementById('fundsPaymentMethod').value;
+            var transactionId = document.getElementById('fundsTransactionId').value;
+            var notes = document.getElementById('fundsNotes').value;
+            var urlParams = new URLSearchParams(window.location.search);
+            var projectId = urlParams.get('projectId');
+            if (projectId) {
+                var projects = getStored('clientProjects', []);
+                var project = projects.find(function (p) { return p.id === projectId; });
+                if (project) {
+                    var currentPaid = parseFloat((project.moneyPaid || '0').replace(/[^0-9.]/g, '')) || 0;
+                    var newPaid = currentPaid + parseFloat(amount);
+                    var currentRemaining = parseFloat((project.moneyRemaining || '0').replace(/[^0-9.]/g, '')) || 0;
+                    var newRemaining = currentRemaining + parseFloat(amount);
+                    project.moneyPaid = 'KES ' + newPaid.toLocaleString();
+                    project.moneyRemaining = 'KES ' + newRemaining.toLocaleString();
+                    var updatedProjects = projects.map(function (p) { return p.id === projectId ? project : p; });
+                    setStored('clientProjects', updatedProjects);
+                    var transactions = getStored('clientTransactions', []);
+                    transactions.push({
+                        id: Date.now(), projectId: projectId, projectName: project.name,
+                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
+                        paymentMethod: paymentMethod, transactionId: transactionId,
+                        notes: notes, date: new Date().toISOString(), type: 'payment'
+                    });
+                    setStored('clientTransactions', transactions);
+                    alert('Funds added successfully! Amount: KES ' + parseFloat(amount).toLocaleString());
+                    addFundsModal.classList.remove('open');
+                    addFundsForm.reset();
+                    viewProjectDetails(projectId);
+                }
+            }
+        });
+    }
+
+    // Request Funds modal (admin)
+    var requestFundsBtn = document.getElementById('requestFundsBtn');
+    var requestFundsModal = document.getElementById('adminRequestFundsModal');
+    var requestFundsForm = document.getElementById('adminRequestFundsForm');
+    if (requestFundsBtn && requestFundsModal && requestFundsForm) {
+        requestFundsBtn.addEventListener('click', function () { requestFundsModal.classList.add('open'); });
+        document.querySelectorAll('[data-close="adminRequestFundsModal"]').forEach(function (el) {
+            el.addEventListener('click', function () { requestFundsModal.classList.remove('open'); });
+        });
+        requestFundsModal.addEventListener('click', function (e) {
+            if (e.target === requestFundsModal) requestFundsModal.classList.remove('open');
+        });
+        requestFundsForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var projectSelect = document.getElementById('requestFundsProject');
+            var projectId = projectSelect.getAttribute('data-project-id');
+            var amount = document.getElementById('requestFundsAmount').value;
+            var reason = document.getElementById('requestFundsReason').value;
+            var description = document.getElementById('requestFundsDescription').value;
+            var dueDate = document.getElementById('requestFundsDueDate').value;
+            if (projectId && amount && reason && description) {
+                var projects = getStored('portalProjects', []);
+                var project = projects.find(function (p) { return String(p.id) === projectId; });
+                if (project) {
+                    var requests = getStored('adminFundRequests', []);
+                    requests.push({
+                        id: Date.now(), projectId: projectId, projectName: project.name,
+                        clientName: project.client, clientEmail: project.clientEmail || '',
+                        amount: 'KSH ' + parseFloat(amount).toLocaleString(),
+                        amountValue: parseFloat(amount), reason: reason,
+                        description: description, dueDate: dueDate,
+                        date: new Date().toISOString(), status: 'pending'
+                    });
+                    setStored('adminFundRequests', requests);
+                    var clientNotifications = getStored('clientNotifications', []);
+                    clientNotifications.push({
+                        id: Date.now(), type: 'fund_request',
+                        title: 'Fund Request - ' + project.name,
+                        message: 'A fund request of KSH ' + parseFloat(amount).toLocaleString() + ' has been sent for ' + project.name + '. Reason: ' + reason + '. Due date: ' + dueDate + '.',
+                        amount: amount, projectName: project.name, clientName: project.client,
+                        date: new Date().toISOString(), read: false
+                    });
+                    setStored('clientNotifications', clientNotifications);
+                    var messages = getStored('portalMessages', []);
+                    messages.push({
+                        from: 'admin@aisconcepts.com', to: project.clientEmail || 'client',
+                        project: project.name,
+                        subject: 'Fund Request - KSH ' + parseFloat(amount).toLocaleString(),
+                        body: 'Dear ' + project.client + ',\n\nWe are requesting funds of KSH ' + parseFloat(amount).toLocaleString() + ' for the project "' + project.name + '".\n\nReason: ' + reason + '\nDescription: ' + description + '\nDue Date: ' + dueDate + '\n\nPlease process this request at your earliest convenience.\n\nThank you,\nAIS Concepts Team',
+                        timestamp: new Date().toISOString(), type: 'fund_request'
+                    });
+                    setStored('portalMessages', messages);
+                    alert('Fund request of KSH ' + parseFloat(amount).toLocaleString() + ' sent to ' + project.client + '! The client will be notified.');
+                    requestFundsModal.classList.remove('open');
+                    requestFundsForm.reset();
+                    if (typeof refreshNotificationsBadge === 'function') refreshNotificationsBadge();
+                }
+            }
+        });
+    }
 });
 
-function getProfileKey(email) {
-    return email ? 'portalProfile_' + email.replace(/[^a-z0-9]/gi, '_') : null;
-}
-function setupPortalProfile(portal, currentUser) {
-    if (!currentUser || !currentUser.email) return;
-    const key = getProfileKey(currentUser.email);
-    const prof = window.__portalUserProfile || {};
-    const profile = {
-        name: prof.name || currentUser.name,
-        email: prof.email || currentUser.email,
-        phone: prof.phone || '',
-        avatar: prof.avatar || currentUser.avatar,
-        password: prof.password || ''
-    };
-    const prefix = portal === 'client' ? 'client' : portal === 'admin' ? 'admin' : 'employee';
-    const nameEl = document.getElementById(prefix + 'ProfileName');
-    const emailEl = document.getElementById(prefix + 'ProfileEmail');
-    const phoneEl = document.getElementById(prefix + 'ProfilePhone');
-    const photoEl = document.getElementById(prefix + 'ProfilePhoto');
-    const photoInput = document.getElementById(prefix + 'ProfilePhotoInput');
-    const form = document.getElementById(prefix + 'ProfileForm');
-    if (nameEl) nameEl.value = profile.name || currentUser.name || '';
-    if (emailEl) emailEl.value = profile.email || currentUser.email || '';
-    if (phoneEl) phoneEl.value = profile.phone || '';
-    if (photoEl) photoEl.src = profile.avatar || currentUser.avatar || 'https://ui-avatars.com/api/?name=' + (profile.name || currentUser.email) + '&background=20c4b4&color=fff&size=128';
-    if (photoInput && photoEl) {
-        photoInput.addEventListener('change', function() {
-            const f = this.files[0];
-            if (!f) return;
-            const r = new FileReader();
-            r.onload = function() {
-                photoEl.src = r.result;
-                currentUser.avatar = r.result;
-                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-                document.querySelectorAll('.user-avatar img').forEach(img => { img.src = r.result; });
-            };
-            r.readAsDataURL(f);
-        });
-    }
-    if (form && key) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = (prefix === 'client' ? document.getElementById('clientProfileName') : prefix === 'admin' ? document.getElementById('adminProfileName') : document.getElementById('employeeProfileName')).value;
-            const email = (prefix === 'client' ? document.getElementById('clientProfileEmail') : prefix === 'admin' ? document.getElementById('adminProfileEmail') : document.getElementById('employeeProfileEmail')).value;
-            const phone = (prefix === 'client' ? document.getElementById('clientProfilePhone') : prefix === 'admin' ? document.getElementById('adminProfilePhone') : document.getElementById('employeeProfilePhone')).value;
-            const newPass = (prefix === 'client' ? document.getElementById('clientProfileNewPassword') : prefix === 'admin' ? document.getElementById('adminProfileNewPassword') : document.getElementById('employeeProfileNewPassword')).value;
-            const avatar = photoEl ? photoEl.src : profile.avatar;
-            const token = sessionStorage.getItem('authToken');
-            fetch((window.API_BASE || '') + '/api/user/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer ' + token
-                },
-                body: JSON.stringify({ name: name, email: email, phone: phone, avatar: avatar, password: newPass || undefined })
-            }).then(function (r) {
-                if (!r.ok) throw new Error('save failed');
-                window.__portalUserProfile = { name: name, email: email, phone: phone, avatar: avatar };
-                currentUser.name = name;
-                currentUser.email = email;
-                currentUser.avatar = avatar;
-                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-                displayUserInfo(currentUser);
-                alert('Profile saved.');
-            }).catch(function () {
-                alert('Could not save profile. Check your connection.');
-            });
-        });
-    }
-}
+// ===== ADMIN INTERACTIONS =====
 
 function setupAdminInteractions(currentUser) {
-    const assignForm = document.getElementById('assignProjectForm');
-    const assignmentsBody = document.getElementById('assignmentsTableBody');
-    const adminMessageForm = document.getElementById('adminMessageForm');
-    
-    // Client Management
-    const adminAddClientBtn = document.getElementById('adminAddClientBtn');
-    const adminAddClientForm = document.getElementById('adminAddClientForm');
-    const adminClientsTableBody = document.getElementById('adminClientsTableBody');
-    
+    var adminAddClientBtn = document.getElementById('adminAddClientBtn');
+    var adminAddClientForm = document.getElementById('adminAddClientForm');
+    var adminClientsTableBody = document.getElementById('adminClientsTableBody');
+
     if (adminAddClientBtn) {
-        adminAddClientBtn.addEventListener('click', function() {
-            const modal = document.getElementById('adminAddClientModal');
+        adminAddClientBtn.addEventListener('click', function () {
+            var modal = document.getElementById('adminAddClientModal');
             if (modal) modal.classList.add('open');
         });
     }
-    
+
     if (adminAddClientForm) {
-        adminAddClientForm.addEventListener('submit', function(e) {
+        adminAddClientForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const name = document.getElementById('clientName').value;
-            const email = document.getElementById('clientEmail').value;
-            const phone = document.getElementById('clientPhone').value;
-            const company = document.getElementById('clientCompany').value;
-            const address = document.getElementById('clientAddress').value;
-            const notes = document.getElementById('clientNotes').value;
-            
-            if (!name || !email) {
-                alert('Please fill in at least name and email');
-                return;
-            }
-            
-            // Get existing clients
-            const clients = getStored('portalClients', []);
-            
-            // Add new client
-            const newClient = {
-                id: Date.now(),
-                name: name,
-                email: email,
-                phone: phone,
-                company: company,
-                address: address,
-                notes: notes,
-                date: new Date().toISOString(),
-                projects: []
-            };
-            
-            clients.push(newClient);
+            var name = document.getElementById('clientName').value;
+            var email = document.getElementById('clientEmail').value;
+            var phone = document.getElementById('clientPhone').value;
+            var company = document.getElementById('clientCompany').value;
+            var address = document.getElementById('clientAddress').value;
+            var notes = document.getElementById('clientNotes').value;
+            if (!name || !email) { alert('Please fill in at least name and email'); return; }
+            var clients = getStored('portalClients', []);
+            clients.push({ id: Date.now(), name: name, email: email, phone: phone, company: company, address: address, notes: notes, date: new Date().toISOString(), projects: [] });
             setStored('portalClients', clients);
-            
-            // Re-render table
             renderAdminClientsTable();
-            
-            // Reset form and close modal
             adminAddClientForm.reset();
             document.getElementById('adminAddClientModal').classList.remove('open');
-            
             alert('Client added successfully!');
         });
     }
-    
-    // Foreman Management
-    const adminAddForemanBtn = document.getElementById('adminAddForemanBtn');
-    const adminForemanForm = document.getElementById('adminForemanForm');
-    
+
+    var adminAddForemanBtn = document.getElementById('adminAddForemanBtn');
+    var adminForemanForm = document.getElementById('adminForemanForm');
+
     if (adminAddForemanBtn) {
-        adminAddForemanBtn.addEventListener('click', function() {
-            const modal = document.getElementById('adminForemanModal');
+        adminAddForemanBtn.addEventListener('click', function () {
+            var modal = document.getElementById('adminForemanModal');
             if (modal) modal.classList.add('open');
         });
     }
-    
+
     if (adminForemanForm) {
-        adminForemanForm.addEventListener('submit', function(e) {
+        adminForemanForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const name = document.getElementById('adminForemanName').value;
-            const id = document.getElementById('adminForemanId').value;
-            const email = document.getElementById('adminForemanEmail').value;
-            const phone = document.getElementById('adminForemanPhone').value;
-            const password = document.getElementById('adminForemanPassword').value;
-            const confirmPassword = document.getElementById('adminForemanConfirmPassword').value;
-            
-            // Validate passwords match
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            
-            if (!name || !id || !password) {
-                alert('Please fill in all required fields!');
-                return;
-            }
-            
-            // Create new foreman object
-            const newForeman = {
-                name: name,
-                id: id,
-                email: email || `${id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
-                phone: phone,
-                password: password,
-                role: 'foreman',
-                status: 'active',
-                assignedProjects: [],
-                createdAt: new Date().toISOString()
+            var name = document.getElementById('adminForemanName').value;
+            var id = document.getElementById('adminForemanId').value;
+            var email = document.getElementById('adminForemanEmail').value;
+            var phone = document.getElementById('adminForemanPhone').value;
+            var password = document.getElementById('adminForemanPassword').value;
+            var confirmPassword = document.getElementById('adminForemanConfirmPassword').value;
+            if (password !== confirmPassword) { alert('Passwords do not match!'); return; }
+            if (!name || !id || !password) { alert('Please fill in all required fields!'); return; }
+            var newForeman = {
+                name: name, id: id,
+                email: email || (id.toLowerCase().replace(/\s/g, '') + '@aisconcepts.com'),
+                phone: phone, password: password, role: 'foreman', status: 'active',
+                assignedProjects: [], createdAt: new Date().toISOString()
             };
-            
-            // Save directly to MongoDB
-            const authToken = sessionStorage.getItem('authToken');
-            console.log('Creating foreman with data:', newForeman);
-            console.log('Auth token:', authToken ? 'exists' : 'missing');
-            console.log('API base:', window.API_BASE);
-            
-            fetch(`${window.API_BASE}/api/foreman/create`, {
+            var authToken = sessionStorage.getItem('authToken');
+            fetch(window.API_BASE + '/api/foreman/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
                 body: JSON.stringify(newForeman)
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
+            }).then(function (response) {
                 if (!response.ok) {
-                    return response.text().then(text => {
-                        console.error('Error response body:', text);
-                        const errorData = JSON.parse(text);
+                    return response.text().then(function (text) {
+                        var errorData = JSON.parse(text);
                         if (errorData.error && errorData.error.includes('already exists')) {
-                            throw new Error(`Foreman already exists with this email or phone. Please use different credentials or update the existing foreman.`);
+                            throw new Error('Foreman already exists with this email or phone. Please use different credentials or update the existing foreman.');
                         }
-                        throw new Error(`Failed to save foreman to database: ${response.status} ${text}`);
+                        throw new Error('Failed to save foreman to database: ' + response.status + ' ' + text);
                     });
                 }
                 return response.json();
-            })
-            .then(data => {
-                console.log('Foreman created successfully:', data);
-                
-                // Close modal and reset form
-                const modal = document.getElementById('adminForemanModal');
+            }).then(function () {
+                var modal = document.getElementById('adminForemanModal');
                 if (modal) modal.classList.remove('open');
                 adminForemanForm.reset();
-                
-                // Refresh foremen table from database
                 renderAdminForemenTable();
-                
                 alert('Foreman created successfully!');
-            })
-            .catch(error => {
-                console.error('Error creating foreman:', error);
-                alert(`Failed to create foreman: ${error.message}`);
+            }).catch(function (error) {
+                console.error('Error creating foreman account:', error);
+                alert('There was an issue creating the foreman account: ' + error.message);
             });
         });
     }
-    
-    // Initial render
+
     renderAdminClientsTable();
     renderAdminForemenTable();
-    
-    // Function to render admin clients table
+
     function renderAdminClientsTable() {
-        const clients = getStored('portalClients', []);
-        const tbody = adminClientsTableBody;
+        var clients = getStored('portalClients', []);
+        var tbody = adminClientsTableBody;
         if (!tbody) return;
-        
         if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No clients added yet. Click "Add Client" to get started.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No clients added yet. Click "Add Client" to get started.</td></tr>';
             return;
         }
-        
-        tbody.innerHTML = clients.map(client => `
-            <tr>
-                <td>${client.name || ''}</td>
-                <td>${client.email || ''}</td>
-                <td>${client.projects ? client.projects.length : 0}</td>
-                <td>KES ${client.projects ? client.projects.reduce((sum, p) => {
-                    const budget = parseFloat(p.budget?.replace(/[^0-9.]/g, '')) || 0;
-                    return sum + budget;
-                }, 0).toLocaleString() : '0'}</td>
-                <td>${new Date(client.date).toLocaleDateString()}</td>
-                <td>
-                    <button class="btn-icon" onclick="editClient(${client.id})" title="Edit client">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon" onclick="deleteClient(${client.id})" title="Delete client">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = clients.map(function (client) {
+            var budget = client.projects ? client.projects.reduce(function (sum, p) {
+                return sum + (parseFloat((p.budget || '').replace(/[^0-9.]/g, '')) || 0);
+            }, 0) : 0;
+            return '<tr>' +
+                '<td>' + escapeHtml(client.name) + '</td>' +
+                '<td>' + escapeHtml(client.email) + '</td>' +
+                '<td>' + (client.projects ? client.projects.length : 0) + '</td>' +
+                '<td>KES ' + budget.toLocaleString() + '</td>' +
+                '<td>' + new Date(client.date).toLocaleDateString() + '</td>' +
+                '<td>' +
+                '<button class="btn-icon" onclick="editClient(' + client.id + ')" title="Edit client"><i class="fas fa-edit"></i></button> ' +
+                '<button class="btn-icon" onclick="deleteClient(' + client.id + ')" title="Delete client"><i class="fas fa-trash"></i></button>' +
+                '</td></tr>';
+        }).join('');
     }
-    
-    // Function to edit client
-    window.editClient = function(clientId) {
-        const clients = getStored('portalClients', []);
-        const client = clients.find(c => c.id === clientId);
+
+    window.editClient = function (clientId) {
+        var clients = getStored('portalClients', []);
+        var client = clients.find(function (c) { return c.id === clientId; });
         if (!client) return;
-        
-        // Populate form with existing data
         document.getElementById('clientName').value = client.name || '';
         document.getElementById('clientEmail').value = client.email || '';
         document.getElementById('clientPhone').value = client.phone || '';
         document.getElementById('clientCompany').value = client.company || '';
         document.getElementById('clientAddress').value = client.address || '';
         document.getElementById('clientNotes').value = client.notes || '';
-        
-        // Show modal
         document.getElementById('adminAddClientModal').classList.add('open');
     };
-    
-    // Function to delete client
-    window.deleteClient = function(clientId) {
+
+    window.deleteClient = function (clientId) {
         if (!confirm('Are you sure you want to delete this client?')) return;
-        
-        const clients = getStored('portalClients', []);
-        const filteredClients = clients.filter(c => c.id !== clientId);
-        
-        setStored('portalClients', filteredClients);
+        var clients = getStored('portalClients', []);
+        setStored('portalClients', clients.filter(function (c) { return c.id !== clientId; }));
         renderAdminClientsTable();
-        
         alert('Client deleted successfully!');
-    }
-    
-    // Function to render admin foremen table
+    };
+
     function renderAdminForemenTable() {
-        const tbody = document.getElementById('adminForemenTableBody');
+        var tbody = document.getElementById('adminForemenTableBody');
         if (!tbody) return;
-        
-        // Load directly from MongoDB
-        const authToken = sessionStorage.getItem('authToken');
-        console.log('Loading foremen from:', `${window.API_BASE}/api/users?role=foreman`);
-        console.log('Auth token:', authToken ? 'exists' : 'missing');
-        
-        fetch(`${window.API_BASE}/api/users?role=foreman`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(response => {
-            console.log('Foremen load response status:', response.status);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Foremen load error response:', text);
-                    throw new Error(`Failed to load foremen from database: ${response.status} ${text}`);
-                });
-            }
+        var authToken = sessionStorage.getItem('authToken');
+        fetch(window.API_BASE + '/api/users?role=foreman', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load foremen: ' + response.status);
             return response.json();
-        })
-        .then(foremen => {
-            console.log('Foremen loaded successfully:', foremen);
-            if (foremen.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
+        }).then(function (foremen) {
+            if (!foremen.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No foremen added yet. Click "Create Foreman Account" to get started.</td></tr>';
                 return;
             }
-            
-            // Render the table with MongoDB data
             renderForemenTableData(foremen);
-        })
-        .catch(error => {
-            console.error('Error loading foremen from database:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error loading foremen: ' + error.message + '</td></tr>';
+        }).catch(function (error) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#ff6b6b;">Error loading foremen: ' + escapeHtml(error.message) + '</td></tr>';
         });
     }
-    
+
     function renderForemenTableData(foremen) {
-        const tbody = document.getElementById('adminForemenTableBody');
+        var tbody = document.getElementById('adminForemenTableBody');
         if (!tbody) return;
-        
-        tbody.innerHTML = foremen.map(foreman => `
-            <tr>
-                <td>${foreman.name || ''}</td>
-                <td>${foreman.email || ''}</td>
-                <td>${foreman.phone || ''}</td>
-                <td>${foreman.assignedProjects ? foreman.assignedProjects.length : 0}</td>
-                <td><span class="status-badge status-${foreman.status || 'active'}">${foreman.status || 'Active'}</span></td>
-                <td>${new Date(foreman.createdAt).toLocaleDateString()}</td>
-                <td>
-                    <button class="btn-icon" onclick="editForeman('${foreman._id || foreman.id}')" title="Edit foreman">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon" onclick="deleteForeman('${foreman._id || foreman.id}')" title="Delete foreman">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = foremen.map(function (foreman) {
+            var fid = escapeAttr(foreman._id || foreman.id || '');
+            return '<tr>' +
+                '<td>' + escapeHtml(foreman.name) + '</td>' +
+                '<td>' + escapeHtml(foreman.email) + '</td>' +
+                '<td>' + escapeHtml(foreman.phone) + '</td>' +
+                '<td>' + (foreman.assignedProjects ? foreman.assignedProjects.length : 0) + '</td>' +
+                '<td><span class="status-badge status-' + escapeHtml(foreman.status || 'active') + '">' + escapeHtml(foreman.status || 'Active') + '</span></td>' +
+                '<td>' + new Date(foreman.createdAt).toLocaleDateString() + '</td>' +
+                '<td>' +
+                '<button class="btn-icon" onclick="editForeman(\'' + fid + '\')" title="Edit foreman"><i class="fas fa-edit"></i></button> ' +
+                '<button class="btn-icon" onclick="deleteForeman(\'' + fid + '\')" title="Delete foreman"><i class="fas fa-trash"></i></button>' +
+                '</td></tr>';
+        }).join('');
     }
-    
-    // Function to edit foreman
-    window.editForeman = function(foremanId) {
-        // Load foreman data from MongoDB
-        const authToken = sessionStorage.getItem('authToken');
-        
-        fetch(`${window.API_BASE}/api/users/${foremanId}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load foreman data');
-            }
+
+    window.editForeman = function (foremanId) {
+        var authToken = sessionStorage.getItem('authToken');
+        fetch(window.API_BASE + '/api/users/' + foremanId, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load foreman data');
             return response.json();
-        })
-        .then(foreman => {
-            // Populate form with existing data
+        }).then(function (foreman) {
             document.getElementById('adminForemanName').value = foreman.name || '';
             document.getElementById('adminForemanId').value = foreman._id || foreman.id || '';
             document.getElementById('adminForemanEmail').value = foreman.email || '';
             document.getElementById('adminForemanPhone').value = foreman.phone || '';
             document.getElementById('adminForemanPassword').value = '';
             document.getElementById('adminForemanConfirmPassword').value = '';
-            
-            // Show modal
             document.getElementById('adminForemanModal').classList.add('open');
-        })
-        .catch(error => {
-            console.error('Error loading foreman data:', error);
+        }).catch(function () {
             alert('Failed to load foreman data. Please try again.');
         });
     };
-    
-    // Function to delete foreman
-    window.deleteForeman = function(foremanId) {
+
+    window.deleteForeman = function (foremanId) {
         if (!confirm('Are you sure you want to delete this foreman?')) return;
-        
-        // Call MongoDB API to delete foreman
-        fetch(`${window.API_BASE}/api/foreman/${foremanId}`, {
+        fetch(window.API_BASE + '/api/foreman/' + foremanId, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to delete foreman from database');
-            }
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to delete foreman');
             return response.json();
-        })
-        .then(() => {
-            // Refresh foremen table from database
+        }).then(function () {
             renderAdminForemenTable();
             alert('Foreman deleted successfully!');
-        })
-        .catch(error => {
-            console.error('Error deleting foreman:', error);
+        }).catch(function () {
             alert('Failed to delete foreman. Please try again.');
         });
     };
-    
-    const assignments = getStored('assignments', []);
-    renderAssignments(assignmentsBody, assignments);
 
-    const newInvoiceBtn = document.getElementById('adminNewInvoiceBtn');
-    const invoiceModal = document.getElementById('adminInvoiceModal');
-    const invoiceForm = document.getElementById('adminInvoiceForm');
+    // Invoices
+    var newInvoiceBtn = document.getElementById('adminNewInvoiceBtn');
+    var invoiceModal = document.getElementById('adminInvoiceModal');
+    var invoiceForm = document.getElementById('adminInvoiceForm');
     if (newInvoiceBtn && invoiceModal) {
-        newInvoiceBtn.addEventListener('click', function() { invoiceModal.classList.add('open'); });
+        newInvoiceBtn.addEventListener('click', function () { invoiceModal.classList.add('open'); });
     }
-    document.querySelectorAll('[data-close="adminInvoiceModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('adminInvoiceModal').classList.remove('open'); });
+    document.querySelectorAll('[data-close="adminInvoiceModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('adminInvoiceModal').classList.remove('open'); });
     });
-    if (invoiceModal) invoiceModal.addEventListener('click', function(e) { if (e.target === invoiceModal) invoiceModal.classList.remove('open'); });
+    if (invoiceModal) invoiceModal.addEventListener('click', function (e) { if (e.target === invoiceModal) invoiceModal.classList.remove('open'); });
     if (invoiceForm) {
-        invoiceForm.addEventListener('submit', function(e) {
+        invoiceForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const invoices = getStored('portalInvoices', []);
+            var invoices = getStored('portalInvoices', []);
             invoices.push({
                 id: Date.now(),
                 number: document.getElementById('invNumber').value,
@@ -871,29 +858,29 @@ function setupAdminInteractions(currentUser) {
             invoiceModal.classList.remove('open');
         });
     }
-    const invoiceEditModal = document.getElementById('adminInvoiceEditModal');
-    const invoiceEditForm = document.getElementById('adminInvoiceEditForm');
+
+    var invoiceEditModal = document.getElementById('adminInvoiceEditModal');
+    var invoiceEditForm = document.getElementById('adminInvoiceEditForm');
     if (invoiceEditModal) {
-        document.querySelectorAll('[data-close="adminInvoiceEditModal"]').forEach(el => {
-            el.addEventListener('click', function() { invoiceEditModal.classList.remove('open'); });
+        document.querySelectorAll('[data-close="adminInvoiceEditModal"]').forEach(function (el) {
+            el.addEventListener('click', function () { invoiceEditModal.classList.remove('open'); });
         });
-        invoiceEditModal.addEventListener('click', function(e) { if (e.target === invoiceEditModal) invoiceEditModal.classList.remove('open'); });
+        invoiceEditModal.addEventListener('click', function (e) { if (e.target === invoiceEditModal) invoiceEditModal.classList.remove('open'); });
     }
     if (invoiceEditForm) {
-        invoiceEditForm.addEventListener('submit', function(e) {
+        invoiceEditForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const num = document.getElementById('invEditNumber').value;
-            const invoices = getStored('portalInvoices', []);
-            const idx = invoices.findIndex(function(i) { return i.number === num; });
+            var num = document.getElementById('invEditNumber').value;
+            var invoices = getStored('portalInvoices', []);
+            var idx = invoices.findIndex(function (i) { return i.number === num; });
             if (idx >= 0) {
-                invoices[idx] = {
-                    ...invoices[idx],
+                invoices[idx] = Object.assign({}, invoices[idx], {
                     client: document.getElementById('invEditClient').value,
                     project: document.getElementById('invEditProject').value || '',
                     amount: document.getElementById('invEditAmount').value,
                     dueDate: document.getElementById('invEditDueDate').value,
                     status: document.getElementById('invEditStatus').value
-                };
+                });
                 setStored('portalInvoices', invoices);
                 renderAdminInvoices(document.getElementById('adminInvoicesBody'));
                 invoiceEditModal.classList.remove('open');
@@ -901,18 +888,24 @@ function setupAdminInteractions(currentUser) {
         });
     }
 
+    // Assignments
+    var assignForm = document.getElementById('assignProjectForm');
+    var assignmentsBody = document.getElementById('assignmentsTableBody');
+    var assignments = getStored('assignments', []);
+    renderAssignments(assignmentsBody, assignments);
+
     if (assignForm && assignmentsBody) {
-        assignForm.addEventListener('submit', function(e) {
+        assignForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const project = document.getElementById('assignProjectName').value;
-            const employeeEmail = document.getElementById('assignEmployeeEmail').value;
-            const due = document.getElementById('assignDueDate').value;
-            const notes = document.getElementById('assignNotes').value;
-            const deadline = document.getElementById('assignDeadline') ? document.getElementById('assignDeadline').value : '';
-            const clientEmailEl = document.getElementById('assignClientEmail');
-            const clientEmail = clientEmailEl ? clientEmailEl.value.trim() : '';
-            const updated = getStored('assignments', []);
-            updated.push({ project, employeeEmail, due, deadline, notes, clientEmail: clientEmail || undefined });
+            var project = document.getElementById('assignProjectName').value;
+            var employeeEmail = document.getElementById('assignEmployeeEmail').value;
+            var due = document.getElementById('assignDueDate').value;
+            var notes = document.getElementById('assignNotes').value;
+            var deadline = document.getElementById('assignDeadline') ? document.getElementById('assignDeadline').value : '';
+            var clientEmailEl = document.getElementById('assignClientEmail');
+            var clientEmail = clientEmailEl ? clientEmailEl.value.trim() : '';
+            var updated = getStored('assignments', []);
+            updated.push({ project: project, employeeEmail: employeeEmail, due: due, deadline: deadline, notes: notes, clientEmail: clientEmail || undefined });
             setStored('assignments', updated);
             renderAssignments(assignmentsBody, updated);
             assignForm.reset();
@@ -920,132 +913,103 @@ function setupAdminInteractions(currentUser) {
         });
     }
 
-    const messages = getStored('portalMessages', []);
+    // Messages
+    var messages = getStored('portalMessages', []);
     var adminNotifInner = document.getElementById('adminMessagesListInner');
     if (adminNotifInner) renderMessagesAsCards(adminNotifInner, messages);
 
+    var adminMessageForm = document.getElementById('adminMessageForm');
     if (adminMessageForm) {
-        adminMessageForm.addEventListener('submit', function(e) {
+        adminMessageForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const to = document.getElementById('messageTo').value;
-            const project = document.getElementById('messageProject').value;
-            const bodyEl = document.getElementById('messageBody');
-            const body = bodyEl ? bodyEl.value : '';
-            var API_BASE = window.API_BASE || '';
+            var to = document.getElementById('messageTo').value;
+            var project = document.getElementById('messageProject').value;
+            var bodyEl = document.getElementById('messageBody');
+            var body = bodyEl ? bodyEl.value : '';
             var token = sessionStorage.getItem('authToken');
-            fetch(API_BASE + '/api/admin/send-message', {
+            fetch((window.API_BASE || '') + '/api/admin/send-message', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer ' + token
-                },
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
                 body: JSON.stringify({ to: to, project: project, body: body })
-            })
-                .then(function (r) {
-                    if (!r.ok) throw new Error('fail');
-                    return r.json();
-                })
-                .then(function () {
-                    const updated = getStored('portalMessages', []);
-                    updated.push({
-                        from: currentUser ? currentUser.email : 'admin',
-                        to: to,
-                        project: project,
-                        body: body,
-                        timestamp: new Date().toISOString()
-                    });
-                    setStored('portalMessages', updated);
-                    if (adminNotifInner) renderMessagesAsCards(adminNotifInner, updated);
-                    adminMessageForm.reset();
-                    refreshNotificationsBadge();
-                })
-                .catch(function () {
-                    alert('Could not send message.');
-                });
+            }).then(function (r) {
+                if (!r.ok) throw new Error('fail');
+                return r.json();
+            }).then(function () {
+                var updated = getStored('portalMessages', []);
+                updated.push({ from: currentUser ? currentUser.email : 'admin', to: to, project: project, body: body, timestamp: new Date().toISOString() });
+                setStored('portalMessages', updated);
+                if (adminNotifInner) renderMessagesAsCards(adminNotifInner, updated);
+                adminMessageForm.reset();
+                refreshNotificationsBadge();
+            }).catch(function () {
+                alert('Could not send message.');
+            });
         });
     }
 
-    // Add User button & modal
-    const addUserBtn = document.getElementById('adminAddUserBtn');
-    const userModal = document.getElementById('adminUserModal');
-    const userForm = document.getElementById('adminUserForm');
-    const usersList = document.querySelector('.users-list tbody');
+    // Users
+    var addUserBtn = document.getElementById('adminAddUserBtn');
+    var userModal = document.getElementById('adminUserModal');
+    var userForm = document.getElementById('adminUserForm');
     if (addUserBtn && userModal) {
-        addUserBtn.addEventListener('click', function() {
+        addUserBtn.addEventListener('click', function () {
             document.getElementById('adminUserModalTitle').textContent = 'Add User';
             document.getElementById('adminUserId').value = '';
             if (userForm) userForm.reset();
             userModal.classList.add('open');
         });
     }
-    document.querySelectorAll('[data-close="adminUserModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('adminUserModal').classList.remove('open'); });
+    document.querySelectorAll('[data-close="adminUserModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('adminUserModal').classList.remove('open'); });
     });
-    if (userModal) userModal.addEventListener('click', function(e) { if (e.target === userModal) userModal.classList.remove('open'); });
-    if (userForm && userModal && usersList) {
-        userForm.addEventListener('submit', function(e) {
+    if (userModal) userModal.addEventListener('click', function (e) { if (e.target === userModal) userModal.classList.remove('open'); });
+    if (userForm && userModal) {
+        userForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            alert(
-                'Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals. This form is for reference only.'
-            );
-
+            alert('Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals. This form is for reference only.');
             userModal.classList.remove('open');
         });
     }
 
-    // New Project button & modal
-    const newProjectBtn = document.getElementById('adminNewProjectBtn');
-    const projectModal = document.getElementById('adminProjectModal');
-    const projectForm = document.getElementById('adminProjectForm');
-    const projectsList = document.querySelector('.admin-projects tbody');
-    
-    // Foreman management elements
-    const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
-    const selectedForemanName = document.querySelector('.selected-foreman-name');
+    // Projects
+    var newProjectBtn = document.getElementById('adminNewProjectBtn');
+    var projectModal = document.getElementById('adminProjectModal');
+    var projectForm = document.getElementById('adminProjectForm');
+    var selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
+    var selectedForemanNameEl = document.querySelector('.selected-foreman-name');
+    var selectedForeman = null;
+
     if (newProjectBtn && projectModal) {
-        newProjectBtn.addEventListener('click', function() {
+        newProjectBtn.addEventListener('click', function () {
             document.getElementById('adminProjectModalTitle').textContent = 'New Project';
             document.getElementById('adminProjectId').value = '';
             if (projectForm) projectForm.reset();
-            
-            // Reset selected foreman
             selectedForeman = null;
-            if (selectedForemanDisplay) {
-                selectedForemanDisplay.style.display = 'none';
-            }
-            if (selectedForemanName) {
-                selectedForemanName.textContent = '';
-            }
-            
-            // Reset location fields
+            if (selectedForemanDisplay) selectedForemanDisplay.style.display = 'none';
+            if (selectedForemanNameEl) selectedForemanNameEl.textContent = '';
             document.getElementById('projectLocationName').value = '';
             document.getElementById('projectLatitude').value = '';
             document.getElementById('projectLongitude').value = '';
-            
             projectModal.classList.add('open');
         });
     }
-    const projectExitBtn = document.getElementById('adminProjectExitBtn');
+    var projectExitBtn = document.getElementById('adminProjectExitBtn');
     if (projectExitBtn && projectModal) {
-        projectExitBtn.addEventListener('click', function() {
-            projectModal.classList.remove('open');
-        });
+        projectExitBtn.addEventListener('click', function () { projectModal.classList.remove('open'); });
     }
-    document.querySelectorAll('[data-close="adminProjectModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('adminProjectModal').classList.remove('open'); });
+    document.querySelectorAll('[data-close="adminProjectModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('adminProjectModal').classList.remove('open'); });
     });
-    if (projectModal) projectModal.addEventListener('click', function(e) { if (e.target === projectModal) projectModal.classList.remove('open'); });
+    if (projectModal) projectModal.addEventListener('click', function (e) { if (e.target === projectModal) projectModal.classList.remove('open'); });
+
+    // Broadcast modal
     var broadcastModal = document.getElementById('adminBroadcastModal');
     var broadcastForm = document.getElementById('adminBroadcastForm');
     document.querySelectorAll('[data-close="adminBroadcastModal"]').forEach(function (el) {
-        el.addEventListener('click', function () {
-            if (broadcastModal) broadcastModal.classList.remove('open');
-        });
+        el.addEventListener('click', function () { if (broadcastModal) broadcastModal.classList.remove('open'); });
     });
     if (broadcastModal) {
-        broadcastModal.addEventListener('click', function (e) {
-            if (e.target === broadcastModal) broadcastModal.classList.remove('open');
-        });
+        broadcastModal.addEventListener('click', function (e) { if (e.target === broadcastModal) broadcastModal.classList.remove('open'); });
     }
     if (broadcastForm && broadcastModal) {
         broadcastForm.addEventListener('submit', function (e) {
@@ -1057,1667 +1021,513 @@ function setupAdminInteractions(currentUser) {
             var fileInput = document.getElementById('broadcastImages');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
             var token = sessionStorage.getItem('authToken');
-            var API_BASE = window.API_BASE || '';
             function send(imgs) {
-                fetch(API_BASE + '/api/admin/client-progress-broadcast', {
+                fetch((window.API_BASE || '') + '/api/admin/client-progress-broadcast', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({
-                        projectId: pid,
-                        projectName: pname,
-                        clientEmail: cemail,
-                        message: msg,
-                        images: imgs || []
-                    })
-                })
-                    .then(function (r) {
-                        if (!r.ok) throw new Error('fail');
-                        return r.json();
-                    })
-                    .then(function () {
-                        broadcastModal.classList.remove('open');
-                        broadcastForm.reset();
-                        refreshNotificationsBadge();
-                        alert('Update sent to client.');
-                    })
-                    .catch(function () {
-                        alert('Could not send. Ensure client email is set.');
-                    });
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ projectId: pid, projectName: pname, clientEmail: cemail, message: msg, images: imgs || [] })
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('fail');
+                    return r.json();
+                }).then(function () {
+                    broadcastModal.classList.remove('open');
+                    broadcastForm.reset();
+                    refreshNotificationsBadge();
+                    alert('Update sent to client.');
+                }).catch(function () {
+                    alert('Could not send. Ensure client email is set.');
+                });
             }
             if (files.length) {
-                Promise.all(
-                    files.map(function (file) {
-                        return new Promise(function (resolve) {
-                            var r = new FileReader();
-                            r.onload = function () {
-                                resolve(r.result);
-                            };
-                            r.readAsDataURL(file);
-                        });
-                    })
-                ).then(send);
+                Promise.all(files.map(function (file) {
+                    return new Promise(function (resolve) {
+                        var reader = new FileReader();
+                        reader.onload = function () { resolve(reader.result); };
+                        reader.readAsDataURL(file);
+                    });
+                })).then(send);
             } else {
                 send([]);
             }
         });
     }
-    if (projectForm && projectModal && projectsList) {
-        // Foreman Selection System
-        const selectForemanBtn = document.getElementById('selectForemanBtn');
-        const foremanSelectionModal = document.getElementById('foremanSelectionModal');
-        const pickExistingForeman = document.getElementById('pickExistingForeman');
-        const createNewForeman = document.getElementById('createNewForeman');
-        const pickExistingForemanModal = document.getElementById('pickExistingForemanModal');
-        const createNewForemanModal = document.getElementById('createNewForemanModal');
-        const removeForemanBtn = document.getElementById('removeForemanBtn');
-        
-        let selectedForeman = null;
-        
-        // Open foreman selection modal
+
+    // Foreman selection in project form
+    if (projectForm) {
+        var selectForemanBtn = document.getElementById('selectForemanBtn');
+        var foremanSelectionModal = document.getElementById('foremanSelectionModal');
+        var pickExistingForeman = document.getElementById('pickExistingForeman');
+        var createNewForeman = document.getElementById('createNewForeman');
+        var pickExistingForemanModal = document.getElementById('pickExistingForemanModal');
+        var createNewForemanModal = document.getElementById('createNewForemanModal');
+        var removeForemanBtn = document.getElementById('removeForemanBtn');
+
+        function updateSelectedForemanDisplay(foreman) {
+            if (selectedForemanDisplay && selectedForemanNameEl) {
+                selectedForemanNameEl.textContent = foreman.name;
+                selectedForemanDisplay.style.display = 'block';
+            }
+        }
+
         if (selectForemanBtn) {
-            selectForemanBtn.addEventListener('click', function() {
-                if (foremanSelectionModal) {
-                    foremanSelectionModal.classList.add('open');
-                }
+            selectForemanBtn.addEventListener('click', function () {
+                if (foremanSelectionModal) foremanSelectionModal.classList.add('open');
             });
         }
-        
-        // Handle option selection
         if (pickExistingForeman) {
-            pickExistingForeman.addEventListener('click', function() {
-                if (foremanSelectionModal) {
-                    foremanSelectionModal.classList.remove('open');
-                }
+            pickExistingForeman.addEventListener('click', function () {
+                if (foremanSelectionModal) foremanSelectionModal.classList.remove('open');
                 if (pickExistingForemanModal) {
                     loadExistingForemen();
                     pickExistingForemanModal.classList.add('open');
                 }
             });
         }
-        
         if (createNewForeman) {
-            createNewForeman.addEventListener('click', function() {
-                if (foremanSelectionModal) {
-                    foremanSelectionModal.classList.remove('open');
-                }
-                if (createNewForemanModal) {
-                    createNewForemanModal.classList.add('open');
-                }
+            createNewForeman.addEventListener('click', function () {
+                if (foremanSelectionModal) foremanSelectionModal.classList.remove('open');
+                if (createNewForemanModal) createNewForemanModal.classList.add('open');
             });
         }
-        
-        // Load existing foremen
+        if (removeForemanBtn) {
+            removeForemanBtn.addEventListener('click', function () {
+                selectedForeman = null;
+                if (selectedForemanDisplay) selectedForemanDisplay.style.display = 'none';
+                if (selectedForemanNameEl) selectedForemanNameEl.textContent = '';
+            });
+        }
+
         async function loadExistingForemen() {
-            const foremenList = document.getElementById('existingForemenList');
+            var foremenList = document.getElementById('existingForemenList');
             if (!foremenList) return;
-            
-            foremenList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading foremen...</p>';
-            
+            foremenList.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">Loading foremen...</p>';
             try {
-                // Try to load from MongoDB first
-                const authToken = sessionStorage.getItem('authToken');
-                if (authToken) {
-                    const response = await fetch(`${window.API_BASE}/api/users?role=foreman`, {
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        const foremen = data.users || data;
-                        displayForemen(foremen);
-                        return;
-                    }
-                }
-                
-                // Fallback to local storage
-                const users = getStored('portalUsers', []);
-                const foremen = users.filter(user => user.role === 'foreman');
+                var authToken = sessionStorage.getItem('authToken');
+                var response = await fetch(window.API_BASE + '/api/users?role=foreman', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                var foremen = response.ok ? (await response.json()) : getStored('portalUsers', []).filter(function (u) { return u.role === 'foreman'; });
                 displayForemen(foremen);
-                
             } catch (error) {
-                console.error('Error loading foremen:', error);
-                // Fallback to local storage
-                const users = getStored('portalUsers', []);
-                const foremen = users.filter(user => user.role === 'foreman');
+                var foremen = getStored('portalUsers', []).filter(function (u) { return u.role === 'foreman'; });
                 displayForemen(foremen);
             }
         }
-        
+
         function displayForemen(foremen) {
-            const foremenList = document.getElementById('existingForemenList');
+            var foremenList = document.getElementById('existingForemenList');
             if (!foremenList) return;
-            
-            foremenList.innerHTML = '';
-            
-            if (foremen.length === 0) {
-                foremenList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No foremen found in the system</p>';
+            if (!foremen.length) {
+                foremenList.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">No foremen found in the system</p>';
                 return;
             }
-            
-            foremen.forEach(foreman => {
-                const foremanItem = document.createElement('div');
-                foremanItem.className = 'foreman-item';
-                foremanItem.innerHTML = `
-                    <div class="foreman-avatar">${foreman.name.charAt(0).toUpperCase()}</div>
-                    <div class="foreman-info">
-                        <div class="foreman-name">${foreman.name}</div>
-                        <div class="foreman-details">ID: ${foreman.id} | ${foreman.email || 'No email'}</div>
-                    </div>
-                    <div class="foreman-status">${foreman.status || 'Active'}</div>
-                `;
-                
-                foremanItem.addEventListener('click', function() {
-                    // Remove previous selection
-                    document.querySelectorAll('.foreman-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
-                    
-                    // Add selection to this item
-                    this.classList.add('selected');
-                    
-                    // Store selected foreman
+            foremenList.innerHTML = '';
+            foremen.forEach(function (foreman) {
+                var item = document.createElement('div');
+                item.className = 'foreman-item';
+                item.innerHTML =
+                    '<div class="foreman-avatar">' + foreman.name.charAt(0).toUpperCase() + '</div>' +
+                    '<div class="foreman-info"><div class="foreman-name">' + escapeHtml(foreman.name) + '</div>' +
+                    '<div class="foreman-details">ID: ' + escapeHtml(foreman.id || '') + ' | ' + escapeHtml(foreman.email || 'No email') + '</div></div>' +
+                    '<div class="foreman-status">' + escapeHtml(foreman.status || 'Active') + '</div>';
+                item.addEventListener('click', function () {
+                    document.querySelectorAll('.foreman-item').forEach(function (i) { i.classList.remove('selected'); });
+                    item.classList.add('selected');
                     selectedForeman = foreman;
-                    
-                    // Update display
                     updateSelectedForemanDisplay(foreman);
-                    
-                    // Close modal
-                    if (pickExistingForemanModal) {
-                        pickExistingForemanModal.classList.remove('open');
-                    }
+                    if (pickExistingForemanModal) pickExistingForemanModal.classList.remove('open');
                 });
-                
-                foremenList.appendChild(foremanItem);
+                foremenList.appendChild(item);
             });
         }
-        
-        // Update selected foreman display
-        function updateSelectedForemanDisplay(foreman) {
-            if (selectedForemanDisplay && selectedForemanName) {
-                selectedForemanName.textContent = foreman.name;
-                selectedForemanDisplay.style.display = 'block';
-            }
-        }
-        
-        // Remove selected foreman
-        if (removeForemanBtn) {
-            removeForemanBtn.addEventListener('click', function() {
-                selectedForeman = null;
-                if (selectedForemanDisplay) {
-                    selectedForemanDisplay.style.display = 'none';
-                }
-                if (selectedForemanName) {
-                    selectedForemanName.textContent = '';
-                }
-            });
-        }
-        
-        // Handle create new foreman form
-        const createNewForemanForm = document.getElementById('createNewForemanForm');
+
+        var createNewForemanForm = document.getElementById('createNewForemanForm');
         if (createNewForemanForm) {
-            createNewForemanForm.addEventListener('submit', function(e) {
+            createNewForemanForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                
-                const name = document.getElementById('newForemanName').value;
-                const id = document.getElementById('newForemanId').value;
-                const email = document.getElementById('newForemanEmail').value;
-                const phone = document.getElementById('newForemanPhone').value;
-                const password = document.getElementById('newForemanPassword').value;
-                const confirmPassword = document.getElementById('newForemanConfirmPassword').value;
-                
-                // Validate passwords match
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    return;
-                }
-                
-                // Create new foreman object
-                const newForeman = {
-                    name: name,
-                    id: id,
-                    email: email || `${id.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`,
-                    phone: phone,
-                    password: password,
-                    role: 'foreman',
-                    status: 'active',
-                    assignedProjects: [],
-                    createdAt: new Date().toISOString()
+                var name = document.getElementById('newForemanName').value;
+                var id = document.getElementById('newForemanId').value;
+                var email = document.getElementById('newForemanEmail').value;
+                var phone = document.getElementById('newForemanPhone').value;
+                var password = document.getElementById('newForemanPassword').value;
+                var confirmPassword = document.getElementById('newForemanConfirmPassword').value;
+                if (password !== confirmPassword) { alert('Passwords do not match!'); return; }
+                var newForemanObj = {
+                    name: name, id: id,
+                    email: email || (id.toLowerCase().replace(/\s/g, '') + '@aisconcepts.com'),
+                    phone: phone, password: password, role: 'foreman', status: 'active',
+                    assignedProjects: [], createdAt: new Date().toISOString()
                 };
-                
-                // Save to users
-                const users = getStored('portalUsers', []);
-                users.push(newForeman);
+                var users = getStored('portalUsers', []);
+                users.push(newForemanObj);
                 setStored('portalUsers', users);
-                
-                // Update selected foreman display
-                selectedForeman = newForeman;
-                updateSelectedForemanDisplay(newForeman);
-                
-                // Close modal and reset form
-                if (createNewForemanModal) {
-                    createNewForemanModal.classList.remove('open');
-                }
+                selectedForeman = newForemanObj;
+                updateSelectedForemanDisplay(newForemanObj);
+                if (createNewForemanModal) createNewForemanModal.classList.remove('open');
                 createNewForemanForm.reset();
-                
-                // Show success message
                 alert('Foreman created successfully!');
             });
         }
-        
-        projectForm.addEventListener('submit', function(e) {
+
+        projectForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            // Manual validation for required fields
-            const projectName = document.getElementById('adminProjectName').value;
-            const projectClient = document.getElementById('adminProjectClient').value;
-            const projectLocationName = document.getElementById('projectLocationName').value;
-            
+            var projectName = document.getElementById('adminProjectName').value;
+            var projectClient = document.getElementById('adminProjectClient').value;
+            var projectLocationName = document.getElementById('projectLocationName').value;
             if (!projectName || !projectClient || !projectLocationName) {
                 alert('Please fill in all required fields: Project Name, Client, and Location Name.');
                 return;
             }
-            
-            // Validate foreman credentials if checkbox is checked
-            const shouldCreateForemanAccount = document.getElementById('createForemanAccount').checked;
-            console.log('Should create foreman account:', shouldCreateForemanAccount);
-            
-            if (shouldCreateForemanAccount) {
-                // Use selected foreman data instead of manual input fields
-                if (!selectedForeman) {
-                    alert('Please select a foreman before creating a foreman account.');
-                    return;
-                }
-                
-                console.log('Using selected foreman:', selectedForeman);
-                
-                // Handle different foreman data structures from API vs local storage
-                const foremanName = selectedForeman.name || selectedForeman.fullName || '';
-                const foremanId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
-                const foremanEmail = selectedForeman.email || '';
-                const foremanPassword = selectedForeman.password || '';
-                
-                console.log('Foreman values:', { foremanName, foremanId, foremanEmail, foremanPassword });
-                
-                if (!foremanName || !foremanId) {
+            var shouldCreateForemanAccount = document.getElementById('createForemanAccount') && document.getElementById('createForemanAccount').checked;
+            if (shouldCreateForemanAccount && !selectedForeman) {
+                alert('Please select a foreman before creating a foreman account.');
+                return;
+            }
+            if (shouldCreateForemanAccount && selectedForeman) {
+                var fName = selectedForeman.name || selectedForeman.fullName || '';
+                var fId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
+                if (!fName || !fId) {
                     alert('Selected foreman is missing required information (name and ID are required).');
                     return;
                 }
             }
-            const id = document.getElementById('adminProjectId').value;
-            const projects = getStored('portalProjects', []);
-            const name = document.getElementById('adminProjectName').value;
-            const client = document.getElementById('adminProjectClient').value;
-            
-            // New location fields
-            const locationName = document.getElementById('projectLocationName').value;
-            const latitude = document.getElementById('projectLatitude').value;
-            const longitude = document.getElementById('projectLongitude').value;
-            
-            // Build location object
-            const location = {
-                name: locationName,
-                latitude: latitude || null,
-                longitude: longitude || null
-            };
-            
-            const budget = document.getElementById('adminProjectBudget').value || 'KSH 0';
-            let deadline = document.getElementById('projectDeadline').value;
-            
-            // Handle selected foreman
-            const assignedForeman = selectedForeman ? {
+
+            var id = document.getElementById('adminProjectId').value;
+            var projects = getStored('portalProjects', []);
+            var name = document.getElementById('adminProjectName').value;
+            var client = document.getElementById('adminProjectClient').value;
+            var locationName = document.getElementById('projectLocationName').value;
+            var latitude = document.getElementById('projectLatitude').value;
+            var longitude = document.getElementById('projectLongitude').value;
+            var location = { name: locationName, latitude: latitude || null, longitude: longitude || null };
+            var budget = document.getElementById('adminProjectBudget').value || 'KSH 0';
+            var deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
+            var assignedForeman = selectedForeman ? {
                 name: selectedForeman.name || selectedForeman.fullName || '',
                 id: selectedForeman.id || selectedForeman._id || selectedForeman.username || '',
                 email: selectedForeman.email || ''
             } : null;
-            
-            const progress = document.getElementById('adminProjectProgress') ? document.getElementById('adminProjectProgress').value : 0;
-            const createForemanAccount = shouldCreateForemanAccount;
-            const status = document.getElementById('adminProjectStatus').value;
-            const category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
-            const moneyPaid = document.getElementById('adminProjectMoneyPaid') ? document.getElementById('adminProjectMoneyPaid').value : '';
-            const moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
-            const moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
-            const moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
-            deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
-            
-            if (id) {
-                const idx = projects.findIndex(p => String(p.id) === id);
-                if (idx >= 0) {
-                    projects[idx] = {
-                        ...projects[idx],
-                        name,
-                        client,
-                        location,
-                        budget,
-                        deadline,
-                        assignedForeman,
-                        createForemanAccount,
-                        progress,
-                        status,
-                        category,
-                        moneyPaid,
-                        moneyUsed,
-                        moneyRemaining,
-                        moneyOwed,
-                        completionDate: deadline || ''
-                    };
-                }
-            } else {
-                projects.push({
-                    id: Date.now(),
-                    name,
-                    client,
-                    location,
-                    budget,
-                    deadline,
-                    assignedForeman,
-                    createForemanAccount,
-                    progress: progress || 0,
-                    status,
-                    category,
-                    moneyPaid,
-                    moneyUsed,
-                    moneyRemaining,
-                    moneyOwed,
-                    deadline: deadline || '',
-                    completionDate: deadline || ''
-                });
-            }
-            
-            // Save to local storage
-            setStored('portalProjects', projects);
-            
-            // Try to save to backend, but fall back to local storage if needed
-            const authToken = sessionStorage.getItem('authToken');
-            
-            // Prepare project data for backend
-            const projectData = id ? {
-                id: id,
-                name,
-                client,
-                location,
-                budget,
-                deadline,
-                assignedForeman,
-                createForemanAccount,
-                progress,
-                status,
-                category,
-                moneyPaid,
-                moneyUsed,
-                moneyRemaining,
-                moneyOwed,
-                completionDate: deadline || ''
-            } : {
-                id: Date.now(),
-                name,
-                client,
-                location,
-                budget,
-                deadline,
-                assignedForeman,
-                createForemanAccount,
-                progress,
-                status,
-                category,
-                moneyPaid,
-                moneyUsed,
-                moneyRemaining,
-                moneyOwed,
+            var progress = document.getElementById('adminProjectProgress') ? document.getElementById('adminProjectProgress').value : 0;
+            var status = document.getElementById('adminProjectStatus').value;
+            var category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
+            var moneyPaid = document.getElementById('adminProjectMoneyPaid') ? document.getElementById('adminProjectMoneyPaid').value : '';
+            var moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
+            var moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
+            var moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
+            var projectObj = {
+                name: name, client: client, location: location, budget: budget, deadline: deadline,
+                assignedForeman: assignedForeman, createForemanAccount: shouldCreateForemanAccount,
+                progress: progress || 0, status: status, category: category,
+                moneyPaid: moneyPaid, moneyUsed: moneyUsed, moneyRemaining: moneyRemaining, moneyOwed: moneyOwed,
                 completionDate: deadline || ''
             };
-            
-            // Handle foreman account creation if requested
-            if (createForemanAccount && selectedForeman) {
-                // Handle different foreman data structures
-                const foremanName = selectedForeman.name || selectedForeman.fullName || '';
-                const foremanId = selectedForeman.id || selectedForeman._id || selectedForeman.username || '';
-                const foremanEmail = selectedForeman.email || `${foremanId.toLowerCase().replace(/\s/g, '')}@aisconcepts.com`;
-                
-                console.log('Selected foreman details:', selectedForeman);
-                
-                // Check if foreman already exists in the database (has _id or approvalStatus)
-                if (selectedForeman._id || selectedForeman.approvalStatus === 'approved') {
-                    console.log('Foreman already exists in database, skipping account creation');
-                    alert(`Project "${name}" created successfully! Foreman ${foremanName} already has an account.`);
-                } else {
-                    // Create new foreman account
-                    const foremanData = {
-                        name: foremanName,
-                        username: foremanId,
-                        email: foremanEmail,
-                        password: selectedForeman.password || 'temp123', // Default password if not provided
-                        role: 'foreman',
-                        assignedProjects: [name],
-                        phone: selectedForeman.phone || ''
-                    };
-                    
-                    console.log('Creating foreman account with data:', foremanData);
-                    
-                    // Use the working registration endpoint pattern
-                    const authToken = sessionStorage.getItem('authToken');
-                    
-                    fetch(`${window.API_BASE}/api/auth/register-employee`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${authToken}`
-                        },
-                        body: JSON.stringify(foremanData)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            // If it's a duplicate error, handle it gracefully
-                            if (response.status === 400) {
-                                console.log('Foreman account may already exist, treating as success');
-                                return { success: true, message: 'Account already exists' };
-                            }
-                            throw new Error(`Failed to create foreman account: ${response.status} ${response.statusText}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Foreman account created:', data);
-                        alert(`Project "${name}" created successfully and foreman account created for ${foremanData.name}!`);
-                    })
-                    .catch(error => {
-                        console.error('Error creating foreman account:', error);
-                        alert(`Project "${name}" created successfully, but there was an issue creating the foreman account: ${error.message}`);
-                    });
-                }
+
+            if (id) {
+                var idx = projects.findIndex(function (p) { return String(p.id) === id; });
+                if (idx >= 0) projects[idx] = Object.assign({}, projects[idx], projectObj);
             } else {
-                alert(`Project "${name}" created successfully!`);
+                projectObj.id = Date.now();
+                projects.push(projectObj);
             }
-            
-            // Try to save to backend API if available
-            if (authToken) {
-                fetch(`${window.API_BASE}/api/projects`, {
+            setStored('portalProjects', projects);
+
+            if (shouldCreateForemanAccount && selectedForeman && !(selectedForeman._id || selectedForeman.approvalStatus === 'approved')) {
+                var foremanData = {
+                    name: selectedForeman.name || '', username: selectedForeman.id || '',
+                    email: selectedForeman.email || ((selectedForeman.id || '').toLowerCase().replace(/\s/g, '') + '@aisconcepts.com'),
+                    password: selectedForeman.password || 'temp123',
+                    role: 'foreman', assignedProjects: [name], phone: selectedForeman.phone || ''
+                };
+                var authToken = sessionStorage.getItem('authToken');
+                fetch(window.API_BASE + '/api/auth/register-employee', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(projectData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        console.warn('Failed to save project to backend, but saved locally');
-                    }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify(foremanData)
+                }).then(function (response) {
+                    if (!response.ok && response.status !== 400) throw new Error('Failed to create foreman account: ' + response.status);
                     return response.json();
-                })
-                .catch(error => {
-                    console.warn('Error saving project to backend:', error);
+                }).then(function () {
+                    alert('Project "' + name + '" saved and foreman account created for ' + foremanData.name + '!');
+                }).catch(function (error) {
+                    alert('There was an issue creating the foreman account: ' + error.message);
                 });
+            } else if (shouldCreateForemanAccount && selectedForeman && (selectedForeman._id || selectedForeman.approvalStatus === 'approved')) {
+                alert('Project "' + name + '" saved. Foreman ' + (selectedForeman.name || '') + ' already has an account.');
             }
-            
-            // Refresh the projects table
+
             renderAdminProjectsTable();
             projectModal.classList.remove('open');
-            projectForm.reset();
         });
     }
-    var viewProjectModal = document.getElementById('adminViewProjectModal');
-    if (viewProjectModal) viewProjectModal.addEventListener('click', function(e) { if (e.target === viewProjectModal) viewProjectModal.classList.remove('open'); });
+}
 
-    window.editUser = function(userId) {
-        const users = __portalCache.portalUsers || [];
-        const user = users.find(function (u) { return String(u.id) === String(userId); });
-        if (!user) return;
-        document.getElementById('adminUserModalTitle').textContent = 'View user (read-only)';
-        document.getElementById('adminUserId').value = user.id;
-        document.getElementById('adminUserName').value = user.name;
-        document.getElementById('adminUserEmail').value = user.email;
-        document.getElementById('adminUserRole').value = user.role;
-        document.getElementById('adminUserStatus').value = user.status || 'Active';
-        document.getElementById('adminUserModal').classList.add('open');
-    };
-    window.deleteUser = async function(userId) {
-        if (!confirm('Permanently delete this user from the database?')) return;
-        var API_BASE = window.API_BASE || '';
-        var token = sessionStorage.getItem('authToken');
-        try {
-            var r = await fetch(API_BASE + '/api/admin/users/' + encodeURIComponent(userId), {
-                method: 'DELETE',
-                headers: { Authorization: 'Bearer ' + token }
-            });
-            if (!r.ok) {
-                var err = await r.json().catch(function () { return {}; });
-                alert(err.error || 'Could not delete user.');
-                return;
-            }
-            __portalCache.portalUsers = (__portalCache.portalUsers || []).filter(function (u) {
-                return String(u.id) !== String(userId);
-            });
-            renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
-        } catch (e) {
-            alert('Could not delete user.');
-        }
-        __portalCache.portalUsers = (__portalCache.portalUsers || []).filter(function (u) {
-            return String(u.id) !== String(userId);
+// ===== ADMIN PROJECT HELPERS =====
+
+window.deleteUser = async function (userId) {
+    if (!confirm('Permanently delete this user from the database?')) return;
+    var token = sessionStorage.getItem('authToken');
+    try {
+        var r = await fetch((window.API_BASE || '') + '/api/admin/users/' + encodeURIComponent(userId), {
+            method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
         });
+        if (!r.ok) {
+            var err = await r.json().catch(function () { return {}; });
+            alert(err.error || 'Could not delete user.');
+            return;
+        }
+        __portalCache.portalUsers = (__portalCache.portalUsers || []).filter(function (u) { return String(u.id) !== String(userId); });
         renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
-    };
+    } catch (e) {
+        alert('Could not delete user.');
+    }
+};
 
-    window.editProject = function(projectId) {
-        const projects = getStored('portalProjects', []);
-        const project = projects.find(p => String(p._id || p.id) === projectId);
+window.editProject = function (projectId) {
+    fetch(window.API_BASE + '/api/projects', {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load projects');
+        return r.json();
+    }).then(function (projects) {
+        var project = projects.find(function (p) { return String(p._id || p.id) === projectId; });
         if (!project) return;
         document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-        document.getElementById('adminProjectId').value = project._id || project.id;
-        document.getElementById('adminProjectName').value = project.name;
-        document.getElementById('adminProjectClient').value = project.client;
+        document.getElementById('adminProjectId').value = project._id || project.id || '';
+        document.getElementById('adminProjectName').value = project.name || '';
+        document.getElementById('adminProjectClient').value = project.client || '';
         document.getElementById('adminProjectBudget').value = project.budget || '';
         document.getElementById('adminProjectProgress').value = project.progress || 0;
+        if (document.getElementById('adminProjectCategory')) document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
         document.getElementById('adminProjectStatus').value = project.status || 'Active';
-        const catEl = document.getElementById('adminProjectCategory');
-        if (catEl) catEl.value = project.category || 'Commercial';
-        const moneyPaidEl = document.getElementById('adminProjectMoneyPaid');
-        const moneyUsedEl = document.getElementById('adminProjectMoneyUsed');
-        const moneyRemainingEl = document.getElementById('adminProjectMoneyRemaining');
-        const moneyOwedEl = document.getElementById('adminProjectMoneyOwed');
-        if (moneyPaidEl) moneyPaidEl.value = project.moneyPaid || '';
-        if (moneyUsedEl) moneyUsedEl.value = project.moneyUsed || '';
-        if (moneyRemainingEl) moneyRemainingEl.value = project.moneyRemaining || '';
-        if (moneyOwedEl) moneyOwedEl.value = project.moneyOwed || '';
+        if (document.getElementById('adminProjectDeadline')) document.getElementById('adminProjectDeadline').value = project.deadline || project.completionDate || '';
+        if (project.location && typeof project.location === 'object') {
+            document.getElementById('projectLocationName').value = project.location.name || '';
+            document.getElementById('projectLatitude').value = project.location.latitude || '';
+            document.getElementById('projectLongitude').value = project.location.longitude || '';
+        } else {
+            document.getElementById('projectLocationName').value = project.location || '';
+            document.getElementById('projectLatitude').value = '';
+            document.getElementById('projectLongitude').value = '';
+        }
+        if (document.getElementById('adminProjectMoneyPaid')) document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
+        if (document.getElementById('adminProjectMoneyUsed')) document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
+        if (document.getElementById('adminProjectMoneyRemaining')) document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
+        if (document.getElementById('adminProjectMoneyOwed')) document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
+        var sfd = document.getElementById('selectedForemanDisplay');
+        var sfn = document.querySelector('.selected-foreman-name');
+        if (project.assignedForeman && sfd && sfn) {
+            sfn.textContent = project.assignedForeman.name;
+            sfd.style.display = 'block';
+        } else if (sfd) {
+            sfd.style.display = 'none';
+        }
         document.getElementById('adminProjectModal').classList.add('open');
-        var dlEl = document.getElementById('adminProjectDeadline');
-        if (dlEl) dlEl.value = project.deadline || project.completionDate || '';
-    };
-    
-    window.viewProject = function(projectId) {
-        const projects = getStored('portalProjects', []);
-        const project = projects.find(p => p.id === projectId);
-        if (!project) return;
-        document.getElementById('adminViewProjectContent').innerHTML = `
-            <p><strong>Name:</strong> ${project.name}</p>
-            <p><strong>Client:</strong> ${project.client}</p>
-            <p><strong>Location:</strong> ${project.location || '-'}</p>
-            <p><strong>Foreman:</strong> ${project.foremanName || 'Not Assigned'}</p>
-            <p><strong>Budget:</strong> ${project.budget || '-'}</p>
-            <p><strong>Progress:</strong> ${project.progress}%</p>
-            <p><strong>Deadline:</strong> ${project.deadline || '-'}</p>
-            <p><strong>Status:</strong> ${project.status}</p>
-            <p><strong>Workers:</strong> ${project.workerCount || 0} workers</p>
-            <p><strong>Total Payroll:</strong> $${project.totalPayroll || '0'}</p>
-        `;
+    }).catch(function (error) {
+        console.error(error);
+        alert('Failed to load project details. Please try again.');
+    });
+};
+
+window.viewProjectDetails = function (projectId) {
+    fetch(window.API_BASE + '/api/projects', {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load projects');
+        return r.json();
+    }).then(function (projects) {
+        var project = projects.find(function (p) { return String(p._id || p.id) === String(projectId); });
+        var modal = document.getElementById('adminViewProjectModal');
+        var content = document.getElementById('adminViewProjectContent');
+        if (!modal || !content) return;
+        if (!project) { content.innerHTML = '<p>Project not found.</p>'; modal.classList.add('open'); return; }
+        var locStr = project.location && project.location.name ? project.location.name : project.location || 'Not specified';
+        var foremanStr = project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned';
+        var html = '<div class="project-details"><h3>' + escapeHtml(project.name || '') + '</h3><div class="project-info-grid">' +
+            '<div class="info-item"><label>Client:</label><span>' + escapeHtml(project.client || 'Not specified') + '</span></div>' +
+            '<div class="info-item"><label>Location:</label><span>' + escapeHtml(locStr) + '</span></div>' +
+            '<div class="info-item"><label>Foreman:</label><span>' + escapeHtml(foremanStr) + '</span></div>' +
+            '<div class="info-item"><label>Budget:</label><span>' + escapeHtml(project.budget || 'Not specified') + '</span></div>' +
+            '<div class="info-item"><label>Progress:</label><span>' + (project.progress || 0) + '%</span></div>' +
+            '<div class="info-item"><label>Status:</label><span class="status-badge status-' + escapeHtml((project.status || 'Active').toLowerCase().replace(/\s+/g, '-')) + '">' + escapeHtml(project.status || 'Active') + '</span></div>' +
+            '<div class="info-item"><label>Deadline:</label><span>' + escapeHtml(project.deadline || 'Not specified') + '</span></div>' +
+            '<div class="info-item"><label>Category:</label><span>' + escapeHtml(project.category || 'Commercial') + '</span></div>';
+        if (project.location && project.location.latitude && project.location.longitude) {
+            html += '<div class="info-item"><label>Coordinates:</label><span>' + project.location.latitude + ', ' + project.location.longitude + '</span></div>';
+        }
+        if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+            html += '<div class="info-item"><label>Money Paid:</label><span>' + escapeHtml(project.moneyPaid || 'KSH 0') + '</span></div>' +
+                '<div class="info-item"><label>Money Used:</label><span>' + escapeHtml(project.moneyUsed || 'KSH 0') + '</span></div>' +
+                '<div class="info-item"><label>Money Remaining:</label><span>' + escapeHtml(project.moneyRemaining || 'KSH 0') + '</span></div>' +
+                '<div class="info-item"><label>Money Owed:</label><span>' + escapeHtml(project.moneyOwed || 'KSH 0') + '</span></div>';
+        }
+        html += '</div></div><div style="margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">' +
+            '<button class="btn btn-primary" onclick="openRequestFundsModal(\'' + escapeAttr(String(projectId)) + '\')" style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);">' +
+            '<i class="fas fa-hand-holding-usd"></i> Request Funds</button></div>';
+        content.innerHTML = html;
+        modal.classList.add('open');
+    }).catch(function (error) {
+        console.error(error);
+        alert('Failed to load project details. Please try again.');
+    });
+};
+
+window.viewProject = function (projectId) {
+    var projects = getStored('portalProjects', []);
+    var project = projects.find(function (p) { return p.id === projectId; });
+    if (!project) return;
+    var content = document.getElementById('adminViewProjectContent');
+    if (content) {
+        content.innerHTML =
+            '<p><strong>Name:</strong> ' + escapeHtml(project.name) + '</p>' +
+            '<p><strong>Client:</strong> ' + escapeHtml(project.client) + '</p>' +
+            '<p><strong>Location:</strong> ' + escapeHtml(project.location && project.location.name ? project.location.name : project.location || '-') + '</p>' +
+            '<p><strong>Foreman:</strong> ' + escapeHtml(project.foremanName || 'Not Assigned') + '</p>' +
+            '<p><strong>Budget:</strong> ' + escapeHtml(project.budget || '-') + '</p>' +
+            '<p><strong>Progress:</strong> ' + (project.progress || 0) + '%</p>' +
+            '<p><strong>Deadline:</strong> ' + escapeHtml(project.deadline || '-') + '</p>' +
+            '<p><strong>Status:</strong> ' + escapeHtml(project.status) + '</p>';
         document.getElementById('adminViewProjectModal').classList.add('open');
-    };
-
-    window.viewProjectWorkers = function(projectId) {
-        const projects = getStored('portalProjects', []);
-        const project = projects.find(p => p.id === projectId);
-        if (!project) return;
-        
-        // Fetch workers for this project
-        fetch(`${window.API_BASE}/api/projects/${projectId}/workers`, {
-            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('authToken')}` }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const workers = data.workers || [];
-            const totalPayroll = workers.reduce((sum, worker) => sum + (parseFloat(worker.dailyRate || 0)), 0);
-            
-            document.getElementById('adminViewProjectContent').innerHTML = `
-                <h3>Workers for ${project.name}</h3>
-                <div style="max-height: 300px; overflow-y: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>ID</th>
-                                <th>Phone</th>
-                                <th>Daily Rate</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${workers.map(worker => `
-                                <tr>
-                                    <td>${worker.name || '-'}</td>
-                                    <td>${worker.nationalId || '-'}</td>
-                                    <td>${worker.phone || '-'}</td>
-                                    <td>$${worker.dailyRate || '0'}</td>
-                                    <td><span class="status-badge status-${worker.status || 'active'}">${worker.status || 'Active'}</span></td>
-                                    <td>
-                                        <button class="btn btn-sm" onclick="editWorker('${worker._id}')">Edit</button>
-                                        <button class="btn btn-sm btn-danger" onclick="removeWorker('${worker._id}')">Remove</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div style="margin-top: 20px;">
-                        <p><strong>Total Workers:</strong> ${workers.length}</p>
-                        <p><strong>Total Daily Payroll:</strong> $${totalPayroll.toFixed(2)}</p>
-                    </div>
-                </div>
-            `;
-        })
-        .catch(error => {
-            console.error('Error fetching workers:', error);
-            document.getElementById('adminViewProjectContent').innerHTML = '<p>Error loading workers data.</p>';
-        });
     }
-}
+};
 
-window.setupEmployeeInteractions = function(currentUser) {
-    const assignmentsBody = document.getElementById('employeeAssignmentsBody');
-
-    const allAssignments = getStored('assignments', []);
-    const myAssignments = currentUser
-        ? allAssignments.filter(a => a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase())
-        : allAssignments;
-    if (assignmentsBody) renderAssignments(assignmentsBody, myAssignments, true);
-    var projectFilterTabs = document.querySelectorAll('#employeeProjectFilterTabs .filter-btn');
-    projectFilterTabs.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            projectFilterTabs.forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            window._employeeProjectFilter = btn.getAttribute('data-filter') || 'all';
-            renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), myAssignments);
-        });
+window.viewProjectWorkers = function (projectId) {
+    fetch(window.API_BASE + '/api/projects/' + projectId + '/workers', {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (response) { return response.json(); })
+    .then(function (data) {
+        var workers = data.workers || [];
+        var totalPayroll = workers.reduce(function (sum, w) { return sum + (parseFloat(w.dailyRate || 0)); }, 0);
+        var content = document.getElementById('adminViewProjectContent');
+        if (!content) return;
+        content.innerHTML = '<h3>Workers (' + workers.length + ')</h3>' +
+            '<div style="max-height:300px;overflow-y:auto;">' +
+            '<table style="width:100%;border-collapse:collapse;">' +
+            '<thead><tr><th>Name</th><th>ID</th><th>Phone</th><th>Daily Rate</th><th>Status</th><th>Actions</th></tr></thead>' +
+            '<tbody>' +
+            workers.map(function (w) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(w.name || '-') + '</td>' +
+                    '<td>' + escapeHtml(w.nationalId || '-') + '</td>' +
+                    '<td>' + escapeHtml(w.phone || '-') + '</td>' +
+                    '<td>$' + escapeHtml(w.dailyRate || '0') + '</td>' +
+                    '<td><span class="status-badge status-' + escapeHtml(w.status || 'active') + '">' + escapeHtml(w.status || 'Active') + '</span></td>' +
+                    '<td>' +
+                    '<button class="btn btn-sm" onclick="editWorker(\'' + escapeAttr(w._id) + '\')">Edit</button> ' +
+                    '<button class="btn btn-sm btn-danger" onclick="removeWorker(\'' + escapeAttr(w._id) + '\')">Remove</button>' +
+                    '</td></tr>';
+            }).join('') +
+            '</tbody></table>' +
+            '<div style="margin-top:20px;"><p><strong>Total Workers:</strong> ' + workers.length + '</p>' +
+            '<p><strong>Total Daily Payroll:</strong> $' + totalPayroll.toFixed(2) + '</p></div></div>';
+        document.getElementById('adminViewProjectModal').classList.add('open');
+    }).catch(function () {
+        var content = document.getElementById('adminViewProjectContent');
+        if (content) content.innerHTML = '<p>Error loading workers data.</p>';
     });
+};
 
-    // Update Task modal (image + description)
-    const taskUpdateModal = document.getElementById('employeeTaskUpdateModal');
-    const taskUpdateForm = document.getElementById('employeeTaskUpdateForm');
-    document.querySelectorAll('[data-close="employeeTaskUpdateModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('employeeTaskUpdateModal').classList.remove('open'); });
+window.deleteProject = function (projectId) {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
+    var authToken = sessionStorage.getItem('authToken');
+    fetch(window.API_BASE + '/api/projects/' + projectId, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to delete project');
+        return response.json();
+    }).then(function () {
+        var projects = getStored('portalProjects', []);
+        setStored('portalProjects', projects.filter(function (p) { return String(p.id) !== String(projectId); }));
+        renderAdminProjectsTable();
+        alert('Project deleted successfully!');
+    }).catch(function () {
+        alert('Failed to delete project. Please try again.');
     });
-    if (taskUpdateModal) taskUpdateModal.addEventListener('click', function(e) { if (e.target === taskUpdateModal) taskUpdateModal.classList.remove('open'); });
-    if (taskUpdateForm) {
-        taskUpdateForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var project = (document.getElementById('taskUpdateProjectName') && document.getElementById('taskUpdateProjectName').value) || '';
-            var description = document.getElementById('taskUpdateDescription').value;
-            var fileInput = document.getElementById('taskUpdateImages');
-            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
-            var token = sessionStorage.getItem('authToken');
-            var API_BASE = window.API_BASE || '';
-            function sendWithImages(imageArr) {
-                fetch(API_BASE + '/api/portal/employee-progress', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({
-                        project: project,
-                        description: description,
-                        images: imageArr || []
-                    })
-                })
-                    .then(function (r) {
-                        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'failed'); });
-                        return r.json();
-                    })
-                    .then(function () {
-                        taskUpdateForm.reset();
-                        if (taskUpdateModal) taskUpdateModal.classList.remove('open');
-                        return fetch(API_BASE + '/api/portal/bootstrap', {
-                            headers: { Authorization: 'Bearer ' + token }
-                        });
-                    })
-                    .then(function (r) {
-                        if (r && r.ok) return r.json();
-                    })
-                    .then(function (data) {
-                        if (data && data.employeeTaskUpdates) __portalCache.employeeTaskUpdates = data.employeeTaskUpdates;
-                        refreshNotificationsBadge();
-                        alert('Progress submitted.');
-                    })
-                    .catch(function () {
-                        alert('Could not submit progress. Check assignment matches this project.');
-                    });
-            }
-            if (files.length) {
-                var readers = files.map(function (file) {
-                    return new Promise(function (resolve) {
-                        var r = new FileReader();
-                        r.onload = function () { resolve(r.result); };
-                        r.readAsDataURL(file);
-                    });
-                });
-                Promise.all(readers).then(sendWithImages);
-            } else {
-                sendWithImages([]);
-            }
-        });
-    }
+};
 
-    // Add Time Entry modal
-    const timeModal = document.getElementById('employeeTimeModal');
-    const timeForm = document.getElementById('employeeTimeForm');
-    const timeEntriesBody = document.querySelector('.time-entries tbody');
-    const addTimeBtn = document.getElementById('employeeAddTimeBtn');
-    if (addTimeBtn && timeModal) {
-        addTimeBtn.addEventListener('click', function() { timeModal.classList.add('open'); });
-    }
-    document.querySelectorAll('[data-close="employeeTimeModal"]').forEach(el => {
-        el.addEventListener('click', function() { document.getElementById('employeeTimeModal').classList.remove('open'); });
-    });
-    if (timeModal) timeModal.addEventListener('click', function(e) { if (e.target === timeModal) timeModal.classList.remove('open'); });
-    if (timeForm && timeEntriesBody) {
-        timeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const entries = getStored('employeeTimeEntries', []);
-            entries.push({
-                date: document.getElementById('timeEntryDate').value,
-                project: document.getElementById('timeEntryProject').value,
-                description: document.getElementById('timeEntryDescription').value,
-                hours: parseFloat(document.getElementById('timeEntryHours').value),
-                employeeEmail: currentUser ? currentUser.email : 'employee@demo.com'
-            });
-            setStored('employeeTimeEntries', entries);
-            renderEmployeeTimeEntries(timeEntriesBody, entries);
-            timeForm.reset(); timeModal.classList.remove('open');
-        });
-    }
+window.openRequestFundsModal = function (projectId) {
+    var projects = getStored('portalProjects', []);
+    var project = projects.find(function (p) { return String(p.id) === String(projectId); });
+    if (!project) return;
+    var modal = document.getElementById('adminRequestFundsModal');
+    if (!modal) return;
+    var projEl = document.getElementById('requestFundsProject');
+    if (projEl) { projEl.value = project.name || ''; projEl.setAttribute('data-project-id', projectId); }
+    var today = new Date().toISOString().split('T')[0];
+    var dueDateEl = document.getElementById('requestFundsDueDate');
+    if (dueDateEl) dueDateEl.setAttribute('min', today);
+    var viewModal = document.getElementById('adminViewProjectModal');
+    if (viewModal) viewModal.classList.remove('open');
+    modal.classList.add('open');
+};
 
-    // Time entry edit modal: close and submit
-    const timeEditModal = document.getElementById('employeeTimeEditModal');
-    const timeEditForm = document.getElementById('employeeTimeEditForm');
-    if (timeEditModal) {
-        document.querySelectorAll('[data-close="employeeTimeEditModal"]').forEach(el => {
-            el.addEventListener('click', function() { timeEditModal.classList.remove('open'); });
-        });
-        timeEditModal.addEventListener('click', function(e) { if (e.target === timeEditModal) timeEditModal.classList.remove('open'); });
-    }
-    if (timeEditForm && timeEntriesBody) {
-        timeEditForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const idx = parseInt(document.getElementById('timeEditIndex').value, 10);
-            const entries = getStored('employeeTimeEntries', []);
-            if (isNaN(idx) || idx < 0 || idx >= entries.length) {
-                timeEditModal.classList.remove('open');
-                return;
-            }
-            entries[idx] = {
-                date: document.getElementById('timeEditDate').value,
-                project: document.getElementById('timeEditProject').value,
-                description: document.getElementById('timeEditDescription').value,
-                hours: parseFloat(document.getElementById('timeEditHours').value) || 0,
-                employeeEmail: entries[idx].employeeEmail
-            };
-            setStored('employeeTimeEntries', entries);
-            renderEmployeeTimeEntries(timeEntriesBody, entries);
-            timeEditForm.reset();
-            if (timeEditModal) timeEditModal.classList.remove('open');
-        });
-    }
-}
+window.openAdminBroadcastModal = function (projectId) {
+    var projects = getStored('portalProjects', []);
+    var p = projects.find(function (x) { return String(x.id) === String(projectId); });
+    if (!p) return;
+    var modal = document.getElementById('adminBroadcastModal');
+    if (!modal) return;
+    document.getElementById('broadcastProjectId').value = p.id;
+    document.getElementById('broadcastProjectName').value = p.name || '';
+    var clientEmailEl = document.getElementById('broadcastClientEmail');
+    if (clientEmailEl) clientEmailEl.value = (p.client && p.client.indexOf('@') !== -1) ? p.client : '';
+    document.getElementById('broadcastMessage').value = '';
+    var imgs = document.getElementById('broadcastImages');
+    if (imgs) imgs.value = '';
+    modal.classList.add('open');
+};
 
-function renderAssignments(tbody, assignments, hideEmployeeColumn) {
-    if (!tbody) return;
-    if (hideEmployeeColumn && tbody.id === 'employeeAssignmentsBody') {
-        renderEmployeeAssignmentsTable(tbody, assignments);
-        return;
+window.adminAssignProjectPrefill = function (projectName, clientEmail) {
+    navigatePortalSection('admin-assignments', {});
+    var sel = document.getElementById('assignProjectName');
+    if (sel && projectName) {
+        var opt = Array.prototype.slice.call(sel.options).find(function (o) { return o.value === projectName; });
+        if (!opt) {
+            var o = document.createElement('option');
+            o.value = projectName; o.textContent = projectName;
+            sel.appendChild(o);
+        }
+        sel.value = projectName;
     }
-    tbody.innerHTML = assignments.map(a => `
-        <tr>
-            <td>${a.project}</td>
-            ${hideEmployeeColumn ? '' : `<td>${a.employeeEmail}</td>`}
-            <td>${a.due || '-'}</td>
-            <td>${a.deadline || a.due || '-'}</td>
-            <td>${a.notes || '-'}</td>
-        </tr>
-    `).join('');
-}
-function getEmployeeAssignmentStatus() {
-    return getStored('employeeAssignmentStatus', {}) || {};
-}
-function setEmployeeAssignmentStatus(map) {
-    setStored('employeeAssignmentStatus', map);
-}
-function renderEmployeeAssignmentsTable(tbody, assignments) {
-    if (!tbody || tbody.id !== 'employeeAssignmentsBody') return;
-    var statusMap = getEmployeeAssignmentStatus();
-    var filter = (window._employeeProjectFilter || 'all');
-    function timelineText(dueStr) {
-        if (!dueStr) return '-';
-        var d = new Date(dueStr);
-        var now = new Date();
-        var days = Math.ceil((d - now) / (24 * 60 * 60 * 1000));
-        if (days < 0) return 'Overdue';
-        if (days === 0) return 'Due today';
-        if (days === 1) return 'Due tomorrow';
-        return 'Due in ' + days + ' days';
-    }
-    var filtered = assignments.filter(function(a) {
-        var key = (a.project || '') + '|' + (a.employeeEmail || '');
-        var st = statusMap[key] || 'not-started';
-        if (filter === 'all') return true;
-        if (filter === 'not-started' || filter === 'assigned') return st === 'not-started';
-        if (filter === 'active') return st === 'active';
-        if (filter === 'completed') return st === 'completed';
-        return true;
-    });
-    tbody.innerHTML = filtered.map(function(a) {
-        var key = (a.project || '') + '|' + (a.employeeEmail || '');
-        var st = statusMap[key] || 'not-started';
-        var due = a.due || '-';
-        var deadline = a.deadline || a.due || '-';
-        var timeline = timelineText(a.deadline || a.due);
-        var keyEsc = key.replace(/'/g, "\\'");
-        var projEsc = String(a.project || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        var action = st === 'not-started' ? '<button type="button" class="btn btn-sm btn-primary" onclick="startAssignment(\'' + keyEsc + '\')">Start</button>' :
-            st === 'active' ? '<span class="status-badge status-pending">In progress</span> <button type="button" class="btn btn-sm btn-secondary" onclick="completeAssignment(\'' + keyEsc + '\')">Mark done</button>' :
-            '<span class="status-badge status-paid">Done</span>';
-        var updBtn = ' <button type="button" class="btn btn-sm btn-secondary" onclick="openEmployeeProgressModal(\'' + projEsc + '\')"><i class="fas fa-upload"></i> Progress</button>';
-        if (st === 'completed') updBtn = '';
-        return '<tr><td>' + (a.project || '') + '</td><td>' + due + '</td><td>' + deadline + '</td><td>' + timeline + '</td><td>' + (a.notes || '-') + '</td><td>' + action + updBtn + '</td></tr>';
-    }).join('');
-}
-window.openEmployeeProgressModal = function(projectName) {
-    var el = document.getElementById('taskUpdateProjectLabel');
-    if (el) el.textContent = projectName || '';
-    var hid = document.getElementById('taskUpdateProjectName');
-    if (hid) hid.value = projectName || '';
-    var ta = document.getElementById('taskUpdateDescription');
-    if (ta) ta.value = '';
-    var fi = document.getElementById('taskUpdateImages');
-    if (fi) fi.value = '';
-    var modal = document.getElementById('employeeTaskUpdateModal');
+    var ce = document.getElementById('assignClientEmail');
+    if (ce && clientEmail) ce.value = clientEmail;
+};
+
+window.adminInvoicePrefill = function (client, projectName) {
+    var modal = document.getElementById('adminInvoiceModal');
+    var invClient = document.getElementById('invClient');
+    var invProject = document.getElementById('invProject');
+    if (invClient) invClient.value = client || '';
+    if (invProject) invProject.value = projectName || '';
     if (modal) modal.classList.add('open');
 };
-window.startAssignment = function(key) {
-    var map = getEmployeeAssignmentStatus();
-    map[key] = 'active';
-    setEmployeeAssignmentStatus(map);
-    var path = window.location.pathname || '';
-    if (path.includes('/employee/')) {
-        var assignments = getStored('assignments', []).filter(function(a) { return (a.employeeEmail === (JSON.parse(sessionStorage.getItem('currentUser') || '{}').email)); });
-        renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
-        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
-        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
-    }
-};
-window.completeAssignment = function(key) {
-    var map = getEmployeeAssignmentStatus();
-    map[key] = 'completed';
-    setEmployeeAssignmentStatus(map);
-    var path = window.location.pathname || '';
-    if (path.includes('/employee/')) {
-        var assignments = getStored('assignments', []).filter(function(a) { return (a.employeeEmail === (JSON.parse(sessionStorage.getItem('currentUser') || '{}').email)); });
-        renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
-        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
-        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
-    }
+
+window.openProjectInquiryModal = function (projectId, projectName) {
+    var modal = document.getElementById('clientProjectInquiryModal');
+    if (!modal) return;
+    document.getElementById('inquiryProjectId').value = projectId;
+    document.getElementById('inquiryProjectName').value = projectName;
+    modal.classList.add('open');
 };
 
-function renderMessages(tbody, messages) {
-    if (!tbody) return;
-    tbody.innerHTML = messages.slice().reverse().map(m => `
-        <tr>
-            <td>${m.from}</td>
-            <td>${m.to}</td>
-            <td>${m.project || '-'}</td>
-            <td>${m.body}</td>
-        </tr>
-    `).join('');
-}
-
-function renderMessagesAsCards(container, messages) {
-    if (!container) return;
-    container.innerHTML = messages.slice().reverse().map(m => `
-        <div class="message-card">
-            <div class="message-from">${m.from} → ${m.to}</div>
-            <div class="message-meta">${m.project ? 'Project: ' + m.project + ' · ' : ''}${m.timestamp ? new Date(m.timestamp).toLocaleString() : ''}</div>
-            <div class="message-body">${m.body}</div>
-        </div>
-    `).join('') || '<p class="empty-state">No messages yet.</p>';
-}
-
-function renderEmployeeProgress(container, progressEntries) {
-    if (!container) return;
-    container.innerHTML = progressEntries.slice().reverse().map(p => `
-        <div class="deadline-item">
-            <i class="fas fa-image" style="color: var(--primary);"></i>
-            <div>
-                <strong>${p.project}</strong>
-                <p>${p.description}</p>
-                ${p.photoUrl ? `<p><a href="${p.photoUrl}" target="_blank">View photo</a></p>` : ''}
-            </div>
-        </div>
-    `).join('');
-}
-
-function displayUserInfo(user) {
-    // Update all instances of user info across pages
-    document.querySelectorAll('.user-avatar img').forEach(img => {
-        img.src = user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=20c4b4&color=fff&size=128`;
-    });
-    
-    document.querySelectorAll('.user-name').forEach(el => {
-        el.textContent = user.name || user.email.split('@')[0];
-    });
-    
-    document.querySelectorAll('.user-email').forEach(el => {
-        el.textContent = user.email;
-    });
-    
-    document.querySelectorAll('.user-role').forEach(el => {
-        el.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-        // Add role-specific styling
-        el.className = `user-role role-${user.role}`;
-    });
-}
-
-function logout() {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('currentUser');
-    window.location.href = '../index.html';
-}
-
-// ===== CLIENT PORTAL FUNCTIONS =====
-function clientPortalProjectGroup(p) {
-    var s = (p.status || '').toLowerCase();
-    if (s.indexOf('complete') !== -1) return 'completed';
-    if (s === 'pending' || s === 'review') return 'pending';
-    return 'ongoing';
-}
-
-window.applyClientProjectFilter = function () {
-    var projectsContainer = document.getElementById('clientProjectsGrid');
-    if (!projectsContainer) return;
-    var f = window._clientProjectFilter || 'all';
-    var list = window._clientProjectsList || [];
-    var filtered =
-        f === 'all' ? list : list.filter(function (p) {
-              return clientPortalProjectGroup(p) === f;
-          });
-    var adminUpdates = getStored('adminClientProgressUpdates', []);
-    if (!filtered.length) {
-        projectsContainer.innerHTML = '<p class="empty-state">No projects in this view.</p>';
-        return;
-    }
-    projectsContainer.innerHTML = filtered
-        .map(function (project) {
-            var stClass = String(project.status || 'active')
-                .toLowerCase()
-                .replace(/\s+/g, '-');
-            var deadline = project.deadline || project.completionDate || '-';
-            var ups = adminUpdates.filter(function (u) {
-                return (
-                    String(u.projectId) === String(project._id || project.id) ||
-                    (u.projectName && u.projectName === project.name)
-                );
-            });
-            var upHtml = ups.length
-                ? '<div class="client-admin-updates"><strong>Updates from your team</strong>' +
-                  ups
-                      .slice()
-                      .reverse()
-                      .slice(0, 3)
-                      .map(function (u) {
-                          return (
-                              '<p class="small-meta">' +
-                              (u.at ? new Date(u.at).toLocaleString() : '') +
-                              ': ' +
-                              escapeHtml((u.message || '').slice(0, 160)) +
-                              '</p>'
-                          );
-                      })
-                      .join('') +
-                  '</div>'
-                : '';
-            return (
-                '<div class="project-card">' +
-                '<div class="project-image">' +
-                '<img src="' +
-                (project.image || '/images/project1.jpg') +
-                '" alt="' +
-                escapeHtml(project.name) +
-                '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbT0iYmFzZWxpbmUiPlByb2plY3Q8L3RleHQ+PC9zdmc+\'">' +
-                '</div>' +
-                '<div class="project-details">' +
-                '<h3>' +
-                escapeHtml(project.name) +
-                '</h3>' +
-                '<p>Status: <span class="status-badge status-' +
-                stClass +
-                '">' +
-                escapeHtml(project.status || '') +
-                '</span></p>' +
-                '<p><strong>Deadline:</strong> ' +
-                escapeHtml(deadline) +
-                '</p>' +
-                '<div class="progress-bar"><div class="progress-fill" style="width: ' +
-                (project.progress || 0) +
-                '%"></div></div>' +
-                '<p>Progress: ' +
-                (project.progress || 0) +
-                '%</p>' +
-                '<p><strong>Next Milestone:</strong> ' +
-                escapeHtml(project.nextMilestone || '-') +
-                '</p>' +
-                upHtml +
-                '<div class="project-actions">' +
-                '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(' +
-                (project._id || project.id) +
-                ')">View Details</button>' +
-                '<button type="button" class="btn btn-secondary" onclick="openProjectInquiryModal(\'' +
-                (project._id || project.id) + '\', \'' + escapeHtml(project.name).replace(/'/g, "\\'") + '\')">Inquire</button>' +
-                '</div>' +
-                '</div></div>'
-            );
-        })
-        .join('');
-};
-
-// Money Overview Function
-function updateMoneyOverview(projects) {
-    var totalPaid = 0;
-    var totalUsed = 0;
-    var totalBudget = 0;
-    
-    projects.forEach(function(project) {
-        var paid = parseFloat(project.moneyPaid) || 0;
-        var used = parseFloat(project.moneyUsed) || 0;
-        var remaining = parseFloat(project.moneyRemaining) || 0;
-        
-        totalPaid += paid;
-        totalUsed += used;
-        totalBudget += (paid + remaining);
-    });
-    
-    var totalLeft = totalBudget - totalUsed;
-    
-    // Update the DOM elements
-    var totalPaidEl = document.getElementById('totalPaid');
-    var moneyUsedEl = document.getElementById('moneyUsed');
-    var moneyLeftEl = document.getElementById('moneyLeft');
-    
-    if (totalPaidEl) {
-        totalPaidEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyUsedEl) {
-        moneyUsedEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-    
-    if (moneyLeftEl) {
-        moneyLeftEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    }
-}
-
-function loadClientDashboard() {
-    const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    
-    // Load projects from database instead of static data
-    const authToken = sessionStorage.getItem('authToken');
-    
-    if (authToken && currentUser) {
-        fetch(`${window.API_BASE}/api/projects?client=${encodeURIComponent(currentUser.email)}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load projects');
-            }
-            return response.json();
-        })
-        .then(projects => {
-            // Filter projects for this client
-            const clientProjects = projects.filter(p => {
-                const clientEmail = (p.client || '').toLowerCase();
-                const userEmail = currentUser.email.toLowerCase();
-                const userName = (currentUser.name || '').toLowerCase();
-                return clientEmail === userEmail || clientEmail === userName;
-            });
-            
-            // Format projects for client display
-            const formattedProjects = clientProjects.map(p => ({
-                id: p._id || p.id,
-                name: p.name,
-                image: p.image || '/images/project1.jpg',
-                progress: p.progress || 0,
-                status: p.status || 'Active',
-                nextMilestone: p.nextMilestone || '-',
-                completionDate: p.completionDate || '-',
-                deadline: p.deadline || p.completionDate || '',
-                description: p.description || '',
-                moneyPaid: p.moneyPaid || '-',
-                moneyUsed: p.moneyUsed || '-',
-                moneyRemaining: p.moneyRemaining || '-',
-                moneyOwed: p.moneyOwed || '-'
-            }));
-            
-            window._clientProjectsList = formattedProjects;
-            window._clientProjectFilter = window._clientProjectFilter || 'all';
-            window.applyClientProjectFilter();
-            updateClientStats();
-        })
-        .catch(error => {
-            console.error('Error loading client projects:', error);
-            // Fallback to empty projects list
-            window._clientProjectsList = [];
-            window._clientProjectFilter = window._clientProjectFilter || 'all';
-            window.applyClientProjectFilter();
-            updateClientStats();
-        });
-    } else {
-        // No auth token or user, show empty projects
-        window._clientProjectsList = [];
-        window._clientProjectFilter = window._clientProjectFilter || 'all';
-        window.applyClientProjectFilter();
-        updateClientStats();
-    }
-    var clientProjTabs = document.querySelectorAll('#clientProjectFilterTabs .filter-btn');
-    if (clientProjTabs.length && !window._clientProjectsFilterBound) {
-        window._clientProjectsFilterBound = true;
-        clientProjTabs.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                clientProjTabs.forEach(function (b) {
-                    b.classList.remove('active');
-                });
-                btn.classList.add('active');
-                window._clientProjectFilter = btn.getAttribute('data-filter') || 'all';
-                window.applyClientProjectFilter();
-            });
-        });
-    }
-    // Update statistics after projects are loaded
-    function updateClientStats() {
-        const projects = window._clientProjectsList || [];
-        var pendingInv = (getStored('clientInvoices', []) || []).filter(function (i) {
-            return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
-        }).length;
-        var docCount = (getStored('clientDocuments', []) || []).length;
-        var ongoing = projects.filter(function (p) {
-            return clientPortalProjectGroup(p) !== 'completed';
-        }).length;
-        var elP = document.getElementById('clientStatProjects');
-        var elD = document.getElementById('clientStatDocs');
-        var elI = document.getElementById('clientStatInvoices');
-        var elM = document.getElementById('clientStatMilestones');
-        if (elP) elP.textContent = String(projects.length);
-        if (elD) elD.textContent = String(docCount);
-        if (elI) elI.textContent = String(pendingInv);
-        if (elM) elM.textContent = String(ongoing);
-
-        // Update money overview cards
-        updateMoneyOverview(projects);
-    }
-    
-    // Call update stats after projects are loaded
-    updateClientStats();
-
-    
-    // Load documents from database
-    function loadClientDocuments() {
-        if (!authToken || !currentUser) {
-            renderClientDocuments([]);
-            return;
-        }
-        
-        fetch(`${window.API_BASE}/api/documents?client=${encodeURIComponent(currentUser.email)}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load documents');
-            }
-            return response.json();
-        })
-        .then(documents => {
-            renderClientDocuments(documents);
-        })
-        .catch(error => {
-            console.error('Error loading client documents:', error);
-            renderClientDocuments([]);
-        });
-    }
-    
-    function renderClientDocuments(docs) {
-        const documentsList = document.getElementById('clientDocumentsBody');
-        if (documentsList) {
-            if (docs.length === 0) {
-                                documentsList.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No documents available</dress></tr>';
-            } else {
-                documentsList.innerHTML = docs.map(doc => `
-                    <tr>
-                        <td>${doc.name}</td>
-                        <td>${new Date(doc.createdAt).toLocaleDateString()}</td>
-                        <td>${doc.size || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="downloadDocument('${doc._id || doc.id}')">Download</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-    }
-    
-    loadClientDocuments();
-    const uploadDocBtn = document.getElementById('clientUploadDocBtn');
-    const uploadDocModal = document.getElementById('clientUploadDocModal');
-    const uploadDocForm = document.getElementById('clientUploadDocForm');
-    if (uploadDocBtn && uploadDocModal) uploadDocBtn.addEventListener('click', function() { uploadDocModal.classList.add('open'); });
-    document.querySelectorAll('[data-close="clientUploadDocModal"]').forEach(function(el) {
-        el.addEventListener('click', function() { document.getElementById('clientUploadDocModal').classList.remove('open'); });
-    });
-    if (uploadDocModal) uploadDocModal.addEventListener('click', function(e) { if (e.target === uploadDocModal) uploadDocModal.classList.remove('open'); });
-    if (uploadDocForm) {
-        uploadDocForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('clientDocName').value.trim() || 'Document';
-            const fileInput = document.getElementById('clientDocFile');
-            const file = fileInput && fileInput.files[0];
-            let size = '0 KB';
-            let data = null;
-            if (file) {
-                size = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB';
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const docs = getStored('clientDocuments', []);
-                    docs.push({ name: name, date: new Date().toISOString().slice(0, 10), size: size, data: reader.result });
-                    setStored('clientDocuments', docs);
-                    renderClientDocuments();
-                    uploadDocForm.reset();
-                    uploadDocModal.classList.remove('open');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                const docs = getStored('clientDocuments', []);
-                docs.push({ name: name, date: new Date().toISOString().slice(0, 10), size: size });
-                setStored('clientDocuments', docs);
-                renderClientDocuments();
-                uploadDocForm.reset();
-                uploadDocModal.classList.remove('open');
-            }
-        });
-    }
-
-    // Load invoices from database
-    function loadClientInvoices() {
-        if (!authToken || !currentUser) {
-            renderClientInvoices([]);
-            return;
-        }
-        
-        fetch(`${window.API_BASE}/api/invoices?client=${encodeURIComponent(currentUser.email)}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load invoices');
-            }
-            return response.json();
-        })
-        .then(invoices => {
-            renderClientInvoices(invoices);
-        })
-        .catch(error => {
-            console.error('Error loading client invoices:', error);
-            renderClientInvoices([]);
-        });
-    }
-    
-    function renderClientInvoices(invoices) {
-        const invoicesList = document.getElementById('clientInvoicesBody');
-        if (invoicesList) {
-            if (invoices.length === 0) {
-                invoicesList.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No invoices available</dress></tr>';
-            } else {
-                invoicesList.innerHTML = invoices.map(invoice => `
-                    <tr>
-                        <td>${invoice.number}</td>
-                        <td>${invoice.amount}</td>
-                        <td>${new Date(invoice.createdAt).toLocaleDateString()}</td>
-                        <td><span class="status-badge status-${(invoice.status || '').toLowerCase()}">${invoice.status}</span></td>
-                        <td><button class="btn-icon" onclick="viewInvoice('${invoice._id || invoice.id}')" title="View"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="downloadClientInvoice('${invoice._id || invoice.id}')" title="Download"><i class="fas fa-download"></i></button></dress>
-                    </tr>
-                `).join('');
-            }
-        }
-    }
-    
-    // Setup project inquiry modal
-    const inquiryModal = document.getElementById('clientProjectInquiryModal');
-    const inquiryForm = document.getElementById('clientProjectInquiryForm');
-    
-    if (inquiryForm) {
-        inquiryForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-            if (!currentUser) {
-                alert('Please log in to send inquiries.');
-                return;
-            }
-            
-            const inquiryData = {
-                projectId: document.getElementById('inquiryProjectId').value,
-                projectName: document.getElementById('inquiryProjectName').value,
-                clientEmail: currentUser.email,
-                clientName: currentUser.name,
-                subject: document.getElementById('inquirySubject').value,
-                message: document.getElementById('inquiryMessage').value,
-                priority: document.getElementById('inquiryPriority').value,
-                createdAt: new Date().toISOString(),
-                status: 'pending'
-            };
-            
-            // Send inquiry to backend
-            fetch(`${window.API_BASE}/api/inquiries`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify(inquiryData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to send inquiry');
-                }
-                return response.json();
-            })
-            .then(() => {
-                alert('Your inquiry has been sent successfully! We will respond within 24 hours.');
-                inquiryForm.reset();
-                inquiryModal.classList.remove('open');
-            })
-            .catch(error => {
-                console.error('Error sending inquiry:', error);
-                alert('Failed to send inquiry. Please try again.');
-            });
-        });
-    }
-    
-    loadClientInquiries();
-    loadClientInvoices();
-
-    const timelineList = document.getElementById('clientTimelineList');
-    if (timelineList) {
-        const milestones = [];
-        timelineList.innerHTML = milestones.map(m => `
-            <div class="deadline-item">
-                <i class="fas fa-calendar-alt" style="color: var(--primary);"></i>
-                <div><strong>${m.title}</strong><p>${m.date}</p></div>
-            </div>
-        `).join('');
-    }
-
-    const messagesList = document.getElementById('clientMessagesList');
-    if (messagesList) {
-        const messages = getStored('portalMessages', []).filter(m => m.to === (currentUser && currentUser.email));
-        messagesList.innerHTML = messages.length ? messages.slice().reverse().map(m => `
-            <div class="message-card">
-                <div class="message-from">From: ${m.from}</div>
-                <div class="message-meta">${m.project ? 'Project: ' + m.project + ' · ' : ''}${m.timestamp ? new Date(m.timestamp).toLocaleString() : ''}</div>
-                <div class="message-body">${m.body}</div>
-            </div>
-        `).join('') : '<p class="empty-state">No messages yet.</p>';
-    }
-
-    const supportName = document.getElementById('supportName');
-    const supportEmail = document.getElementById('supportEmail');
-    if (currentUser && supportName) supportName.value = currentUser.name || '';
-    if (currentUser && supportEmail) supportEmail.value = currentUser.email || '';
-}
-
-function loadClientInquiries() {
-    const authToken = sessionStorage.getItem('authToken');
-    const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    
-    if (!authToken || !currentUser) return;
-    
-    fetch(`${window.API_BASE}/api/inquiries?client=${encodeURIComponent(currentUser.email)}`, {
-        headers: {
-            'Authorization': `Bearer ${authToken}`
-        }
-    })
-    .then(response => response.json())
-    .then(inquiries => {
-        const inquiriesList = document.getElementById('clientInquiriesList');
-        if (inquiriesList) {
-            if (inquiries.length === 0) {
-                inquiriesList.innerHTML = '<p class="empty-state">No inquiries yet.</p>';
-            } else {
-                inquiriesList.innerHTML = inquiries.map(inquiry => `
-                    <div class="inquiry-item">
-                        <div class="inquiry-header">
-                            <strong>${inquiry.subject}</strong>
-                            <span class="status-badge status-${inquiry.status}">${inquiry.status}</span>
-                        </div>
-                        <div class="inquiry-body">${inquiry.message}</div>
-                        <div class="inquiry-footer">
-                            <small>Submitted: ${new Date(inquiry.createdAt).toLocaleDateString()}</small>
-                            ${inquiry.response ? `<div class="inquiry-response"><strong>Response:</strong> ${inquiry.response}</div>` : ''}
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error loading inquiries:', error);
-    });
-}
-
-function renderEmployeeTasks(container, tasks) {
-    if (!container) return;
-    const list = tasks && tasks.length ? tasks : [];
-    if (!tasks || !tasks.length) setStored('employeeTasks', list);
-    const updates = getStored('employeeTaskUpdates', []);
-    container.innerHTML = (tasks && tasks.length ? tasks : list).map(task => {
-        const taskUpdates = updates.filter(u => String(u.taskId) === String(task.id));
-        const lastUpdate = taskUpdates.length ? taskUpdates[taskUpdates.length - 1] : null;
-        return `
-        <div class="task-item">
-            <div class="task-content">
-                <div class="task-title">${task.title}</div>
-                <div class="task-meta">Project: ${task.project} | Due: ${task.dueDate} | Assigned by: ${task.assignedBy || '-'}</div>
-                ${lastUpdate ? '<div class="task-last-update"><small>Last update: ' + (lastUpdate.description || '').slice(0, 60) + (lastUpdate.imageData ? ' [Photo]' : '') + '</small></div>' : ''}
-            </div>
-            <div class="task-priority priority-${(task.priority || 'Medium').toLowerCase()}">${task.priority || 'Medium'}</div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openTaskUpdateModal(${task.id})"><i class="fas fa-upload"></i> Update</button>
-        </div>
-    `;
-    }).join('');
-}
-
-function renderEmployeeTimeEntries(tbody, entries) {
-    if (!tbody) return;
-    const list = entries && entries.length ? entries : [];
-    if (!entries || !entries.length) setStored('employeeTimeEntries', list);
-    const data = entries && entries.length ? entries : list;
-    tbody.innerHTML = data.map((entry, index) => `
-        <tr>
-            <td>${entry.date}</dress>
-            <td>${entry.project}</dress>
-            <td>${entry.description}</dress>
-            <td>${entry.hours}</dress>
-            <td><button class="btn-icon" onclick="editTimeEntry(${index})"><i class="fas fa-edit"></i></button></dress>
-        </tr>
-    `).join('');
-    var remEl = document.getElementById('employeeTimeRemaining');
-    if (remEl) {
-        var now = new Date();
-        var mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-        var weekStart = mon.toISOString().slice(0, 10);
-        var weekEnd = new Date(mon); weekEnd.setDate(mon.getDate() + 6);
-        weekEnd = weekEnd.toISOString().slice(0, 10);
-        var weekHours = data.filter(function(e) { return e.date >= weekStart && e.date <= weekEnd; }).reduce(function(sum, e) { return sum + (parseFloat(e.hours) || 0); }, 0);
-        var cap = 40;
-        var remaining = Math.max(0, cap - weekHours);
-        remEl.innerHTML = '<p><strong>This week:</strong> ' + weekHours.toFixed(1) + ' hours logged &middot; <strong>' + remaining.toFixed(1) + ' hours remaining</strong> (out of ' + cap + 'h)</p>';
-        remEl.className = 'time-remaining-bar';
-    }
-}
-
-// ===== EMPLOYEE PORTAL FUNCTIONS =====
-function renderEmployeeOngoingForUpdate() {
-    var container = document.getElementById('employeeOngoingProgressList');
-    if (!container) return;
-    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-    var assignments = (getStored('assignments', [])).filter(function (a) {
-        return (
-            a.employeeEmail &&
-            currentUser &&
-            a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase()
-        );
-    });
-    var statusMap = getEmployeeAssignmentStatus();
-    var ongoing = assignments.filter(function (a) {
-        var key = (a.project || '') + '|' + (a.employeeEmail || '');
-        var st = statusMap[key] || 'not-started';
-        return st !== 'completed';
-    });
-    container.innerHTML = ongoing.length
-        ? ongoing
-              .map(function (a) {
-                  var key = (a.project || '') + '|' + (a.employeeEmail || '');
-                  var st = statusMap[key] || 'not-started';
-                  var projEsc = String(a.project || '')
-                      .replace(/\\/g, '\\\\')
-                      .replace(/'/g, "\\'");
-                  var dl = a.deadline || a.due || '-';
-                  return (
-                      '<div class="deadline-item" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;"><div><strong>' +
-                      (a.project || '') +
-                      '</strong><p style="margin:4px 0 0;">Deadline: ' +
-                      dl +
-                      ' &middot; Status: ' +
-                      st +
-                      '</p></div><button type="button" class="btn btn-primary btn-sm" onclick="openEmployeeProgressModal(\'' +
-                      projEsc +
-                      '\')">Update progress</button></div>'
-                  );
-              })
-              .join('')
-        : '<p class="empty-state">No ongoing projects need updates.</p>';
-}
-
-function loadEmployeeDashboard() {
-    const timeEntries = getStored('employeeTimeEntries', null);
-    renderEmployeeTimeEntries(document.querySelector('.time-entries tbody'), timeEntries);
-
-    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-    var myAssignments = (getStored('assignments', [])).filter(function(a) { return a.employeeEmail && currentUser && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase(); });
-    var statusMap = getEmployeeAssignmentStatus();
-    var activeCount = myAssignments.filter(function (a) {
-        var key = (a.project || '') + '|' + (a.employeeEmail || '');
-        return (statusMap[key] || 'not-started') === 'active';
-    }).length;
-    var completedCount = myAssignments.filter(function (a) {
-        var key = (a.project || '') + '|' + (a.employeeEmail || '');
-        return (statusMap[key] || 'not-started') === 'completed';
-    }).length;
-    var assignedCount = myAssignments.length;
-    var now = new Date();
-    var mon = new Date(now);
-    mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-    var weekStart = mon.toISOString().slice(0, 10);
-    var weekEnd = new Date(mon);
-    weekEnd.setDate(mon.getDate() + 6);
-    var weekEndStr = weekEnd.toISOString().slice(0, 10);
-    var entries = getStored('employeeTimeEntries', []);
-    var weekHours = entries
-        .filter(function (e) {
-            return e.date >= weekStart && e.date <= weekEndStr;
-        })
-        .reduce(function (sum, e) {
-            return sum + (parseFloat(e.hours) || 0);
-        }, 0);
-    var statActive = document.getElementById('employeeStatActive');
-    var statHours = document.getElementById('employeeStatHours');
-    var statAssigned = document.getElementById('employeeStatAssigned');
-    var statDone = document.getElementById('employeeStatCompleted');
-    if (statActive) statActive.textContent = String(activeCount);
-    if (statHours) statHours.textContent = weekHours.toFixed(1);
-    if (statAssigned) statAssigned.textContent = String(assignedCount);
-    if (statDone) statDone.textContent = String(completedCount);
-    var deadlinesList = document.getElementById('employeeScheduleDeadlines');
-    if (deadlinesList) {
-        if (myAssignments.length) {
-            deadlinesList.innerHTML = myAssignments.slice(0, 10).map(function(a) {
-                var d = a.deadline || a.due;
-                return '<div class="deadline-item"><i class="fas fa-calendar-alt" style="color: var(--primary);"></i><div><strong>' + (a.project || '') + '</strong><p>Due: ' + (d || '-') + '</p></div></div>';
-            }).join('');
-        } else {
-            deadlinesList.innerHTML = '<div class="deadline-item"><i class="fas fa-calendar-alt"></i><div><strong>No upcoming deadlines</strong><p>Assignments from admin will appear here.</p></div></div>';
-        }
-    }
-    var timesheetBody = document.getElementById('employeeTimesheetBody');
-    if (timesheetBody) {
-        var entries = getStored('employeeTimeEntries', []);
-        var now = new Date();
-        var mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
-        var weekStart = mon.toISOString().slice(0, 10);
-        var weekEnd = new Date(mon); weekEnd.setDate(mon.getDate() + 6);
-        weekEnd = weekEnd.toISOString().slice(0, 10);
-        var weekEntries = entries.filter(function(e) { return e.date >= weekStart && e.date <= weekEnd; });
-        timesheetBody.innerHTML = weekEntries.length ? weekEntries.map(function(e) {
-            return '<tr><td>' + (e.date || '') + '</dress><td>' + (e.project || '') + '</dress><td>' + (e.description || '') + '</dress><td>' + (e.hours || '') + '</dress></tr>';
-        }).join('') : '<tr><td colspan="4">No entries this week. Add time from Time Tracking.</dress></tr>';
-    }
-    document.querySelectorAll('a[data-section="employee-time"]').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.querySelectorAll('.sidebar-nav a').forEach(function(a) { a.classList.remove('active'); });
-            var timeLink = document.querySelector('.sidebar-nav a[data-section="employee-time"]');
-            if (timeLink) { timeLink.classList.add('active'); }
-            document.querySelectorAll('.portal-section').forEach(function(sec) { sec.style.display = 'none'; });
-            var sec = document.getElementById('employee-time');
-            if (sec) sec.style.display = 'block';
-        });
-    });
-    renderEmployeeOngoingForUpdate();
-}
+// ===== RENDER HELPERS =====
 
 function renderAdminUsers(tbody, users) {
     if (!tbody) return;
-    const list = users && users.length ? users : [];
-    tbody.innerHTML = list.length
-        ? list.map(function (user) {
-              var rid = String(user.id).replace(/'/g, "\\'");
-              return (
-                  '<tr>' +
-                  '<td>' +
-                  (user.name || '') +
-                  '</dress><td>' +
-                  (user.email || '') +
-                  '</dress><td><span class="user-role role-' +
-                  String(user.role || '')
-                      .toLowerCase()
-                      .replace(/\s+/g, '') +
-                  '">' +
-                  (user.role || '') +
-                  '</span></dress><td><span class="status-badge status-' +
-                  String(user.status || 'Active')
-                      .toLowerCase()
-                      .replace(/\s+/g, '') +
-                  '">' +
-                  (user.status || 'Active') +
-                  '</span></dress><td>' +
-                  (user.lastLogin && user.lastLogin !== '-' ? new Date(user.lastLogin).toLocaleString() : user.lastLogin || '-') +
-                  '</dress><td>' +
-                  '<button type="button" class="btn-icon" onclick="editUser(\'' +
-                  rid +
-                  '\')"><i class="fas fa-edit"></i></button> ' +
-                  '<button type="button" class="btn-icon" onclick="deleteUser(\'' +
-                  rid +
-                  '\')"><i class="fas fa-trash"></i></button>' +
-                  '</dress>' +
-                  '</tr>'
-              );
-          }).join('')
-        : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</dress></tr>';
+    var list = users && users.length ? users : [];
+    tbody.innerHTML = list.length ? list.map(function (user) {
+        var rid = String(user.id).replace(/'/g, "\\'");
+        return '<tr>' +
+            '<td>' + escapeHtml(user.name || '') + '</td>' +
+            '<td>' + escapeHtml(user.email || '') + '</td>' +
+            '<td><span class="user-role role-' + String(user.role || '').toLowerCase().replace(/\s+/g, '') + '">' + escapeHtml(user.role || '') + '</span></td>' +
+            '<td><span class="status-badge status-' + String(user.status || 'Active').toLowerCase().replace(/\s+/g, '') + '">' + escapeHtml(user.status || 'Active') + '</span></td>' +
+            '<td>' + (user.lastLogin && user.lastLogin !== '-' ? new Date(user.lastLogin).toLocaleString() : user.lastLogin || '-') + '</td>' +
+            '<td>' +
+            '<button type="button" class="btn-icon" onclick="editUser(\'' + rid + '\')"><i class="fas fa-edit"></i></button> ' +
+            '<button type="button" class="btn-icon" onclick="deleteUser(\'' + rid + '\')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="6">No users yet. Approved clients and employees appear here after registration.</td></tr>';
 }
 
 function adminPortalProjectGroup(p) {
@@ -2736,442 +1546,71 @@ function renderAdminProjects(tbody, projects) {
 window.renderAdminProjectsTable = function () {
     var tbody = document.querySelector('.admin-projects tbody');
     if (!tbody) return;
-    
-    // Load projects directly from MongoDB
-    fetch(`${window.API_BASE}/api/projects`, {
-        headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load projects from database');
-        }
+    fetch(window.API_BASE + '/api/projects', {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to load projects');
         return response.json();
-    })
-    .then(projects => {
-        console.log('Loaded projects from database:', projects);
-        console.log('Sample project structure:', projects[0]);
-        
+    }).then(function (projects) {
         var f = window._adminProjectFilter || 'all';
-        var filtered =
-            f === 'all'
-                ? projects
-                : projects.filter(function (p) {
-                      return adminPortalProjectGroup(p) === f;
-                  });
+        var filtered = f === 'all' ? projects : projects.filter(function (p) { return adminPortalProjectGroup(p) === f; });
         if (!projects.length) {
-            tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</dress></tr>';
+            tbody.innerHTML = '<tr><td colspan="9">No projects in this filter.</td></tr>';
             return;
         }
-        
-        // Render projects from MongoDB data
-        renderProjectsFromDatabase(tbody, filtered);
-    })
-    .catch(error => {
-        console.error('Error loading projects from database:', error);
-        tbody.innerHTML = '<tr><td colspan="7" style="color: #ff6b6b;">Error loading projects. Please refresh the page.</dress></tr>';
-    });
-};
-
-function renderProjectsFromDatabase(tbody, projects) {
-    if (!tbody) return;
-    
-    if (!projects.length) {
-        tbody.innerHTML = '<tr><td colspan="7">No projects in this filter.</dress></tr>';
-        return;
-    }
-    tbody.innerHTML = projects
-        .map(function (project) {
+        tbody.innerHTML = filtered.map(function (project) {
             var st = (project.status || 'Active').toLowerCase().replace(/\s+/g, '-');
-            var dl = project.deadline || project.completionDate || '-';
-            var clientEsc = String(project.client || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            var nameEsc = String(project.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            var idStr = project._id || project.id;
-            return (
-                '<tr>' +
+            var idStr = escapeAttr(String(project._id || project.id));
+            var nameEsc = escapeAttr(project.name || '');
+            var clientEsc = escapeAttr(project.client || '');
+            var locStr = project.location && project.location.name ? project.location.name : project.location || '';
+            var foremanStr = project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned';
+            return '<tr>' +
+                '<td>' + escapeHtml(project.name || '') + '</td>' +
+                '<td>' + escapeHtml(project.client || '') + '</td>' +
+                '<td>' + escapeHtml(locStr) + '</td>' +
+                '<td>' + escapeHtml(foremanStr) + '</td>' +
+                '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + (project.workerCount || 0) + ' workers</a></td>' +
+                '<td><div style="width:100px;"><div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div></div></td>' +
+                '<td>' + escapeHtml(adminPortalProjectGroup(project) === 'completed' ? '-' : project.deadline || '') + '</td>' +
+                '<td><span class="status-badge status-' + st + '">' + escapeHtml(project.status || 'Active') + '</span></td>' +
                 '<td>' +
-                (project.name || '') +
-                '</dress>' +
-                '<td>' +
-                (project.client || '') +
-                '</dress>' +
-                '<td>' +
-                (project.location && project.location.name ? project.location.name : project.location || '') +
-                '</dress>' +
-                '<td>' +
-                (project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned') +
-                '</dress>' +
-                '<td>' +
-                '<a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + 
-                (project.workerCount || 0) + ' workers</a>' +
-                '</dress>' +
-                '<td><div style="width: 100px;"><div class="progress-bar"><div class="progress-fill" style="width: ' +
-                (project.progress || 0) +
-                '%"></div></div></div></dress>' +
-                '<td>' +
-                (adminPortalProjectGroup(project) === 'completed' ? '-' : escapeHtml(project.deadline || '')) +
-                '</dress>' +
-                '<td><span class="status-badge status-' +
-                st +
-                '">' +
-                (project.status || 'Active') +
-                '</span></dress>' +
-                '<td>' +
-                '<button type="button" class="btn-icon" title="Assign" onclick="adminAssignProjectPrefill(\'' +
-                nameEsc +
-                '\',\'' +
-                clientEsc +
-                '\')"><i class="fas fa-user-plus"></i></button> ' +
-                '<button type="button" class="btn-icon" title="View Details" onclick="viewProjectDetails(\'' +
-                idStr +
-                '\')"><i class="fas fa-eye"></i></button> ' +
-                '<button type="button" class="btn-icon" title="Edit Project" onclick="editProject(\'' +
-                idStr +
-                '\')"><i class="fas fa-edit"></i></button> ' +
-                '<button type="button" class="btn-icon btn-danger" title="Delete Project" onclick="deleteProject(\'' +
-                idStr +
-                '\')"><i class="fas fa-trash"></i></button> ' +
-                '</dress>' +
-                '</tr>'
-            );
-        })
-        .join('');
-};
-
-window.adminAssignProjectPrefill = function (projectName, clientEmail) {
-    navigatePortalSection('admin-assignments', {});
-    var sel = document.getElementById('assignProjectName');
-    if (sel && projectName) {
-        var opt = Array.prototype.slice.call(sel.options).find(function (o) { return o.value === projectName; });
-        if (!opt) {
-            var o = document.createElement('option');
-            o.value = projectName;
-            o.textContent = projectName;
-            sel.appendChild(o);
-        }
-        sel.value = projectName;
-    }
-    var ce = document.getElementById('assignClientEmail');
-    if (ce && clientEmail) ce.value = clientEmail;
-};
-
-window.adminInvoicePrefill = function (client, projectName) {
-    var modal = document.getElementById('adminInvoiceModal');
-    var invClient = document.getElementById('invClient');
-    var invProject = document.getElementById('invProject');
-    if (invClient) invClient.value = client || '';
-    if (invProject) invProject.value = projectName || '';
-    if (modal) modal.classList.add('open');
-};
-
-window.editProject = function(projectId) {
-    // Load projects from database to find the project to edit
-    fetch(`${window.API_BASE}/api/projects`, {
-        headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load projects');
-        }
-        return response.json();
-    })
-    .then(projects => {
-        const project = projects.find(p => String(p._id || p.id) === projectId);
-        if (!project) {
-            console.error('Project not found:', projectId);
-            return;
-        }
-        
-        // Populate form with existing data
-        document.getElementById('adminProjectId').value = project._id || project.id || '';
-        document.getElementById('adminProjectName').value = project.name || '';
-        document.getElementById('adminProjectClient').value = project.client || '';
-        document.getElementById('adminProjectBudget').value = project.budget || '';
-        document.getElementById('adminProjectProgress').value = project.progress || 0;
-        document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
-        document.getElementById('adminProjectStatus').value = project.status || 'Active';
-        document.getElementById('adminProjectDeadline').value = project.deadline || '';
-        
-        // Handle location fields
-        if (project.location && typeof project.location === 'object') {
-            document.getElementById('projectLocationName').value = project.location.name || '';
-            document.getElementById('projectLatitude').value = project.location.latitude || '';
-            document.getElementById('projectLongitude').value = project.location.longitude || '';
-        } else {
-            document.getElementById('projectLocationName').value = project.location || '';
-            document.getElementById('projectLatitude').value = '';
-            document.getElementById('projectLongitude').value = '';
-        }
-        
-        // Handle assigned foreman
-        if (project.assignedForeman) {
-            const selectedForeman = project.assignedForeman;
-            const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
-            const selectedForemanName = document.querySelector('.selected-foreman-name');
-            if (selectedForemanDisplay && selectedForemanName) {
-                selectedForemanName.textContent = selectedForeman.name;
-                selectedForemanDisplay.style.display = 'block';
-            }
-        } else {
-            const selectedForemanDisplay = document.getElementById('selectedForemanDisplay');
-            if (selectedForemanDisplay) {
-                selectedForemanDisplay.style.display = 'none';
-            }
-        }
-        
-        // Handle financial fields
-        document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
-        document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
-        document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
-        document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
-        
-        // Update modal title
-        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-        
-        // Show modal
-        document.getElementById('adminProjectModal').classList.add('open');
-    })
-    .catch(error => {
-        console.error('Error loading project for edit:', error);
-        alert('Failed to load project details. Please try again.');
+                '<button type="button" class="btn-icon" title="Assign" onclick="adminAssignProjectPrefill(\'' + nameEsc + '\',\'' + clientEsc + '\')"><i class="fas fa-user-plus"></i></button> ' +
+                '<button type="button" class="btn-icon" title="View Details" onclick="viewProjectDetails(\'' + idStr + '\')"><i class="fas fa-eye"></i></button> ' +
+                '<button type="button" class="btn-icon" title="Edit Project" onclick="editProject(\'' + idStr + '\')"><i class="fas fa-edit"></i></button> ' +
+                '<button type="button" class="btn-icon btn-danger" title="Delete Project" onclick="deleteProject(\'' + idStr + '\')"><i class="fas fa-trash"></i></button>' +
+                '</td></tr>';
+        }).join('');
+    }).catch(function () {
+        tbody.innerHTML = '<tr><td colspan="9" style="color:#ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
     });
-};
-
-window.viewProjectDetails = function(projectId) {
-    // Load projects from database to find the project to view
-    fetch(`${window.API_BASE}/api/projects`, {
-        headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to load projects');
-        }
-        return response.json();
-    })
-    .then(projects => {
-        const project = projects.find(p => String(p._id || p.id) === projectId);
-        if (!project) {
-            console.error('Project not found:', projectId);
-            return;
-        }
-        
-        const modal = document.getElementById('adminViewProjectModal');
-        const content = document.getElementById('adminViewProjectContent');
-        
-        if (!modal || !content) return;
-        
-        // Build project details HTML
-        let detailsHTML = `
-            <div class="project-details">
-                <h3>${project.name || 'Unnamed Project'}</h3>
-                <div class="project-info-grid">
-                    <div class="info-item">
-                        <label>Client:</label>
-                        <span>${project.client || 'Not specified'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Location:</label>
-                        <span>${project.location && project.location.name ? project.location.name : project.location || 'Not specified'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Foreman:</label>
-                        <span>${project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Budget:</label>
-                        <span>${project.budget || 'Not specified'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Progress:</label>
-                        <span>${project.progress || 0}%</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Status:</label>
-                        <span class="status-badge status-${(project.status || 'Active').toLowerCase().replace(/\s+/g, '-')}">${project.status || 'Active'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Deadline:</label>
-                        <span>${project.deadline || 'Not specified'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Category:</label>
-                        <span>${project.category || 'Commercial'}</span>
-                    </div>
-        `;
-        
-        // Add location coordinates if available
-        if (project.location && project.location.latitude && project.location.longitude) {
-            detailsHTML += `
-                    <div class="info-item">
-                        <label>Coordinates:</label>
-                        <span>${project.location.latitude}, ${project.location.longitude}</span>
-                    </div>
-            `;
-        }
-        
-        // Add financial information
-        if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
-            detailsHTML += `
-                    <div class="info-item">
-                        <label>Money Paid:</label>
-                        <span>${project.moneyPaid || 'KSH 0'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Money Used:</label>
-                        <span>${project.moneyUsed || 'KSH 0'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Money Remaining:</label>
-                        <span>${project.moneyRemaining || 'KSH 0'}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Money Owed:</label>
-                        <span>${project.moneyOwed || 'KSH 0'}</span>
-                    </div>
-            `;
-        }
-        
-        detailsHTML += `
-                </div>
-            </div>
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                <button class="btn btn-primary" onclick="openRequestFundsModal('${projectId}')" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-                    <i class="fas fa-hand-holding-usd"></i> Request Funds
-                </button>
-            </div>
-        `;
-        
-        content.innerHTML = detailsHTML;
-        modal.classList.add('open');
-    })
-    .catch(error => {
-        console.error('Error loading project details:', error);
-        alert('Failed to load project details. Please try again.');
-    });
-};
-
-window.deleteProject = function(projectId) {
-    console.log('Delete project called with projectId:', projectId);
-    console.log('Type of projectId:', typeof projectId);
-    
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
-    
-    // Call MongoDB API to delete project
-    const authToken = sessionStorage.getItem('authToken');
-    
-    console.log('Making DELETE request to:', `${window.API_BASE}/api/projects/${projectId}`);
-    
-    fetch(`${window.API_BASE}/api/projects/${projectId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to delete project from database');
-        }
-        return response.json();
-    })
-    .then(() => {
-        // Also remove from local storage for immediate UI update
-        const projects = getStored('portalProjects', []);
-        const filteredProjects = projects.filter(p => String(p.id) !== projectId);
-        setStored('portalProjects', filteredProjects);
-        
-        // Refresh the projects table
-        renderAdminProjectsTable();
-        
-        alert('Project deleted successfully!');
-    })
-    .catch(error => {
-        console.error('Error deleting project:', error);
-        alert('Failed to delete project. Please try again.');
-    });
-};
-
-window.openProjectInquiryModal = function(projectId, projectName) {
-    const modal = document.getElementById('clientProjectInquiryModal');
-    if (!modal) return;
-    
-    // Set project information
-    document.getElementById('inquiryProjectId').value = projectId;
-    document.getElementById('inquiryProjectName').value = projectName;
-    
-    // Open the modal
-    modal.classList.add('open');
-};
-
-window.openRequestFundsModal = function(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => String(p.id) === projectId);
-    if (!project) return;
-    
-    const modal = document.getElementById('adminRequestFundsModal');
-    if (!modal) return;
-    
-    // Set project information
-    document.getElementById('requestFundsProject').value = project.name || '';
-    document.getElementById('requestFundsProject').setAttribute('data-project-id', projectId);
-    
-    // Set minimum due date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('requestFundsDueDate').setAttribute('min', today);
-    
-    // Close the view modal first
-    const viewModal = document.getElementById('adminViewProjectModal');
-    if (viewModal) viewModal.classList.remove('open');
-    
-    // Open the request funds modal
-    modal.classList.add('open');
-};
-
-window.openAdminBroadcastModal = function (projectId) {
-    var projects = getStored('portalProjects', []);
-    var p = projects.find(function (x) { return String(x.id) === String(projectId); });
-    if (!p) return;
-    var modal = document.getElementById('adminBroadcastModal');
-    if (!modal) return;
-    document.getElementById('broadcastProjectId').value = p.id;
-    document.getElementById('broadcastProjectName').value = p.name || '';
-    var clientEmailEl = document.getElementById('broadcastClientEmail');
-    if (clientEmailEl) {
-        clientEmailEl.value = (p.client && p.client.indexOf('@') !== -1) ? p.client : '';
-    }
-    document.getElementById('broadcastMessage').value = '';
-    var imgs = document.getElementById('broadcastImages');
-    if (imgs) imgs.value = '';
-    modal.classList.add('open');
 };
 
 function renderAdminInvoices(tbody) {
     if (!tbody) return;
-    let invoices = getStored('portalInvoices', null);
+    var invoices = getStored('portalInvoices', null);
     if (!invoices || !invoices.length) {
-        tbody.innerHTML = '<tr><td colspan="7">No invoices yet. Create them from the Invoices section.</dress></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">No invoices yet. Create them from the Invoices section.</td></tr>';
         return;
     }
-    tbody.innerHTML = invoices.map(inv => `
-        <tr>
-            <td>${inv.number}</dress>
-            <td>${inv.client}</dress>
-            <td>${inv.project || '-'}</dress>
-            <td>${inv.amount}</dress>
-            <td>${inv.dueDate}</dress>
-            <td><span class="status-badge status-${(inv.status || 'Pending').toLowerCase()}">${inv.status}</span></dress>
-            <td><button class="btn-icon" onclick="viewInvoice('${inv.number}')"><i class="fas fa-eye"></i></button> <button class="btn-icon" onclick="editInvoice('${inv.number}')"><i class="fas fa-edit"></i></button></dress>
-        </tr>
-    `).join('');
+    tbody.innerHTML = invoices.map(function (inv) {
+        return '<tr>' +
+            '<td>' + escapeHtml(inv.number) + '</td>' +
+            '<td>' + escapeHtml(inv.client) + '</td>' +
+            '<td>' + escapeHtml(inv.project || '-') + '</td>' +
+            '<td>' + escapeHtml(inv.amount) + '</td>' +
+            '<td>' + escapeHtml(inv.dueDate) + '</td>' +
+            '<td><span class="status-badge status-' + escapeHtml((inv.status || 'Pending').toLowerCase()) + '">' + escapeHtml(inv.status) + '</span></td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewInvoice(\'' + escapeAttr(inv.number) + '\')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="editInvoice(\'' + escapeAttr(inv.number) + '\')"><i class="fas fa-edit"></i></button>' +
+            '</td></tr>';
+    }).join('');
 }
+
 function editInvoice(invoiceNumber) {
-    const invoices = getStored('portalInvoices', []);
-    const inv = invoices.find(function(i) { return i.number === invoiceNumber; });
+    var invoices = getStored('portalInvoices', []);
+    var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
     if (!inv) return;
     document.getElementById('invEditNumber').value = inv.number;
     document.getElementById('invEditNumberDisplay').value = inv.number;
@@ -3183,201 +1622,790 @@ function editInvoice(invoiceNumber) {
     document.getElementById('adminInvoiceEditModal').classList.add('open');
 }
 
-var adminChartsInited = false;
-function initAdminCharts() {
-    if (typeof Chart === 'undefined' || adminChartsInited) return;
-    const lineCtx = document.getElementById('chartLine');
-    const pieCtx = document.getElementById('chartPie');
-    const barCtx = document.getElementById('chartBar');
-    if (!lineCtx || !pieCtx || !barCtx) return;
-    adminChartsInited = true;
-    if (lineCtx) {
-        new Chart(lineCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{ label: 'Revenue ($K)', data: [], borderColor: '#20c4b4', fill: true, backgroundColor: 'rgba(32,196,180,0.1)' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-    if (pieCtx) {
-        new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Active', 'Review', 'Completed'],
-                datasets: [{ data: [], backgroundColor: ['#20c4b4', '#ffd43b', '#51cf66'] }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-    if (barCtx) {
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Users', 'Projects', 'Invoices'],
-                datasets: [{ label: 'Count', data: [], backgroundColor: '#20c4b4' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-        });
+function viewInvoice(invoiceNumber) {
+    var path = window.location.pathname || '';
+    if (path.includes('/client/')) {
+        var invoices = getStored('clientInvoices', []);
+        var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
+        var content = document.getElementById('clientInvoiceViewContent');
+        var modal = document.getElementById('clientInvoiceViewModal');
+        if (content && modal) {
+            content.innerHTML = inv ? (
+                '<table class="invoice-view-table">' +
+                '<tr><th>Invoice #</th><td>' + escapeHtml(inv.number || '') + '</td></tr>' +
+                '<tr><th>Amount</th><td>' + escapeHtml(inv.amount || '') + '</td></tr>' +
+                '<tr><th>Date</th><td>' + escapeHtml(inv.date || '') + '</td></tr>' +
+                '<tr><th>Status</th><td><span class="status-badge status-' + escapeHtml((inv.status || 'pending').toLowerCase()) + '">' + escapeHtml(inv.status || '') + '</span></td></tr>' +
+                (inv.client ? '<tr><th>Client</th><td>' + escapeHtml(inv.client) + '</td></tr>' : '') +
+                (inv.project ? '<tr><th>Project</th><td>' + escapeHtml(inv.project) + '</td></tr>' : '') +
+                '</table>'
+            ) : '<p>Invoice not found.</p>';
+            var actionsEl = document.getElementById('clientInvoiceViewActions');
+            if (actionsEl && inv) {
+                actionsEl.innerHTML = '<button type="button" class="btn btn-primary" onclick="downloadClientInvoice(\'' + escapeAttr(inv.number || '') + '\')"><i class="fas fa-download"></i> Download Invoice</button>';
+            } else if (actionsEl) actionsEl.innerHTML = '';
+            modal.classList.add('open');
+        }
+    } else if (path.includes('/admin/')) {
+        var invoices = getStored('portalInvoices', []);
+        var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
+        var content = document.getElementById('adminInvoiceViewContent');
+        var modal = document.getElementById('adminInvoiceViewModal');
+        if (content && modal) {
+            content.innerHTML = inv ? (
+                '<table class="invoice-view-table">' +
+                '<tr><th>Invoice #</th><td>' + escapeHtml(inv.number || '') + '</td></tr>' +
+                '<tr><th>Client</th><td>' + escapeHtml(inv.client || '') + '</td></tr>' +
+                '<tr><th>Project</th><td>' + escapeHtml(inv.project || '-') + '</td></tr>' +
+                '<tr><th>Amount</th><td>' + escapeHtml(inv.amount || '') + '</td></tr>' +
+                '<tr><th>Due Date</th><td>' + escapeHtml(inv.dueDate || '') + '</td></tr>' +
+                '<tr><th>Status</th><td><span class="status-badge status-' + escapeHtml((inv.status || 'pending').toLowerCase()) + '">' + escapeHtml(inv.status || '') + '</span></td></tr>' +
+                '</table>'
+            ) : '<p>Invoice not found.</p>';
+            modal.classList.add('open');
+        }
     }
 }
 
-function renderAdminWebsiteProjects() {
-    var tbody = document.getElementById('adminWebsiteProjectsBody');
-    if (!tbody || typeof getWebsiteProjects !== 'function') return;
-    var list = getWebsiteProjects();
-    tbody.innerHTML = list.length ? list.map(function(p) {
-        var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
-        var img = p.image
-            ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
-            : '—';
-        return '<tr>lakang' + img + '</dress><td>' + (p.title || '') + '</dress><td>' + (p.category || '') + '</dress><td>' + desc + '</dress><td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></dress></tr>';
-    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</dress></tr>';
+function downloadDocument(docName) {
+    var docs = getStored('clientDocuments', []);
+    var doc = docs.find(function (d) { return d.name === docName; });
+    if (doc && doc.data) {
+        try {
+            var a = document.createElement('a');
+            a.href = doc.data; a.download = docName; a.click();
+        } catch (e) { window.open(doc.data, '_blank'); }
+    } else {
+        var blob = new Blob(['Placeholder for ' + docName + '. Uploaded documents will download here.'], { type: 'text/plain' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = docName.replace(/\.pdf$/i, '') + '-details.txt';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
 }
-function renderAdminWebsiteServices() {
-    var tbody = document.getElementById('adminWebsiteServicesBody');
-    if (!tbody || typeof getWebsiteServices !== 'function') return;
-    var list = getWebsiteServices();
-    tbody.innerHTML = list.length ? list.map(function(s) {
-        var desc = (s.description || '').slice(0, 50) + ((s.description || '').length > 50 ? '...' : '');
-        var img = s.image
-            ? '<img src="' + String(s.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
-            : '—';
-        return '<tr>lakang' + img + '</dress><td>' + (s.title || '') + '</dress><td>' + (s.category || '') + '</dress><td>' + desc + '</dress><td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></dress></tr>';
-    }).join('') : '<tr><td colspan="5">No website services. Add one above.</dress></tr>';
+
+function downloadClientInvoice(invoiceNumber) {
+    var invoices = getStored('clientInvoices', []);
+    var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
+    if (!inv) return;
+    var text = 'Invoice ' + (inv.number || '') + '\nAmount: ' + (inv.amount || '') + '\nDate: ' + (inv.date || '') + '\nStatus: ' + (inv.status || '') + '\n' + (inv.project ? 'Project: ' + inv.project + '\n' : '');
+    var blob = new Blob([text], { type: 'text/plain' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'invoice-' + (inv.number || 'inv') + '.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
-window.deleteWebsiteProject = function(id) {
-    if (typeof getWebsiteProjects !== 'function' || typeof setWebsiteProjects !== 'function') return;
-    if (!confirm('Delete this website project?')) return;
-    var list = getWebsiteProjects().filter(function(p) { return String(p.id) !== String(id); });
-    setWebsiteProjects(list).then(function () {
-        renderAdminWebsiteProjects();
-    }).catch(function () {
-        alert('Could not save changes.');
+
+function editTimeEntry(entryId) {
+    var entries = getStored('employeeTimeEntries', []);
+    var entry = entries[entryId];
+    if (!entry) return;
+    var modal = document.getElementById('employeeTimeEditModal');
+    if (document.getElementById('timeEditIndex')) document.getElementById('timeEditIndex').value = entryId;
+    if (document.getElementById('timeEditDate')) document.getElementById('timeEditDate').value = entry.date || '';
+    if (document.getElementById('timeEditProject')) document.getElementById('timeEditProject').value = entry.project || '';
+    if (document.getElementById('timeEditDescription')) document.getElementById('timeEditDescription').value = entry.description || '';
+    if (document.getElementById('timeEditHours')) document.getElementById('timeEditHours').value = entry.hours || '';
+    if (modal) modal.classList.add('open');
+}
+
+// ===== ASSIGNMENTS =====
+
+function renderAssignments(tbody, assignments, hideEmployeeColumn) {
+    if (!tbody) return;
+    if (hideEmployeeColumn && tbody.id === 'employeeAssignmentsBody') {
+        renderEmployeeAssignmentsTable(tbody, assignments);
+        return;
+    }
+    tbody.innerHTML = assignments.map(function (a) {
+        return '<tr>' +
+            '<td>' + escapeHtml(a.project) + '</td>' +
+            (hideEmployeeColumn ? '' : '<td>' + escapeHtml(a.employeeEmail) + '</td>') +
+            '<td>' + escapeHtml(a.due || '-') + '</td>' +
+            '<td>' + escapeHtml(a.deadline || a.due || '-') + '</td>' +
+            '<td>' + escapeHtml(a.notes || '-') + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+function getEmployeeAssignmentStatus() { return getStored('employeeAssignmentStatus', {}) || {}; }
+function setEmployeeAssignmentStatus(map) { setStored('employeeAssignmentStatus', map); }
+
+function renderEmployeeAssignmentsTable(tbody, assignments) {
+    if (!tbody || tbody.id !== 'employeeAssignmentsBody') return;
+    var statusMap = getEmployeeAssignmentStatus();
+    var filter = window._employeeProjectFilter || 'all';
+    function timelineText(dueStr) {
+        if (!dueStr) return '-';
+        var d = new Date(dueStr);
+        var now = new Date();
+        var days = Math.ceil((d - now) / (24 * 60 * 60 * 1000));
+        if (days < 0) return 'Overdue';
+        if (days === 0) return 'Due today';
+        if (days === 1) return 'Due tomorrow';
+        return 'Due in ' + days + ' days';
+    }
+    var filtered = assignments.filter(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        var st = statusMap[key] || 'not-started';
+        if (filter === 'all') return true;
+        if (filter === 'not-started' || filter === 'assigned') return st === 'not-started';
+        if (filter === 'active') return st === 'active';
+        if (filter === 'completed') return st === 'completed';
+        return true;
     });
-};
-window.deleteWebsiteService = function(id) {
-    if (typeof getWebsiteServices !== 'function' || typeof setWebsiteServices !== 'function') return;
-    if (!confirm('Delete this website service?')) return;
-    var list = getWebsiteServices().filter(function(s) { return String(s.id) !== String(id); });
-    setWebsiteServices(list).then(function () {
-        renderAdminWebsiteServices();
-    }).catch(function () {
-        alert('Could not save changes.');
-    });
+    tbody.innerHTML = filtered.map(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        var st = statusMap[key] || 'not-started';
+        var keyEsc = escapeAttr(key);
+        var projEsc = escapeAttr(a.project || '');
+        var timeline = timelineText(a.deadline || a.due);
+        var action = st === 'not-started'
+            ? '<button type="button" class="btn btn-sm btn-primary" onclick="startAssignment(\'' + keyEsc + '\')">Start</button>'
+            : st === 'active'
+                ? '<span class="status-badge status-pending">In progress</span> <button type="button" class="btn btn-sm btn-secondary" onclick="completeAssignment(\'' + keyEsc + '\')">Mark done</button>'
+                : '<span class="status-badge status-paid">Done</span>';
+        var updBtn = st !== 'completed' ? ' <button type="button" class="btn btn-sm btn-secondary" onclick="openEmployeeProgressModal(\'' + projEsc + '\')"><i class="fas fa-upload"></i> Progress</button>' : '';
+        return '<tr><td>' + escapeHtml(a.project || '') + '</td><td>' + escapeHtml(a.due || '-') + '</td><td>' + escapeHtml(a.deadline || a.due || '-') + '</td><td>' + timeline + '</td><td>' + escapeHtml(a.notes || '-') + '</td><td>' + action + updBtn + '</td></tr>';
+    }).join('');
+}
+
+window.openEmployeeProgressModal = function (projectName) {
+    var el = document.getElementById('taskUpdateProjectLabel');
+    if (el) el.textContent = projectName || '';
+    var hid = document.getElementById('taskUpdateProjectName');
+    if (hid) hid.value = projectName || '';
+    var ta = document.getElementById('taskUpdateDescription');
+    if (ta) ta.value = '';
+    var fi = document.getElementById('taskUpdateImages');
+    if (fi) fi.value = '';
+    var modal = document.getElementById('employeeTaskUpdateModal');
+    if (modal) modal.classList.add('open');
 };
 
-function renderAdminBlogPosts() {
-    var tbody = document.getElementById('adminBlogPostsBody');
-    if (!tbody || typeof getWebsiteBlogPosts !== 'function') return;
-    var posts = getWebsiteBlogPosts();
-    tbody.innerHTML = posts.length ? posts.map(function(p) {
-        var ex = (p.excerpt || '').slice(0, 50) + ((p.excerpt || '').length > 50 ? '...' : '');
-        var img = p.image
-            ? '<img src="' + String(p.image).replace(/"/g, '&quot;') + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">'
-            : '—';
-        return '<tr>lakang' + img + '</dress><td>' + (p.title || '') + '</dress><td>' + (p.date || '') + '</dress><td>' + ex + '</dress><td><button type=\"button\" class=\"btn-icon\" onclick=\"deleteBlogPost(' + p.id + ')\" title=\"Delete\"><i class=\"fas fa-trash\"></i></button></dress></tr>';
-    }).join('') : '<tr><td colspan=\"5\">No blog posts. Add one above.</dress></tr>';
-}
-window.deleteBlogPost = function(id) {
-    if (typeof getWebsiteBlogPosts !== 'function' || typeof setWebsiteBlogPosts !== 'function') return;
-    if (!confirm('Delete this blog post?')) return;
-    var posts = getWebsiteBlogPosts().filter(function(p) { return String(p.id) !== String(id); });
-    setWebsiteBlogPosts(posts).then(function () {
-        renderAdminBlogPosts();
-    }).catch(function () {
-        alert('Could not save changes.');
-    });
+window.startAssignment = function (key) {
+    var map = getEmployeeAssignmentStatus();
+    map[key] = 'active';
+    setEmployeeAssignmentStatus(map);
+    var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var path = window.location.pathname || '';
+    if (path.includes('/employee/')) {
+        var assignments = getStored('assignments', []).filter(function (a) { return a.employeeEmail === cu.email; });
+        renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
+        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
+        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
+    }
 };
+
+window.completeAssignment = function (key) {
+    var map = getEmployeeAssignmentStatus();
+    map[key] = 'completed';
+    setEmployeeAssignmentStatus(map);
+    var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var path = window.location.pathname || '';
+    if (path.includes('/employee/')) {
+        var assignments = getStored('assignments', []).filter(function (a) { return a.employeeEmail === cu.email; });
+        renderEmployeeAssignmentsTable(document.getElementById('employeeAssignmentsBody'), assignments);
+        if (typeof renderEmployeeOngoingForUpdate === 'function') renderEmployeeOngoingForUpdate();
+        if (typeof loadEmployeeDashboard === 'function') loadEmployeeDashboard();
+    }
+};
+
+// ===== MESSAGES =====
+
+function renderMessagesAsCards(container, messages) {
+    if (!container) return;
+    container.innerHTML = messages.slice().reverse().map(function (m) {
+        return '<div class="message-card">' +
+            '<div class="message-from">' + escapeHtml(m.from) + ' \u2192 ' + escapeHtml(m.to) + '</div>' +
+            '<div class="message-meta">' + (m.project ? 'Project: ' + escapeHtml(m.project) + ' \xb7 ' : '') + (m.timestamp ? new Date(m.timestamp).toLocaleString() : '') + '</div>' +
+            '<div class="message-body">' + escapeHtml(m.body) + '</div>' +
+            '</div>';
+    }).join('') || '<p class="empty-state">No messages yet.</p>';
+}
+
+// ===== EMPLOYEE PORTAL =====
+
+window.setupEmployeeInteractions = function (currentUser) {
+    var assignmentsBody = document.getElementById('employeeAssignmentsBody');
+    var allAssignments = getStored('assignments', []);
+    var myAssignments = currentUser
+        ? allAssignments.filter(function (a) { return a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase(); })
+        : allAssignments;
+    if (assignmentsBody) renderAssignments(assignmentsBody, myAssignments, true);
+
+    var projectFilterTabs = document.querySelectorAll('#employeeProjectFilterTabs .filter-btn');
+    projectFilterTabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            projectFilterTabs.forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            window._employeeProjectFilter = btn.getAttribute('data-filter') || 'all';
+            renderEmployeeAssignmentsTable(assignmentsBody, myAssignments);
+        });
+    });
+
+    var taskUpdateModal = document.getElementById('employeeTaskUpdateModal');
+    var taskUpdateForm = document.getElementById('employeeTaskUpdateForm');
+    document.querySelectorAll('[data-close="employeeTaskUpdateModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('employeeTaskUpdateModal').classList.remove('open'); });
+    });
+    if (taskUpdateModal) taskUpdateModal.addEventListener('click', function (e) { if (e.target === taskUpdateModal) taskUpdateModal.classList.remove('open'); });
+    if (taskUpdateForm) {
+        taskUpdateForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var project = (document.getElementById('taskUpdateProjectName') && document.getElementById('taskUpdateProjectName').value) || '';
+            var description = document.getElementById('taskUpdateDescription').value;
+            var fileInput = document.getElementById('taskUpdateImages');
+            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            var token = sessionStorage.getItem('authToken');
+            function sendWithImages(imageArr) {
+                fetch((window.API_BASE || '') + '/api/portal/employee-progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ project: project, description: description, images: imageArr || [] })
+                }).then(function (r) {
+                    if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'failed'); });
+                    return r.json();
+                }).then(function () {
+                    taskUpdateForm.reset();
+                    if (taskUpdateModal) taskUpdateModal.classList.remove('open');
+                    return fetch((window.API_BASE || '') + '/api/portal/bootstrap', { headers: { Authorization: 'Bearer ' + token } });
+                }).then(function (r) {
+                    if (r && r.ok) return r.json();
+                }).then(function (data) {
+                    if (data && data.employeeTaskUpdates) __portalCache.employeeTaskUpdates = data.employeeTaskUpdates;
+                    refreshNotificationsBadge();
+                    alert('Progress submitted.');
+                }).catch(function () {
+                    alert('Could not submit progress. Check assignment matches this project.');
+                });
+            }
+            if (files.length) {
+                Promise.all(files.map(function (file) {
+                    return new Promise(function (resolve) {
+                        var reader = new FileReader();
+                        reader.onload = function () { resolve(reader.result); };
+                        reader.readAsDataURL(file);
+                    });
+                })).then(sendWithImages);
+            } else { sendWithImages([]); }
+        });
+    }
+
+    var timeModal = document.getElementById('employeeTimeModal');
+    var timeForm = document.getElementById('employeeTimeForm');
+    var timeEntriesBody = document.querySelector('.time-entries tbody');
+    var addTimeBtn = document.getElementById('employeeAddTimeBtn');
+    if (addTimeBtn && timeModal) addTimeBtn.addEventListener('click', function () { timeModal.classList.add('open'); });
+    document.querySelectorAll('[data-close="employeeTimeModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('employeeTimeModal').classList.remove('open'); });
+    });
+    if (timeModal) timeModal.addEventListener('click', function (e) { if (e.target === timeModal) timeModal.classList.remove('open'); });
+    if (timeForm && timeEntriesBody) {
+        timeForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var entries = getStored('employeeTimeEntries', []);
+            entries.push({
+                date: document.getElementById('timeEntryDate').value,
+                project: document.getElementById('timeEntryProject').value,
+                description: document.getElementById('timeEntryDescription').value,
+                hours: parseFloat(document.getElementById('timeEntryHours').value),
+                employeeEmail: currentUser ? currentUser.email : 'employee@demo.com'
+            });
+            setStored('employeeTimeEntries', entries);
+            renderEmployeeTimeEntries(timeEntriesBody, entries);
+            timeForm.reset();
+            timeModal.classList.remove('open');
+        });
+    }
+
+    var timeEditModal = document.getElementById('employeeTimeEditModal');
+    var timeEditForm = document.getElementById('employeeTimeEditForm');
+    if (timeEditModal) {
+        document.querySelectorAll('[data-close="employeeTimeEditModal"]').forEach(function (el) {
+            el.addEventListener('click', function () { timeEditModal.classList.remove('open'); });
+        });
+        timeEditModal.addEventListener('click', function (e) { if (e.target === timeEditModal) timeEditModal.classList.remove('open'); });
+    }
+    if (timeEditForm && timeEntriesBody) {
+        timeEditForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var idx = parseInt(document.getElementById('timeEditIndex').value, 10);
+            var entries = getStored('employeeTimeEntries', []);
+            if (isNaN(idx) || idx < 0 || idx >= entries.length) { timeEditModal.classList.remove('open'); return; }
+            entries[idx] = {
+                date: document.getElementById('timeEditDate').value,
+                project: document.getElementById('timeEditProject').value,
+                description: document.getElementById('timeEditDescription').value,
+                hours: parseFloat(document.getElementById('timeEditHours').value) || 0,
+                employeeEmail: entries[idx].employeeEmail
+            };
+            setStored('employeeTimeEntries', entries);
+            renderEmployeeTimeEntries(timeEntriesBody, entries);
+            timeEditForm.reset();
+            if (timeEditModal) timeEditModal.classList.remove('open');
+        });
+    }
+};
+
+function renderEmployeeTimeEntries(tbody, entries) {
+    if (!tbody) return;
+    var list = entries && entries.length ? entries : [];
+    tbody.innerHTML = list.map(function (entry, index) {
+        return '<tr>' +
+            '<td>' + escapeHtml(entry.date) + '</td>' +
+            '<td>' + escapeHtml(entry.project) + '</td>' +
+            '<td>' + escapeHtml(entry.description) + '</td>' +
+            '<td>' + entry.hours + '</td>' +
+            '<td><button class="btn-icon" onclick="editTimeEntry(' + index + ')"><i class="fas fa-edit"></i></button></td>' +
+            '</tr>';
+    }).join('');
+    var remEl = document.getElementById('employeeTimeRemaining');
+    if (remEl) {
+        var now = new Date();
+        var mon = new Date(now);
+        mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+        var weekStart = mon.toISOString().slice(0, 10);
+        var weekEnd = new Date(mon);
+        weekEnd.setDate(mon.getDate() + 6);
+        var weekEndStr = weekEnd.toISOString().slice(0, 10);
+        var weekHours = list.filter(function (e) { return e.date >= weekStart && e.date <= weekEndStr; }).reduce(function (sum, e) { return sum + (parseFloat(e.hours) || 0); }, 0);
+        var remaining = Math.max(0, 40 - weekHours);
+        remEl.innerHTML = '<p><strong>This week:</strong> ' + weekHours.toFixed(1) + ' hours logged &middot; <strong>' + remaining.toFixed(1) + ' hours remaining</strong> (out of 40h)</p>';
+        remEl.className = 'time-remaining-bar';
+    }
+}
+
+function renderEmployeeOngoingForUpdate() {
+    var container = document.getElementById('employeeOngoingProgressList');
+    if (!container) return;
+    var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var assignments = getStored('assignments', []).filter(function (a) {
+        return a.employeeEmail && cu && a.employeeEmail.toLowerCase() === (cu.email || '').toLowerCase();
+    });
+    var statusMap = getEmployeeAssignmentStatus();
+    var ongoing = assignments.filter(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        return (statusMap[key] || 'not-started') !== 'completed';
+    });
+    container.innerHTML = ongoing.length ? ongoing.map(function (a) {
+        var key = (a.project || '') + '|' + (a.employeeEmail || '');
+        var st = statusMap[key] || 'not-started';
+        var projEsc = escapeAttr(a.project || '');
+        var dl = a.deadline || a.due || '-';
+        return '<div class="deadline-item" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">' +
+            '<div><strong>' + escapeHtml(a.project || '') + '</strong>' +
+            '<p style="margin:4px 0 0;">Deadline: ' + escapeHtml(dl) + ' \xb7 Status: ' + escapeHtml(st) + '</p></div>' +
+            '<button type="button" class="btn btn-primary btn-sm" onclick="openEmployeeProgressModal(\'' + projEsc + '\')">Update progress</button></div>';
+    }).join('') : '<p class="empty-state">No ongoing projects need updates.</p>';
+}
+
+function loadEmployeeDashboard() {
+    var timeEntries = getStored('employeeTimeEntries', null);
+    renderEmployeeTimeEntries(document.querySelector('.time-entries tbody'), timeEntries || []);
+    var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var myAssignments = getStored('assignments', []).filter(function (a) {
+        return a.employeeEmail && cu && a.employeeEmail.toLowerCase() === (cu.email || '').toLowerCase();
+    });
+    var statusMap = getEmployeeAssignmentStatus();
+    var activeCount = myAssignments.filter(function (a) { return (statusMap[(a.project || '') + '|' + (a.employeeEmail || '')] || 'not-started') === 'active'; }).length;
+    var completedCount = myAssignments.filter(function (a) { return (statusMap[(a.project || '') + '|' + (a.employeeEmail || '')] || 'not-started') === 'completed'; }).length;
+    var now = new Date();
+    var mon = new Date(now);
+    mon.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    var weekStart = mon.toISOString().slice(0, 10);
+    var weekEnd = new Date(mon); weekEnd.setDate(mon.getDate() + 6);
+    var weekEndStr = weekEnd.toISOString().slice(0, 10);
+    var entries = getStored('employeeTimeEntries', []);
+    var weekHours = entries.filter(function (e) { return e.date >= weekStart && e.date <= weekEndStr; }).reduce(function (sum, e) { return sum + (parseFloat(e.hours) || 0); }, 0);
+    var statActive = document.getElementById('employeeStatActive');
+    var statHours = document.getElementById('employeeStatHours');
+    var statAssigned = document.getElementById('employeeStatAssigned');
+    var statDone = document.getElementById('employeeStatCompleted');
+    if (statActive) statActive.textContent = String(activeCount);
+    if (statHours) statHours.textContent = weekHours.toFixed(1);
+    if (statAssigned) statAssigned.textContent = String(myAssignments.length);
+    if (statDone) statDone.textContent = String(completedCount);
+    var deadlinesList = document.getElementById('employeeScheduleDeadlines');
+    if (deadlinesList) {
+        deadlinesList.innerHTML = myAssignments.length ? myAssignments.slice(0, 10).map(function (a) {
+            return '<div class="deadline-item"><i class="fas fa-calendar-alt" style="color:var(--primary);"></i><div><strong>' + escapeHtml(a.project || '') + '</strong><p>Due: ' + escapeHtml(a.deadline || a.due || '-') + '</p></div></div>';
+        }).join('') : '<div class="deadline-item"><i class="fas fa-calendar-alt"></i><div><strong>No upcoming deadlines</strong><p>Assignments from admin will appear here.</p></div></div>';
+    }
+    var timesheetBody = document.getElementById('employeeTimesheetBody');
+    if (timesheetBody) {
+        var weekEntries = entries.filter(function (e) { return e.date >= weekStart && e.date <= weekEndStr; });
+        timesheetBody.innerHTML = weekEntries.length ? weekEntries.map(function (e) {
+            return '<tr><td>' + escapeHtml(e.date || '') + '</td><td>' + escapeHtml(e.project || '') + '</td><td>' + escapeHtml(e.description || '') + '</td><td>' + (e.hours || '') + '</td></tr>';
+        }).join('') : '<tr><td colspan="4">No entries this week. Add time from Time Tracking.</td></tr>';
+    }
+    renderEmployeeOngoingForUpdate();
+}
+
+// ===== CLIENT PORTAL =====
+
+function clientPortalProjectGroup(p) {
+    var s = (p.status || '').toLowerCase();
+    if (s.indexOf('complete') !== -1) return 'completed';
+    if (s === 'pending' || s === 'review') return 'pending';
+    return 'ongoing';
+}
+
+window.applyClientProjectFilter = function () {
+    var projectsContainer = document.getElementById('clientProjectsGrid');
+    if (!projectsContainer) return;
+    var f = window._clientProjectFilter || 'all';
+    var list = window._clientProjectsList || [];
+    var filtered = f === 'all' ? list : list.filter(function (p) { return clientPortalProjectGroup(p) === f; });
+    var adminUpdates = getStored('adminClientProgressUpdates', []);
+    if (!filtered.length) { projectsContainer.innerHTML = '<p class="empty-state">No projects in this view.</p>'; return; }
+    projectsContainer.innerHTML = filtered.map(function (project) {
+        var stClass = String(project.status || 'active').toLowerCase().replace(/\s+/g, '-');
+        var deadline = project.deadline || project.completionDate || '-';
+        var ups = adminUpdates.filter(function (u) {
+            return String(u.projectId) === String(project._id || project.id) || (u.projectName && u.projectName === project.name);
+        });
+        var upHtml = ups.length ? '<div class="client-admin-updates"><strong>Updates from your team</strong>' +
+            ups.slice().reverse().slice(0, 3).map(function (u) {
+                return '<p class="small-meta">' + (u.at ? new Date(u.at).toLocaleString() : '') + ': ' + escapeHtml((u.message || '').slice(0, 160)) + '</p>';
+            }).join('') + '</div>' : '';
+        var pid = escapeAttr(String(project._id || project.id));
+        var pname = escapeAttr(project.name || '');
+        return '<div class="project-card">' +
+            '<div class="project-image"><img src="' + escapeHtml(project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
+            '<div class="project-details">' +
+            '<h3>' + escapeHtml(project.name) + '</h3>' +
+            '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
+            '<p><strong>Deadline:</strong> ' + escapeHtml(deadline) + '</p>' +
+            '<div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div>' +
+            '<p>Progress: ' + (project.progress || 0) + '%</p>' +
+            '<p><strong>Next Milestone:</strong> ' + escapeHtml(project.nextMilestone || '-') + '</p>' +
+            upHtml +
+            '<div class="project-actions">' +
+            '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(\'' + pid + '\')">View Details</button> ' +
+            '<button type="button" class="btn btn-secondary" onclick="openProjectInquiryModal(\'' + pid + '\',\'' + pname + '\')">Inquire</button>' +
+            '</div></div></div>';
+    }).join('');
+};
+
+function updateMoneyOverview(projects) {
+    var totalPaid = 0, totalUsed = 0, totalBudget = 0;
+    projects.forEach(function (project) {
+        totalPaid += parseFloat(project.moneyPaid) || 0;
+        totalUsed += parseFloat(project.moneyUsed) || 0;
+        totalBudget += (parseFloat(project.moneyPaid) || 0) + (parseFloat(project.moneyRemaining) || 0);
+    });
+    var totalLeft = totalBudget - totalUsed;
+    var tpEl = document.getElementById('totalPaid');
+    var muEl = document.getElementById('moneyUsed');
+    var mlEl = document.getElementById('moneyLeft');
+    if (tpEl) tpEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (muEl) muEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (mlEl) mlEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function loadClientDashboard() {
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    var authToken = sessionStorage.getItem('authToken');
+
+    function updateClientStats() {
+        var projects = window._clientProjectsList || [];
+        var pendingInv = (getStored('clientInvoices', []) || []).filter(function (i) {
+            return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
+        }).length;
+        var docCount = (getStored('clientDocuments', []) || []).length;
+        var ongoing = projects.filter(function (p) { return clientPortalProjectGroup(p) !== 'completed'; }).length;
+        var elP = document.getElementById('clientStatProjects');
+        var elD = document.getElementById('clientStatDocs');
+        var elI = document.getElementById('clientStatInvoices');
+        var elM = document.getElementById('clientStatMilestones');
+        if (elP) elP.textContent = String(projects.length);
+        if (elD) elD.textContent = String(docCount);
+        if (elI) elI.textContent = String(pendingInv);
+        if (elM) elM.textContent = String(ongoing);
+        updateMoneyOverview(projects);
+    }
+
+    if (authToken && currentUser) {
+        fetch(window.API_BASE + '/api/projects?client=' + encodeURIComponent(currentUser.email), {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load projects');
+            return response.json();
+        }).then(function (projects) {
+            var clientProjects = projects.filter(function (p) {
+                var clientEmail = (p.client || '').toLowerCase();
+                return clientEmail === currentUser.email.toLowerCase() || clientEmail === (currentUser.name || '').toLowerCase();
+            });
+            window._clientProjectsList = clientProjects.map(function (p) {
+                return {
+                    id: p._id || p.id, name: p.name, image: p.image || '/images/project1.jpg',
+                    progress: p.progress || 0, status: p.status || 'Active',
+                    nextMilestone: p.nextMilestone || '-',
+                    completionDate: p.completionDate || '-', deadline: p.deadline || p.completionDate || '',
+                    description: p.description || '',
+                    moneyPaid: p.moneyPaid || '-', moneyUsed: p.moneyUsed || '-',
+                    moneyRemaining: p.moneyRemaining || '-', moneyOwed: p.moneyOwed || '-'
+                };
+            });
+            window._clientProjectFilter = window._clientProjectFilter || 'all';
+            window.applyClientProjectFilter();
+            updateClientStats();
+        }).catch(function () {
+            window._clientProjectsList = [];
+            window._clientProjectFilter = window._clientProjectFilter || 'all';
+            window.applyClientProjectFilter();
+            updateClientStats();
+        });
+    } else {
+        window._clientProjectsList = [];
+        window._clientProjectFilter = window._clientProjectFilter || 'all';
+        window.applyClientProjectFilter();
+        updateClientStats();
+    }
+
+    var clientProjTabs = document.querySelectorAll('#clientProjectFilterTabs .filter-btn');
+    if (clientProjTabs.length && !window._clientProjectsFilterBound) {
+        window._clientProjectsFilterBound = true;
+        clientProjTabs.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                clientProjTabs.forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                window._clientProjectFilter = btn.getAttribute('data-filter') || 'all';
+                window.applyClientProjectFilter();
+            });
+        });
+    }
+
+    function loadClientDocuments() {
+        if (!authToken || !currentUser) { renderClientDocuments([]); return; }
+        fetch(window.API_BASE + '/api/documents?client=' + encodeURIComponent(currentUser.email), {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function (r) {
+            if (!r.ok) throw new Error('Failed');
+            return r.json();
+        }).then(renderClientDocuments).catch(function () { renderClientDocuments([]); });
+    }
+
+    function renderClientDocuments(docs) {
+        var documentsList = document.getElementById('clientDocumentsBody');
+        if (!documentsList) return;
+        if (!docs || !docs.length) {
+            documentsList.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;">No documents available</td></tr>';
+        } else {
+            documentsList.innerHTML = docs.map(function (doc) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(doc.name) + '</td>' +
+                    '<td>' + new Date(doc.createdAt).toLocaleDateString() + '</td>' +
+                    '<td>' + escapeHtml(doc.size || '-') + '</td>' +
+                    '<td><button class="btn btn-sm btn-primary" onclick="downloadDocument(\'' + escapeAttr(doc._id || doc.id) + '\')">Download</button></td>' +
+                    '</tr>';
+            }).join('');
+        }
+    }
+
+    loadClientDocuments();
+
+    var uploadDocBtn = document.getElementById('clientUploadDocBtn');
+    var uploadDocModal = document.getElementById('clientUploadDocModal');
+    var uploadDocForm = document.getElementById('clientUploadDocForm');
+    if (uploadDocBtn && uploadDocModal) uploadDocBtn.addEventListener('click', function () { uploadDocModal.classList.add('open'); });
+    document.querySelectorAll('[data-close="clientUploadDocModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { document.getElementById('clientUploadDocModal').classList.remove('open'); });
+    });
+    if (uploadDocModal) uploadDocModal.addEventListener('click', function (e) { if (e.target === uploadDocModal) uploadDocModal.classList.remove('open'); });
+    if (uploadDocForm) {
+        uploadDocForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var name = document.getElementById('clientDocName').value.trim() || 'Document';
+            var fileInput = document.getElementById('clientDocFile');
+            var file = fileInput && fileInput.files[0];
+            var size = file ? (file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB') : '0 KB';
+            function saveDoc(data) {
+                var docs = getStored('clientDocuments', []);
+                docs.push({ name: name, date: new Date().toISOString().slice(0, 10), size: size, data: data });
+                setStored('clientDocuments', docs);
+                renderClientDocuments(docs);
+                uploadDocForm.reset();
+                uploadDocModal.classList.remove('open');
+            }
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function () { saveDoc(reader.result); };
+                reader.readAsDataURL(file);
+            } else { saveDoc(null); }
+        });
+    }
+
+    function loadClientInvoices() {
+        if (!authToken || !currentUser) { renderClientInvoices([]); return; }
+        fetch(window.API_BASE + '/api/invoices?client=' + encodeURIComponent(currentUser.email), {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function (r) {
+            if (!r.ok) throw new Error('Failed');
+            return r.json();
+        }).then(renderClientInvoices).catch(function () { renderClientInvoices([]); });
+    }
+
+    function renderClientInvoices(invoices) {
+        var invoicesList = document.getElementById('clientInvoicesBody');
+        if (!invoicesList) return;
+        if (!invoices || !invoices.length) {
+            invoicesList.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">No invoices available</td></tr>';
+        } else {
+            invoicesList.innerHTML = invoices.map(function (invoice) {
+                var iid = escapeAttr(String(invoice._id || invoice.id));
+                return '<tr>' +
+                    '<td>' + escapeHtml(invoice.number) + '</td>' +
+                    '<td>' + escapeHtml(invoice.amount) + '</td>' +
+                    '<td>' + new Date(invoice.createdAt).toLocaleDateString() + '</td>' +
+                    '<td><span class="status-badge status-' + escapeHtml((invoice.status || '').toLowerCase()) + '">' + escapeHtml(invoice.status) + '</span></td>' +
+                    '<td>' +
+                    '<button class="btn-icon" onclick="viewInvoice(\'' + iid + '\')" title="View"><i class="fas fa-eye"></i></button> ' +
+                    '<button class="btn-icon" onclick="downloadClientInvoice(\'' + iid + '\')" title="Download"><i class="fas fa-download"></i></button>' +
+                    '</td></tr>';
+            }).join('');
+        }
+    }
+
+    var inquiryModal = document.getElementById('clientProjectInquiryModal');
+    var inquiryForm = document.getElementById('clientProjectInquiryForm');
+    if (inquiryForm) {
+        inquiryForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+            if (!cu) { alert('Please log in to send inquiries.'); return; }
+            var inquiryData = {
+                projectId: document.getElementById('inquiryProjectId').value,
+                projectName: document.getElementById('inquiryProjectName').value,
+                clientEmail: cu.email, clientName: cu.name,
+                subject: document.getElementById('inquirySubject').value,
+                message: document.getElementById('inquiryMessage').value,
+                priority: document.getElementById('inquiryPriority').value,
+                createdAt: new Date().toISOString(), status: 'pending'
+            };
+            fetch(window.API_BASE + '/api/inquiries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') },
+                body: JSON.stringify(inquiryData)
+            }).then(function (r) {
+                if (!r.ok) throw new Error('Failed');
+                return r.json();
+            }).then(function () {
+                alert('Your inquiry has been sent successfully! We will respond within 24 hours.');
+                inquiryForm.reset();
+                if (inquiryModal) inquiryModal.classList.remove('open');
+            }).catch(function () { alert('Failed to send inquiry. Please try again.'); });
+        });
+    }
+
+    loadClientInquiries();
+    loadClientInvoices();
+
+    var messagesList = document.getElementById('clientMessagesList');
+    if (messagesList) {
+        var msgs = getStored('portalMessages', []).filter(function (m) { return m.to === (currentUser && currentUser.email); });
+        messagesList.innerHTML = msgs.length ? msgs.slice().reverse().map(function (m) {
+            return '<div class="message-card">' +
+                '<div class="message-from">From: ' + escapeHtml(m.from) + '</div>' +
+                '<div class="message-meta">' + (m.project ? 'Project: ' + escapeHtml(m.project) + ' \xb7 ' : '') + (m.timestamp ? new Date(m.timestamp).toLocaleString() : '') + '</div>' +
+                '<div class="message-body">' + escapeHtml(m.body) + '</div>' +
+                '</div>';
+        }).join('') : '<p class="empty-state">No messages yet.</p>';
+    }
+
+    var supportName = document.getElementById('supportName');
+    var supportEmail = document.getElementById('supportEmail');
+    if (currentUser && supportName) supportName.value = currentUser.name || '';
+    if (currentUser && supportEmail) supportEmail.value = currentUser.email || '';
+}
+
+function loadClientInquiries() {
+    var authToken = sessionStorage.getItem('authToken');
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (!authToken || !currentUser) return;
+    fetch(window.API_BASE + '/api/inquiries?client=' + encodeURIComponent(currentUser.email), {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+    }).then(function (r) { return r.json(); }).then(function (inquiries) {
+        var inquiriesList = document.getElementById('clientInquiriesList');
+        if (!inquiriesList) return;
+        inquiriesList.innerHTML = inquiries.length ? inquiries.map(function (inquiry) {
+            return '<div class="inquiry-item">' +
+                '<div class="inquiry-header"><strong>' + escapeHtml(inquiry.subject) + '</strong><span class="status-badge status-' + escapeHtml(inquiry.status) + '">' + escapeHtml(inquiry.status) + '</span></div>' +
+                '<div class="inquiry-body">' + escapeHtml(inquiry.message) + '</div>' +
+                '<div class="inquiry-footer"><small>Submitted: ' + new Date(inquiry.createdAt).toLocaleDateString() + '</small>' +
+                (inquiry.response ? '<div class="inquiry-response"><strong>Response:</strong> ' + escapeHtml(inquiry.response) + '</div>' : '') +
+                '</div></div>';
+        }).join('') : '<p class="empty-state">No inquiries yet.</p>';
+    }).catch(function (error) { console.error('Error loading inquiries:', error); });
+}
+
+// ===== ADMIN DASHBOARD =====
+
+async function renderPendingApprovals() {
+    var tbody = document.getElementById('adminPendingApprovalsBody');
+    if (!tbody) return;
+    var token = sessionStorage.getItem('authToken');
+    try {
+        var r = await fetch((window.API_BASE || '') + '/api/admin/pending-users', { headers: { Authorization: 'Bearer ' + token } });
+        if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5">Could not load pending accounts.</td></tr>'; return; }
+        var list = await r.json();
+        tbody.innerHTML = list.length ? list.map(function (u) {
+            return '<tr>' +
+                '<td>' + escapeHtml(u.name || '') + '</td>' +
+                '<td>' + escapeHtml(u.email || '') + '</td>' +
+                '<td>' + escapeHtml(u.role || '') + '</td>' +
+                '<td>' + (u.createdAt ? new Date(u.createdAt).toLocaleString() : '') + '</td>' +
+                '<td><button type="button" class="btn btn-primary" data-approve-id="' + escapeHtml(u.id) + '">Approve</button></td>' +
+                '</tr>';
+        }).join('') : '<tr><td colspan="5">No pending accounts.</td></tr>';
+        tbody.querySelectorAll('[data-approve-id]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var id = btn.getAttribute('data-approve-id');
+                var r2 = await fetch((window.API_BASE || '') + '/api/admin/users/' + id + '/approve', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+                if (r2.ok) {
+                    await renderPendingApprovals();
+                    refreshNotificationsBadge();
+                    try {
+                        var ur = await fetch((window.API_BASE || '') + '/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+                        if (ur.ok) {
+                            __portalCache.portalUsers = await ur.json();
+                            renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
+                            var tu = document.getElementById('totalUsers');
+                            if (tu) tu.textContent = String(__portalCache.portalUsers.length);
+                        }
+                    } catch (e2) {}
+                    alert('Account approved.');
+                } else { alert('Could not approve.'); }
+            });
+        });
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Error loading list.</td></tr>';
+    }
+}
 
 async function renderAdminEnquiries() {
     var tbody = document.getElementById('adminEnquiriesBody');
     if (!tbody) return;
     var list = [];
     try {
-        var r = await fetch((window.API_BASE || '') + '/api/admin/enquiries', {
-            headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
-        });
+        var r = await fetch((window.API_BASE || '') + '/api/admin/enquiries', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
         if (r.ok) list = await r.json();
-    } catch (e) {
-        list = [];
-    }
-    tbody.innerHTML = list.length ? list.slice().reverse().map(function(e) {
-        return '<tr>lakang' + (e.name || '') + '</dress><td>' + (e.contact || '') + '</dress><td>' + (e.type || '') + '</dress><td>' + (e.location || '') + '</dress><td>' + (e.timeline || '-') + '</dress><td>' + (e.budget || '-') + '</dress><td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</dress></tr>';
-    }).join('') : '<tr><td colspan=\"7\">No enquiries yet.</dress></tr>';
-}
-
-// ===== ADMIN PORTAL FUNCTIONS =====
-async function renderPendingApprovals() {
-    var tbody = document.getElementById('adminPendingApprovalsBody');
-    if (!tbody) return;
-    var API_BASE = window.API_BASE || '';
-    var token = sessionStorage.getItem('authToken');
-    try {
-        var r = await fetch(API_BASE + '/api/admin/pending-users', {
-            headers: { Authorization: 'Bearer ' + token }
-        });
-        if (!r.ok) {
-            tbody.innerHTML = '<tr><td colspan="5">Could not load pending accounts.</dress></tr>';
-            return;
-        }
-        var list = await r.json();
-        tbody.innerHTML = list.length
-            ? list
-                  .map(function (u) {
-                      return (
-                          '<tr>' +
-                          '<td>' +
-                          (u.name || '') +
-                          '</dress><td>' +
-                          (u.email || '') +
-                          '</dress><td>' +
-                          (u.role || '') +
-                          '</dress><td>' +
-                          (u.createdAt ? new Date(u.createdAt).toLocaleString() : '') +
-                          '</dress><td><button type="button" class="btn btn-primary" data-approve-id="' +
-                          u.id +
-                          '">Approve</button></dress>' +
-                          '</tr>'
-                      );
-                  })
-                  .join('')
-            : '<tr><td colspan="5">No pending accounts.</dress></tr>';
-        tbody.querySelectorAll('[data-approve-id]').forEach(function (btn) {
-            btn.addEventListener('click', async function () {
-                var id = btn.getAttribute('data-approve-id');
-                var r2 = await fetch(API_BASE + '/api/admin/users/' + id + '/approve', {
-                    method: 'POST',
-                    headers: { Authorization: 'Bearer ' + token }
-                });
-                if (r2.ok) {
-                    await renderPendingApprovals();
-                    if (typeof refreshNotificationsBadge === 'function') refreshNotificationsBadge();
-                    try {
-                        var ur = await fetch(API_BASE + '/api/admin/users', {
-                            headers: { Authorization: 'Bearer ' + token }
-                        });
-                        if (ur.ok) {
-                            __portalCache.portalUsers = await ur.json();
-                            renderAdminUsers(
-                                document.querySelector('.users-list tbody'),
-                                __portalCache.portalUsers
-                            );
-                            var tu = document.getElementById('totalUsers');
-                            if (tu) tu.textContent = String(__portalCache.portalUsers.length);
-                        }
-                    } catch (e2) {}
-                    alert('Account approved.');
-                } else {
-                    alert('Could not approve.');
-                }
-            });
-        });
-    } catch (e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5">Error loading list.</dress></tr>';
-    }
+    } catch (e) { list = []; }
+    tbody.innerHTML = list.length ? list.slice().reverse().map(function (e) {
+        return '<tr>' +
+            '<td>' + escapeHtml(e.name || '') + '</td>' +
+            '<td>' + escapeHtml(e.contact || '') + '</td>' +
+            '<td>' + escapeHtml(e.type || '') + '</td>' +
+            '<td>' + escapeHtml(e.location || '') + '</td>' +
+            '<td>' + escapeHtml(e.timeline || '-') + '</td>' +
+            '<td>' + escapeHtml(e.budget || '-') + '</td>' +
+            '<td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</td>' +
+            '</tr>';
+    }).join('') : '<tr><td colspan="7">No enquiries yet.</td></tr>';
 }
 
 async function loadAdminDashboard() {
@@ -3385,693 +2413,342 @@ async function loadAdminDashboard() {
         if (typeof loadWebsiteProjects === 'function') await loadWebsiteProjects();
         if (typeof loadWebsiteServices === 'function') await loadWebsiteServices();
         if (typeof loadWebsiteBlogPosts === 'function') await loadWebsiteBlogPosts();
-    } catch (e) {
-        console.warn(e);
-    }
+    } catch (e) { console.warn(e); }
+
     var directoryUsers = [];
     try {
-        var ur = await fetch((window.API_BASE || '') + '/api/admin/users', {
-            headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
-        });
+        var ur = await fetch((window.API_BASE || '') + '/api/admin/users', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
         if (ur.ok) directoryUsers = await ur.json();
-    } catch (e) {
-        console.warn(e);
-    }
+    } catch (e) { console.warn(e); }
     __portalCache.portalUsers = directoryUsers;
     renderAdminUsers(document.querySelector('.users-list tbody'), directoryUsers);
-    const projects = getStored('portalProjects', null);
+
     window._adminProjectFilter = 'all';
-    renderAdminProjectsTable();
+    window.renderAdminProjectsTable();
+
     var adminProjTabs = document.querySelectorAll('#adminProjectFilterTabs .filter-btn');
     adminProjTabs.forEach(function (btn) {
         btn.addEventListener('click', function () {
-            adminProjTabs.forEach(function (b) {
-                b.classList.remove('active');
-            });
+            adminProjTabs.forEach(function (b) { b.classList.remove('active'); });
             btn.classList.add('active');
             window._adminProjectFilter = btn.getAttribute('data-filter') || 'all';
-            renderAdminProjectsTable();
+            window.renderAdminProjectsTable();
         });
     });
+
     var assignSel = document.getElementById('assignProjectName');
     if (assignSel) {
         var pl = getStored('portalProjects', []);
-        assignSel.innerHTML = pl.length
-            ? pl
-                  .map(function (p) {
-                      var n = String(p.name || '');
-                      return (
-                          '<option value="' +
-                          n.replace(/&/g, '&amp;').replace(/"/g, '&quot;') +
-                          '">' +
-                          escapeHtml(n) +
-                          '</option>'
-                      );
-                  })
-                  .join('')
-            : '<option value="">Add portal projects first</option>';
+        assignSel.innerHTML = pl.length ? pl.map(function (p) {
+            return '<option value="' + escapeHtml(p.name || '') + '">' + escapeHtml(p.name || '') + '</option>';
+        }).join('') : '<option value="">Add portal projects first</option>';
     }
+
     renderAdminInvoices(document.getElementById('adminInvoicesBody'));
-    const careersBody = document.getElementById('adminCareersBody');
+
+    var careersBody = document.getElementById('adminCareersBody');
     if (careersBody) {
-        let apps = [];
+        var apps = [];
         try {
-            const r = await fetch((window.API_BASE || '') + '/api/admin/career-applications', {
-                headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
-            });
-            if (r.ok) apps = await r.json();
-        } catch (e) {
-            apps = getStored('careerApplications', []);
-        }
-        careersBody.innerHTML = apps.length ? apps.map(function(a) {
-            return '<tr>lakang' + (a.name || '') + '</dress><td>' + (a.email || '') + '</dress><td>' + (a.type || '') + '</dress><td>' + (a.campus || '-') + '</dress><td>' + (a.yearOfStudy || '-') + '</dress><td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</dress></tr>';
-        }).join('') : '<tr><td colspan="6">No applications yet.</dress></tr>';
+            var cr = await fetch((window.API_BASE || '') + '/api/admin/career-applications', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
+            if (cr.ok) apps = await cr.json();
+        } catch (e) { apps = getStored('careerApplications', []); }
+        careersBody.innerHTML = apps.length ? apps.map(function (a) {
+            return '<tr>' +
+                '<td>' + escapeHtml(a.name || '') + '</td>' +
+                '<td>' + escapeHtml(a.email || '') + '</td>' +
+                '<td>' + escapeHtml(a.type || '') + '</td>' +
+                '<td>' + escapeHtml(a.campus || '-') + '</td>' +
+                '<td>' + escapeHtml(a.yearOfStudy || '-') + '</td>' +
+                '<td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td>' +
+                '</tr>';
+        }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
     }
-    const totalUsersEl = document.getElementById('totalUsers');
-    const activeProjectsEl = document.getElementById('activeProjects');
+
+    var totalUsersEl = document.getElementById('totalUsers');
+    var activeProjectsEl = document.getElementById('activeProjects');
     if (totalUsersEl) totalUsersEl.textContent = String(directoryUsers.length);
-    if (activeProjectsEl) activeProjectsEl.textContent = (projects && projects.length) ? String(projects.length) : '0';
-    const totalRevenue = document.getElementById('totalRevenue');
-    const pendingTasks = document.getElementById('pendingTasks');
-    if (totalRevenue) totalRevenue.textContent = '$0';
-    // Update dashboard statistics dynamically
+    if (activeProjectsEl) activeProjectsEl.textContent = '0';
+
     updateAdminDashboardStats();
-    
-    // Update financial summary dynamically
     updateFinancialSummary();
-    
-    // Update CRM statistics
     updateCRMStats();
-    
-    // Update other statistics
+
     var pendingCount = 0;
     try {
-        var pr = await fetch((window.API_BASE || '') + '/api/admin/pending-users', {
-            headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
-        });
-        if (pr.ok) {
-            var plist = await pr.json();
-            pendingCount = (plist && plist.length) || 0;
-        }
+        var pr = await fetch((window.API_BASE || '') + '/api/admin/pending-users', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
+        if (pr.ok) { var plist = await pr.json(); pendingCount = (plist && plist.length) || 0; }
     } catch (e) {}
+    var pendingTasks = document.getElementById('pendingTasks');
     if (pendingTasks) pendingTasks.textContent = String(pendingCount);
-    var contentStatsEl = document.getElementById('adminContentStats');
-    if (contentStatsEl) contentStatsEl.innerHTML = 'Portal projects: ' + (projects && projects.length ? projects.length : 0) + ' &middot; Invoices: ' + (getStored('portalInvoices', []).length) + ' &middot; Career applications: ' + (getStored('careerApplications', []).length);
+
     if (typeof getWebsiteProjects === 'function') renderAdminWebsiteProjects();
     if (typeof getWebsiteServices === 'function') renderAdminWebsiteServices();
     if (typeof getWebsiteBlogPosts === 'function') renderAdminBlogPosts();
+
     await renderAdminEnquiries();
     await renderPendingApprovals();
+
+    // Website project/service modals
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');
     var addWebServBtn = document.getElementById('adminAddWebsiteServiceBtn');
     var webProjModal = document.getElementById('adminWebsiteProjectModal');
     var webServModal = document.getElementById('adminWebsiteServiceModal');
     var webProjForm = document.getElementById('adminWebsiteProjectForm');
     var webServForm = document.getElementById('adminWebsiteServiceForm');
-    if (addWebProjBtn && webProjModal) addWebProjBtn.addEventListener('click', function() { webProjForm.reset(); webProjModal.classList.add('open'); });
-    if (addWebServBtn && webServModal) addWebServBtn.addEventListener('click', function() { webServForm.reset(); webServModal.classList.add('open'); });
-    document.querySelectorAll('[data-close="adminWebsiteProjectModal"]').forEach(function(el) { el.addEventListener('click', function() { webProjModal.classList.remove('open'); }); });
-    document.querySelectorAll('[data-close="adminWebsiteServiceModal"]').forEach(function(el) { el.addEventListener('click', function() { webServModal.classList.remove('open'); }); });
-    if (webProjModal) webProjModal.addEventListener('click', function(e) { if (e.target === webProjModal) webProjModal.classList.remove('open'); });
-    if (webServModal) webServModal.addEventListener('click', function(e) { if (e.target === webServModal) webServModal.classList.remove('open'); });
+    if (addWebProjBtn && webProjModal) addWebProjBtn.addEventListener('click', function () { if (webProjForm) webProjForm.reset(); webProjModal.classList.add('open'); });
+    if (addWebServBtn && webServModal) addWebServBtn.addEventListener('click', function () { if (webServForm) webServForm.reset(); webServModal.classList.add('open'); });
+    document.querySelectorAll('[data-close="adminWebsiteProjectModal"]').forEach(function (el) { el.addEventListener('click', function () { webProjModal.classList.remove('open'); }); });
+    document.querySelectorAll('[data-close="adminWebsiteServiceModal"]').forEach(function (el) { el.addEventListener('click', function () { webServModal.classList.remove('open'); }); });
+    if (webProjModal) webProjModal.addEventListener('click', function (e) { if (e.target === webProjModal) webProjModal.classList.remove('open'); });
+    if (webServModal) webServModal.addEventListener('click', function (e) { if (e.target === webServModal) webServModal.classList.remove('open'); });
+
     if (webProjForm && typeof getWebsiteProjects === 'function') {
-        webProjForm.addEventListener('submit', function(e) {
+        webProjForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var title = document.getElementById('webProjectTitle').value;
             var category = document.getElementById('webProjectCategory').value;
             var description = document.getElementById('webProjectDescription').value;
             var fileInput = document.getElementById('webProjectImage');
             var file = fileInput && fileInput.files[0];
-            var image = file ? null : 'https://via.placeholder.com/600x400?text=' + encodeURIComponent(title);
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function() {
-                    var list = getWebsiteProjects().slice();
-                    list.push({ id: Date.now(), title: title, category: category, categorySecondary: '', image: reader.result, description: description });
-                    setWebsiteProjects(list).then(function () {
-                        renderAdminWebsiteProjects();
-                        webProjForm.reset();
-                        webProjModal.classList.remove('open');
-                    }).catch(function () {
-                        alert('Could not save project.');
-                    });
-                };
-                reader.readAsDataURL(file);
-            } else {
+            function saveWebProj(image) {
                 var list = getWebsiteProjects().slice();
                 list.push({ id: Date.now(), title: title, category: category, categorySecondary: '', image: image, description: description });
-                setWebsiteProjects(list).then(function () {
-                    renderAdminWebsiteProjects();
-                    webProjForm.reset();
-                    webProjModal.classList.remove('open');
-                }).catch(function () {
-                    alert('Could not save project.');
-                });
+                setWebsiteProjects(list).then(function () { renderAdminWebsiteProjects(); webProjForm.reset(); webProjModal.classList.remove('open'); }).catch(function () { alert('Could not save project.'); });
             }
+            if (file) { var reader = new FileReader(); reader.onload = function () { saveWebProj(reader.result); }; reader.readAsDataURL(file); }
+            else { saveWebProj('https://via.placeholder.com/600x400?text=' + encodeURIComponent(title)); }
         });
     }
+
     if (webServForm && typeof getWebsiteServices === 'function') {
-        webServForm.addEventListener('submit', function(e) {
+        webServForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var title = document.getElementById('webServiceTitle').value;
             var category = document.getElementById('webServiceCategory').value;
             var description = document.getElementById('webServiceDescription').value;
             var fileInput = document.getElementById('webServiceImage');
             var file = fileInput && fileInput.files[0];
-            var image = file ? null : 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(title);
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function() {
-                    var list = getWebsiteServices().slice();
-                    list.push({ id: Date.now(), title: title, category: category, image: reader.result, description: description });
-                    setWebsiteServices(list).then(function () {
-                        renderAdminWebsiteServices();
-                        webServForm.reset();
-                        webServModal.classList.remove('open');
-                    }).catch(function () {
-                        alert('Could not save service.');
-                    });
-                };
-                reader.readAsDataURL(file);
-            } else {
+            function saveWebServ(image) {
                 var list = getWebsiteServices().slice();
                 list.push({ id: Date.now(), title: title, category: category, image: image, description: description });
-                setWebsiteServices(list).then(function () {
-                    renderAdminWebsiteServices();
-                    webServForm.reset();
-                    webServModal.classList.remove('open');
-                }).catch(function () {
-                    alert('Could not save service.');
-                });
+                setWebsiteServices(list).then(function () { renderAdminWebsiteServices(); webServForm.reset(); webServModal.classList.remove('open'); }).catch(function () { alert('Could not save service.'); });
             }
-        });
-    }
-    var lastLoginEl = document.getElementById('adminLastLogin');
-    if (lastLoginEl) {
-        var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-        lastLoginEl.textContent = cu && cu.loginTime ? new Date(cu.loginTime).toLocaleString() : '—';
-    }
-    var dueDaysEl = document.getElementById('settingInvoiceDueDays');
-    var emailNotifEl = document.getElementById('settingEmailNotifications');
-    var remindersEl = document.getElementById('settingInvoiceReminders');
-    var admSet = getStored('adminSettings', {});
-    if (dueDaysEl && admSet.invoiceDueDays) dueDaysEl.value = admSet.invoiceDueDays;
-    if (emailNotifEl) emailNotifEl.checked = admSet.emailNotif === '1' || admSet.emailNotif === true;
-    if (remindersEl) remindersEl.checked = admSet.invoiceReminders === '1' || admSet.invoiceReminders === true;
-    var settingsSaveBtn = document.getElementById('adminSettingsSave');
-    if (settingsSaveBtn) {
-        settingsSaveBtn.addEventListener('click', function() {
-            var dueDays = document.getElementById('settingInvoiceDueDays');
-            var emailNotif = document.getElementById('settingEmailNotifications');
-            var reminders = document.getElementById('settingInvoiceReminders');
-            var s = getStored('adminSettings', {});
-            if (dueDays) s.invoiceDueDays = dueDays.value;
-            if (emailNotif) s.emailNotif = emailNotif.checked ? '1' : '0';
-            if (reminders) s.invoiceReminders = reminders.checked ? '1' : '0';
-            setStored('adminSettings', s);
-            alert('Settings saved.');
+            if (file) { var reader = new FileReader(); reader.onload = function () { saveWebServ(reader.result); }; reader.readAsDataURL(file); }
+            else { saveWebServ('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title)); }
         });
     }
 
-    // Blog post modal handlers (admin content)
+    // Blog post modal
     var addBlogBtn = document.getElementById('adminAddBlogPostBtn');
     var blogModal = document.getElementById('adminBlogPostModal');
     var blogForm = document.getElementById('adminBlogPostForm');
-    if (addBlogBtn && blogModal) addBlogBtn.addEventListener('click', function() {
+    if (addBlogBtn && blogModal) addBlogBtn.addEventListener('click', function () {
         if (blogForm) blogForm.reset();
         var dateEl = document.getElementById('blogPostDate');
         if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
         blogModal.classList.add('open');
     });
-    document.querySelectorAll('[data-close=\"adminBlogPostModal\"]').forEach(function(el) {
-        el.addEventListener('click', function() { if (blogModal) blogModal.classList.remove('open'); });
-    });
-    if (blogModal) blogModal.addEventListener('click', function(e) { if (e.target === blogModal) blogModal.classList.remove('open'); });
+    document.querySelectorAll('[data-close="adminBlogPostModal"]').forEach(function (el) { el.addEventListener('click', function () { if (blogModal) blogModal.classList.remove('open'); }); });
+    if (blogModal) blogModal.addEventListener('click', function (e) { if (e.target === blogModal) blogModal.classList.remove('open'); });
     if (blogForm && typeof getWebsiteBlogPosts === 'function') {
-        blogForm.addEventListener('submit', function(e) {
+        blogForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var title = document.getElementById('blogPostTitle').value;
             var date = document.getElementById('blogPostDate').value;
             var excerpt = document.getElementById('blogPostExcerpt').value;
             var fileInput = document.getElementById('blogPostImage');
             var file = fileInput && fileInput.files[0];
-            function add(image) {
+            function addPost(image) {
                 var posts = getWebsiteBlogPosts().slice();
                 posts.push({ id: Date.now(), title: title, date: date, excerpt: excerpt, image: image });
-                setWebsiteBlogPosts(posts).then(function () {
-                    renderAdminBlogPosts();
-                    blogForm.reset();
-                    blogModal.classList.remove('open');
-                }).catch(function () {
-                    alert('Could not save post.');
-                });
+                setWebsiteBlogPosts(posts).then(function () { renderAdminBlogPosts(); blogForm.reset(); blogModal.classList.remove('open'); }).catch(function () { alert('Could not save post.'); });
             }
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function() { add(reader.result); };
-                reader.readAsDataURL(file);
-            } else {
-                add('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title));
-            }
+            if (file) { var reader = new FileReader(); reader.onload = function () { addPost(reader.result); }; reader.readAsDataURL(file); }
+            else { addPost('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title)); }
+        });
+    }
+
+    var lastLoginEl = document.getElementById('adminLastLogin');
+    if (lastLoginEl) {
+        var cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+        lastLoginEl.textContent = cu && cu.loginTime ? new Date(cu.loginTime).toLocaleString() : '\u2014';
+    }
+
+    var admSet = getStored('adminSettings', {});
+    var dueDaysEl = document.getElementById('settingInvoiceDueDays');
+    var emailNotifEl = document.getElementById('settingEmailNotifications');
+    var remindersEl = document.getElementById('settingInvoiceReminders');
+    if (dueDaysEl && admSet.invoiceDueDays) dueDaysEl.value = admSet.invoiceDueDays;
+    if (emailNotifEl) emailNotifEl.checked = admSet.emailNotif === '1' || admSet.emailNotif === true;
+    if (remindersEl) remindersEl.checked = admSet.invoiceReminders === '1' || admSet.invoiceReminders === true;
+    var settingsSaveBtn = document.getElementById('adminSettingsSave');
+    if (settingsSaveBtn) {
+        settingsSaveBtn.addEventListener('click', function () {
+            var s = getStored('adminSettings', {});
+            var dd = document.getElementById('settingInvoiceDueDays');
+            var en = document.getElementById('settingEmailNotifications');
+            var re = document.getElementById('settingInvoiceReminders');
+            if (dd) s.invoiceDueDays = dd.value;
+            if (en) s.emailNotif = en.checked ? '1' : '0';
+            if (re) s.invoiceReminders = re.checked ? '1' : '0';
+            setStored('adminSettings', s);
+            alert('Settings saved.');
         });
     }
 }
 
-// ===== HELPER FUNCTIONS =====
-function viewProjectDetails(projectId) {
-    var raw = getStored('clientProjects', []);
-    var projects = Array.isArray(raw) ? raw : [];
-    var p = projects.find(function(proj) { return proj.id === projectId || String(proj.id) === String(projectId); });
-    var modal = document.getElementById('clientProjectViewModal');
-    var content = document.getElementById('clientProjectViewContent');
-    var actions = document.getElementById('clientProjectViewActions');
-    if (!modal || !content) return;
-    if (!p) {
-        content.innerHTML = '<p>Project not found.</p>';
-        actions.innerHTML = '';
-    } else {
-        var dl = p.deadline || p.completionDate || '-';
-        var ups = (getStored('adminClientProgressUpdates', []) || []).filter(function (u) {
-            return String(u.projectId) === String(projectId) || (u.projectName && u.projectName === p.name);
-        });
-        var upRows = ups.length
-            ? ups
-                  .slice()
-                  .reverse()
-                  .map(function (u) {
-                      return (
-                          '<tr><td colspan="2">' +
-                          '<div class="update-item">' +
-                          '<i class="fas fa-bell"></i>' +
-                          '<div class="update-content">' +
-                          '<strong>' + (u.at ? new Date(u.at).toLocaleString() + ': ' : '') + '</strong>' +
-                          '<span>' + (u.message || '') + '</span>' +
-                          '</div>' +
-                          '</div>' +
-                          '</dress></tr>'
-                      );
-                  }).join('')
-            : '<tr><td colspan="2" style="text-align:center;color:#6b7280;">No updates yet</dress></tr>';
-    }
+// ===== WEBSITE CONTENT RENDERS =====
+
+function renderAdminWebsiteProjects() {
+    var tbody = document.getElementById('adminWebsiteProjectsBody');
+    if (!tbody || typeof getWebsiteProjects !== 'function') return;
+    var list = getWebsiteProjects();
+    tbody.innerHTML = list.length ? list.map(function (p) {
+        var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
+        var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
+            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
 }
 
-function downloadDocument(docName) {
-    const docs = getStored('clientDocuments', []);
-    const doc = docs.find(function(d) { return d.name === docName; });
-    if (doc && doc.data) {
-        try {
-            const a = document.createElement('a');
-            a.href = doc.data;
-            a.download = docName;
-            a.click();
-        } catch (e) {
-            window.open(doc.data, '_blank');
-        }
-    } else {
-        const blob = new Blob(['Placeholder for ' + docName + '. Uploaded documents will download here.'], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = docName.replace(/\.pdf$/i, '') + '-details.txt';
-        a.click();
-        URL.revokeObjectURL(a.href);
-    }
-}
-function downloadClientInvoice(invoiceNumber) {
-    const invoices = getStored('clientInvoices', []);
-    const inv = invoices.find(function(i) { return i.number === invoiceNumber; });
-    if (!inv) return;
-    const text = 'Invoice ' + (inv.number || '') + '\nAmount: ' + (inv.amount || '') + '\nDate: ' + (inv.date || '') + '\nStatus: ' + (inv.status || '') + '\n' + (inv.project ? 'Project: ' + inv.project + '\n' : '');
-    const blob = new Blob([text], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'invoice-' + (inv.number || 'inv') + '.txt';
-    a.click();
-    URL.revokeObjectURL(a.href);
+function renderAdminWebsiteServices() {
+    var tbody = document.getElementById('adminWebsiteServicesBody');
+    if (!tbody || typeof getWebsiteServices !== 'function') return;
+    var list = getWebsiteServices();
+    tbody.innerHTML = list.length ? list.map(function (s) {
+        var desc = (s.description || '').slice(0, 50) + ((s.description || '').length > 50 ? '...' : '');
+        var img = s.image ? '<img src="' + escapeHtml(s.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        return '<tr><td>' + img + '</td><td>' + escapeHtml(s.title || '') + '</td><td>' + escapeHtml(s.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
+            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan="5">No website services. Add one above.</td></tr>';
 }
 
-function viewInvoice(invoiceNumber) {
-    const path = window.location.pathname || '';
-    if (path.includes('/client/')) {
-        const invoices = getStored('clientInvoices', []);
-        const inv = invoices.find(function(i) { return i.number === invoiceNumber; });
-        const content = document.getElementById('clientInvoiceViewContent');
-        const modal = document.getElementById('clientInvoiceViewModal');
-        if (content && modal) {
-            content.innerHTML = inv ? (
-                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</dress></tr>' +
-                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</dress></tr>' +
-                '<tr><th>Date</th><td>' + (inv.date || '') + '</dress></tr>' +
-                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></dress></tr>' +
-                (inv.client ? '<tr><th>Client</th><td>' + inv.client + '</dress></tr>' : '') +
-                (inv.project ? '<tr><th>Project</th><td>' + inv.project + '</dress></tr>' : '') +
-                '</table>'
-            ) : '<p>Invoice not found.</p>';
-            const actionsEl = document.getElementById('clientInvoiceViewActions');
-            if (actionsEl && inv) {
-                actionsEl.innerHTML = '<button type="button" class="btn btn-primary" onclick="downloadClientInvoice(\'' + (inv.number || '') + '\')"><i class="fas fa-download"></i> Download Invoice</button>';
-            } else if (actionsEl) actionsEl.innerHTML = '';
-            modal.classList.add('open');
-        }
-    } else if (path.includes('/admin/')) {
-        const invoices = getStored('portalInvoices', []);
-        const inv = invoices.find(function(i) { return i.number === invoiceNumber; });
-        const content = document.getElementById('adminInvoiceViewContent');
-        const modal = document.getElementById('adminInvoiceViewModal');
-        if (content && modal) {
-            content.innerHTML = inv ? (
-                '<table class="invoice-view-table"><tr><th>Invoice #</th><td>' + (inv.number || '') + '</dress></tr>' +
-                '<tr><th>Client</th><td>' + (inv.client || '') + '</dress></tr>' +
-                '<tr><th>Project</th><td>' + (inv.project || '-') + '</dress></tr>' +
-                '<tr><th>Amount</th><td>' + (inv.amount || '') + '</dress></tr>' +
-                '<tr><th>Due Date</th><td>' + (inv.dueDate || '') + '</dress></tr>' +
-                '<tr><th>Status</th><td><span class="status-badge status-' + (inv.status || 'pending').toLowerCase() + '">' + (inv.status || '') + '</span></dress></tr></table>'
-            ) : '<p>Invoice not found.</p>';
-            modal.classList.add('open');
-        }
-    }
+window.deleteWebsiteProject = function (id) {
+    if (typeof getWebsiteProjects !== 'function' || typeof setWebsiteProjects !== 'function') return;
+    if (!confirm('Delete this website project?')) return;
+    var list = getWebsiteProjects().filter(function (p) { return String(p.id) !== String(id); });
+    setWebsiteProjects(list).then(renderAdminWebsiteProjects).catch(function () { alert('Could not save changes.'); });
+};
+
+window.deleteWebsiteService = function (id) {
+    if (typeof getWebsiteServices !== 'function' || typeof setWebsiteServices !== 'function') return;
+    if (!confirm('Delete this website service?')) return;
+    var list = getWebsiteServices().filter(function (s) { return String(s.id) !== String(id); });
+    setWebsiteServices(list).then(renderAdminWebsiteServices).catch(function () { alert('Could not save changes.'); });
+};
+
+function renderAdminBlogPosts() {
+    var tbody = document.getElementById('adminBlogPostsBody');
+    if (!tbody || typeof getWebsiteBlogPosts !== 'function') return;
+    var posts = getWebsiteBlogPosts();
+    tbody.innerHTML = posts.length ? posts.map(function (p) {
+        var ex = (p.excerpt || '').slice(0, 50) + ((p.excerpt || '').length > 50 ? '...' : '');
+        var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.date || '') + '</td><td>' + escapeHtml(ex) + '</td>' +
+            '<td><button type="button" class="btn-icon" onclick="deleteBlogPost(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+    }).join('') : '<tr><td colspan="5">No blog posts. Add one above.</td></tr>';
 }
 
-function toggleTask(element, taskId) {
-    element.classList.toggle('completed');
-    alert(`Task #${taskId} status updated`);
-}
+window.deleteBlogPost = function (id) {
+    if (typeof getWebsiteBlogPosts !== 'function' || typeof setWebsiteBlogPosts !== 'function') return;
+    if (!confirm('Delete this blog post?')) return;
+    var posts = getWebsiteBlogPosts().filter(function (p) { return String(p.id) !== String(id); });
+    setWebsiteBlogPosts(posts).then(renderAdminBlogPosts).catch(function () { alert('Could not save changes.'); });
+};
 
-function editTimeEntry(entryId) {
-    const entries = getStored('employeeTimeEntries', []);
-    const entry = entries[entryId];
-    if (!entry) return;
-    const modal = document.getElementById('employeeTimeEditModal');
-    const idxEl = document.getElementById('timeEditIndex');
-    const dateEl = document.getElementById('timeEditDate');
-    const projectEl = document.getElementById('timeEditProject');
-    const descEl = document.getElementById('timeEditDescription');
-    const hoursEl = document.getElementById('timeEditHours');
-    if (idxEl) idxEl.value = entryId;
-    if (dateEl) dateEl.value = entry.date || '';
-    if (projectEl) projectEl.value = entry.project || '';
-    if (descEl) descEl.value = entry.description || '';
-    if (hoursEl) hoursEl.value = entry.hours || '';
-    if (modal) modal.classList.add('open');
-}
+// ===== ANALYTICS =====
 
-document.addEventListener('DOMContentLoaded', function() {
-    const addFundsBtn = document.getElementById('addFundsBtn');
-    const addFundsModal = document.getElementById('clientAddFundsModal');
-    const addFundsForm = document.getElementById('clientAddFundsForm');
-    
-    if (addFundsBtn && addFundsModal && addFundsForm) {
-        addFundsBtn.addEventListener('click', function() {
-            addFundsModal.classList.add('open');
-        });
-        
-        document.querySelectorAll('[data-close="clientAddFundsModal"]').forEach(function(el) {
-            el.addEventListener('click', function() {
-                addFundsModal.classList.remove('open');
-            });
-        });
-        
-        addFundsModal.addEventListener('click', function(e) {
-            if (e.target === addFundsModal) {
-                addFundsModal.classList.remove('open');
-            }
-        });
-        
-        addFundsForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const amount = document.getElementById('fundsAmount').value;
-            const paymentMethod = document.getElementById('fundsPaymentMethod').value;
-            const transactionId = document.getElementById('fundsTransactionId').value;
-            const notes = document.getElementById('fundsNotes').value;
-            
-            // Get current project
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectId = urlParams.get('projectId');
-            
-            if (projectId) {
-                const projects = getStored('clientProjects', []);
-                const project = projects.find(p => p.id === projectId);
-                
-                if (project) {
-                    // Update project with new funds
-                    const currentPaid = parseFloat(project.moneyPaid || '0').replace(/[^0-9.]/g, '');
-                    const newPaid = currentPaid + parseFloat(amount);
-                    const currentRemaining = parseFloat(project.moneyRemaining || '0').replace(/[^0-9.]/g, '');
-                    const newRemaining = currentRemaining + parseFloat(amount);
-                    
-                    project.moneyPaid = 'KES ' + newPaid.toLocaleString();
-                    project.moneyRemaining = 'KES ' + newRemaining.toLocaleString();
-                    
-                    // Update stored projects
-                    const updatedProjects = projects.map(p => p.id === projectId ? project : p);
-                    store('clientProjects', updatedProjects);
-                    
-                    // Add to transactions
-                    const transactions = getStored('clientTransactions', []);
-                    transactions.push({
-                        id: Date.now(),
-                        projectId: projectId,
-                        projectName: project.name,
-                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
-                        paymentMethod: paymentMethod,
-                        transactionId: transactionId,
-                        notes: notes,
-                        date: new Date().toISOString(),
-                        type: 'payment'
-                    });
-                    store('clientTransactions', transactions);
-                    
-                    // Show success message
-                    alert('Funds added successfully! Amount: KES ' + parseFloat(amount).toLocaleString());
-                    
-                    // Close modal and refresh project details
-                    addFundsModal.classList.remove('open');
-                    addFundsForm.reset();
-                    viewProjectDetails(projectId);
-                }
-            }
-        });
-    }
-});
-
-// Admin Request Funds functionality
-const requestFundsBtn = document.getElementById('requestFundsBtn');
-const requestFundsModal = document.getElementById('adminRequestFundsModal');
-const requestFundsForm = document.getElementById('adminRequestFundsForm');
-
-if (requestFundsBtn && requestFundsModal && requestFundsForm) {
-    requestFundsBtn.addEventListener('click', function() {
-        requestFundsModal.classList.add('open');
+var adminChartsInited = false;
+function initAdminCharts() {
+    if (typeof Chart === 'undefined' || adminChartsInited) return;
+    var lineCtx = document.getElementById('chartLine');
+    var pieCtx = document.getElementById('chartPie');
+    var barCtx = document.getElementById('chartBar');
+    if (!lineCtx || !pieCtx || !barCtx) return;
+    adminChartsInited = true;
+    new Chart(lineCtx, {
+        type: 'line',
+        data: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], datasets: [{ label: 'Revenue ($K)', data: [], borderColor: '#20c4b4', fill: true, backgroundColor: 'rgba(32,196,180,0.1)' }] },
+        options: { responsive: true, maintainAspectRatio: false }
     });
-    
-    document.querySelectorAll('[data-close="adminRequestFundsModal"]').forEach(function(el) {
-        el.addEventListener('click', function() {
-            requestFundsModal.classList.remove('open');
-        });
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: { labels: ['Active','Review','Completed'], datasets: [{ data: [], backgroundColor: ['#20c4b4','#ffd43b','#51cf66'] }] },
+        options: { responsive: true, maintainAspectRatio: false }
     });
-    
-    requestFundsModal.addEventListener('click', function(e) {
-        if (e.target === requestFundsModal) {
-            requestFundsModal.classList.remove('open');
-        }
-    });
-    
-    requestFundsForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const projectSelect = document.getElementById('requestFundsProject');
-        const projectId = projectSelect.getAttribute('data-project-id');
-        const amount = document.getElementById('requestFundsAmount').value;
-        const reason = document.getElementById('requestFundsReason').value;
-        const description = document.getElementById('requestFundsDescription').value;
-        const dueDate = document.getElementById('requestFundsDueDate').value;
-        
-        if (projectId && amount && reason && description) {
-            const projects = getStored('portalProjects', []);
-            const project = projects.find(p => String(p.id) === projectId);
-            
-            if (project) {
-                // Add to fund requests
-                const requests = getStored('adminFundRequests', []);
-                const request = {
-                    id: Date.now(),
-                    projectId: projectId,
-                    projectName: project.name,
-                    clientName: project.client,
-                    clientEmail: project.clientEmail || '',
-                    amount: 'KSH ' + parseFloat(amount).toLocaleString(),
-                    amountValue: parseFloat(amount),
-                    reason: reason,
-                    description: description,
-                    dueDate: dueDate,
-                    date: new Date().toISOString(),
-                    status: 'pending'
-                };
-                requests.push(request);
-                store('adminFundRequests', requests);
-                
-                // Add to client notifications
-                const clientNotifications = getStored('clientNotifications', []);
-                clientNotifications.push({
-                    id: Date.now(),
-                    type: 'fund_request',
-                    title: 'Fund Request - ' + project.name,
-                    message: `A fund request of KSH ${parseFloat(amount).toLocaleString()} has been sent for ${project.name}. Reason: ${reason}. Due date: ${dueDate}.`,
-                    amount: amount,
-                    projectName: project.name,
-                    clientName: project.client,
-                    date: new Date().toISOString(),
-                    read: false
-                });
-                store('clientNotifications', clientNotifications);
-                
-                // Add to admin messages for tracking
-                const messages = getStored('portalMessages', []);
-                messages.push({
-                    from: 'admin@aisconcepts.com',
-                    to: project.clientEmail || 'client',
-                    project: project.name,
-                    subject: `Fund Request - KSH ${parseFloat(amount).toLocaleString()}`,
-                    body: `Dear ${project.client},\n\nWe are requesting funds of KSH ${parseFloat(amount).toLocaleString()} for the project "${project.name}".\n\nReason: ${reason}\nDescription: ${description}\nDue Date: ${dueDate}\n\nPlease process this request at your earliest convenience.\n\nThank you,\nAIS Concepts Team`,
-                    timestamp: new Date().toISOString(),
-                    type: 'fund_request'
-                });
-                store('portalMessages', messages);
-                
-                // Show success message
-                alert(`Fund request of KSH ${parseFloat(amount).toLocaleString()} sent to ${project.client}! The client will be notified.`);
-                
-                // Close modal and reset form
-                requestFundsModal.classList.remove('open');
-                requestFundsForm.reset();
-                
-                // Refresh notifications badge
-                if (typeof refreshNotificationsBadge === 'function') {
-                    refreshNotificationsBadge();
-                }
-            }
-        }
+    new Chart(barCtx, {
+        type: 'bar',
+        data: { labels: ['Users','Projects','Invoices'], datasets: [{ label: 'Count', data: [], backgroundColor: '#20c4b4' }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
     });
 }
 
-// Function to update admin dashboard statistics dynamically
+// ===== STATS =====
+
 function updateAdminDashboardStats() {
-    const projects = getStored('portalProjects', []);
-    const users = getStored('portalUsers', []);
-    const assignments = getStored('assignments', []);
-    const invoices = getStored('portalInvoices', []);
-    const documents = getStored('clientDocuments', []);
-    const tasks = getStored('employeeTasks', []);
-    
-    // Calculate total clients (unique client emails from projects)
-    const uniqueClients = new Set(projects.map(p => p.client).filter(Boolean));
-    const totalClientsEl = document.getElementById('totalClients');
+    var projects = getStored('portalProjects', []);
+    var users = getStored('portalUsers', []);
+    var invoices = getStored('portalInvoices', []);
+    var documents = getStored('clientDocuments', []);
+    var tasks = getStored('employeeTasks', []);
+    var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
+    var totalClientsEl = document.getElementById('totalClients');
     if (totalClientsEl) totalClientsEl.textContent = String(uniqueClients.size);
-    
-    // Calculate active projects
-    const activeProjects = projects.filter(p => p.status === 'ongoing' || p.status === 'active');
-    const activeProjectsEl = document.getElementById('activeProjects');
+    var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
+    var activeProjectsEl = document.getElementById('activeProjects');
     if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects.length);
-    
-    // Calculate pending tasks
-    const pendingTasks = tasks.filter(t => t.status === 'pending' || !t.status);
-    const pendingTasksEl = document.getElementById('pendingTasks');
+    var pendingTasks = tasks.filter(function (t) { return t.status === 'pending' || !t.status; });
+    var pendingTasksEl = document.getElementById('pendingTasks');
     if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTasks.length);
-    
-    // Calculate total revenue from paid invoices
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid' || inv.status === 'Paid');
-    const totalRevenue = paidInvoices.reduce((sum, inv) => {
-        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
-        return sum + amount;
-    }, 0);
-    const totalRevenueEl = document.getElementById('totalRevenue');
+    var paidInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'paid'; });
+    var totalRevenue = paidInvoices.reduce(function (sum, inv) { return sum + (parseFloat((inv.amount || '').replace(/[^0-9.]/g, '')) || 0); }, 0);
+    var totalRevenueEl = document.getElementById('totalRevenue');
     if (totalRevenueEl) totalRevenueEl.textContent = '$' + totalRevenue.toLocaleString();
-    
-    // Calculate total documents
-    const totalDocumentsEl = document.getElementById('totalDocuments');
+    var totalDocumentsEl = document.getElementById('totalDocuments');
     if (totalDocumentsEl) totalDocumentsEl.textContent = String(documents.length);
-    
-    // Calculate team members (approved users)
-    const teamMembers = users.filter(u => u.approvalStatus === 'approved');
-    const totalUsersEl = document.getElementById('totalUsers');
+    var teamMembers = users.filter(function (u) { return u.approvalStatus === 'approved'; });
+    var totalUsersEl = document.getElementById('totalUsers');
     if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
-    
-    // Calculate pending approvals
-    const pendingApprovals = users.filter(u => u.approvalStatus === 'pending');
-    const pendingApprovalsEl = document.getElementById('pendingApprovals');
+    var pendingApprovals = users.filter(function (u) { return u.approvalStatus === 'pending'; });
+    var pendingApprovalsEl = document.getElementById('pendingApprovals');
     if (pendingApprovalsEl) pendingApprovalsEl.textContent = String(pendingApprovals.length);
-    
-    // Active sites (can be calculated from projects with locations)
-    const activeSites = projects.filter(p => p.location || p.site);
-    const activeSitesEl = document.getElementById('activeSites');
+    var activeSites = projects.filter(function (p) { return p.location || p.site; });
+    var activeSitesEl = document.getElementById('activeSites');
     if (activeSitesEl) activeSitesEl.textContent = String(activeSites.length);
 }
 
-// Function to update financial summary
-function updateFinancialSummary() {
-    const invoices = getStored('portalInvoices', []);
-    const projects = getStored('portalProjects', []);
-    
-    // Calculate total revenue
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid' || inv.status === 'Paid');
-    const totalRevenue = paidInvoices.reduce((sum, inv) => {
-        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
-        return sum + amount;
-    }, 0);
-    const totalRevenueAmountEl = document.getElementById('totalRevenueAmount');
-    if (totalRevenueAmountEl) totalRevenueAmountEl.textContent = '$' + totalRevenue.toLocaleString();
-    
-    // Calculate pending invoices
-    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
-    const pendingInvoiceAmount = pendingInvoices.reduce((sum, inv) => {
-        const amount = parseFloat(inv.amount?.replace(/[^0-9.]/g, '')) || 0;
-        return sum + amount;
-    }, 0);
-    const pendingInvoiceAmountEl = document.getElementById('pendingInvoiceAmount');
-    if (pendingInvoiceAmountEl) pendingInvoiceAmountEl.textContent = '$' + pendingInvoiceAmount.toLocaleString();
-    
-    // Calculate expenses (from project budgets or expenses data)
-    const totalExpenses = projects.reduce((sum, project) => {
-        const expenses = parseFloat(project.expenses?.replace(/[^0-9.]/g, '')) || 0;
-        return sum + expenses;
-    }, 0);
-    const totalExpensesEl = document.getElementById('totalExpenses');
-    if (totalExpensesEl) totalExpensesEl.textContent = '$' + totalExpenses.toLocaleString();
+function updateCRMStats() {
+    var projects = getStored('portalProjects', []);
+    var invoices = getStored('portalInvoices', []);
+    var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
+    var totalClientsCountEl = document.getElementById('totalClientsCount');
+    if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
+    var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
+    var clientActiveProjectsEl = document.getElementById('clientActiveProjects');
+    if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
+    var pendingInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'pending'; });
+    var pendingInvoicesEl = document.getElementById('pendingInvoices');
+    if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
 }
 
-// Task Management Functions
+// ===== TASK MANAGEMENT =====
+
 function setupTaskManagement() {
-    const addTaskBtn = document.getElementById('adminAddTaskBtn');
-    const taskModal = document.getElementById('adminAddTaskModal');
-    const taskForm = document.getElementById('adminAddTaskForm');
-    const tasksTableBody = document.getElementById('adminTasksTableBody');
-    const taskFilters = document.querySelectorAll('.task-filters .filter-btn');
-    
+    var addTaskBtn = document.getElementById('adminAddTaskBtn');
+    var taskModal = document.getElementById('adminAddTaskModal');
+    var taskForm = document.getElementById('adminAddTaskForm');
+    var tasksTableBody = document.getElementById('adminTasksTableBody');
+    var taskFilters = document.querySelectorAll('.task-filters .filter-btn');
     if (addTaskBtn && taskModal) {
-        addTaskBtn.addEventListener('click', function() {
-            taskForm.reset();
-            populateTaskDropdowns();
-            taskModal.classList.add('open');
-        });
+        addTaskBtn.addEventListener('click', function () { if (taskForm) taskForm.reset(); populateTaskDropdowns(); taskModal.classList.add('open'); });
     }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminAddTaskModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            taskModal.classList.remove('open'); 
-        });
-    });
-    
-    if (taskModal) {
-        taskModal.addEventListener('click', function(e) { 
-            if (e.target === taskModal) taskModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    document.querySelectorAll('[data-close="adminAddTaskModal"]').forEach(function (el) { el.addEventListener('click', function () { taskModal.classList.remove('open'); }); });
+    if (taskModal) taskModal.addEventListener('click', function (e) { if (e.target === taskModal) taskModal.classList.remove('open'); });
     if (taskForm) {
-        taskForm.addEventListener('submit', function(e) {
+        taskForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const task = {
+            var task = {
                 id: Date.now(),
                 title: document.getElementById('taskTitle').value,
                 description: document.getElementById('taskDescription').value,
@@ -4079,161 +2756,114 @@ function setupTaskManagement() {
                 project: document.getElementById('taskProject').value,
                 priority: document.getElementById('taskPriority').value,
                 dueDate: document.getElementById('taskDueDate').value,
-                status: 'pending',
-                createdDate: new Date().toISOString()
+                status: 'pending', createdDate: new Date().toISOString()
             };
-            
-            const tasks = getStored('adminTasks', []);
+            var tasks = getStored('adminTasks', []);
             tasks.push(task);
             setStored('adminTasks', tasks);
-            
             renderTasks(tasksTableBody, tasks);
             taskModal.classList.remove('open');
             taskForm.reset();
         });
     }
-    
-    // Filter functionality
-    taskFilters.forEach(filter => {
-        filter.addEventListener('click', function() {
-            taskFilters.forEach(f => f.classList.remove('active'));
-            this.classList.add('active');
-            const filterValue = this.getAttribute('data-filter');
-            const tasks = getStored('adminTasks', []);
-            const filteredTasks = filterValue === 'all' ? tasks : tasks.filter(task => task.status === filterValue);
-            renderTasks(tasksTableBody, filteredTasks);
+    taskFilters.forEach(function (filter) {
+        filter.addEventListener('click', function () {
+            taskFilters.forEach(function (f) { f.classList.remove('active'); });
+            filter.classList.add('active');
+            var filterValue = filter.getAttribute('data-filter');
+            var tasks = getStored('adminTasks', []);
+            renderTasks(tasksTableBody, filterValue === 'all' ? tasks : tasks.filter(function (t) { return t.status === filterValue; }));
         });
     });
-    
-    // Initial render
-    const tasks = getStored('adminTasks', []);
-    renderTasks(tasksTableBody, tasks);
+    renderTasks(tasksTableBody, getStored('adminTasks', []));
 }
 
 function populateTaskDropdowns() {
-    const users = getStored('portalUsers', []);
-    const projects = getStored('portalProjects', []);
-    
-    const assigneeSelect = document.getElementById('taskAssignee');
-    const projectSelect = document.getElementById('taskProject');
-    
+    var users = getStored('portalUsers', []);
+    var projects = getStored('portalProjects', []);
+    var assigneeSelect = document.getElementById('taskAssignee');
+    var projectSelect = document.getElementById('taskProject');
     if (assigneeSelect) {
         assigneeSelect.innerHTML = '<option value="">Select team member</option>' +
-            users.filter(user => user.role === 'Employee').map(user => 
-                `<option value="${user.email}">${user.name}</option>`
-            ).join('');
+            users.filter(function (u) { return u.role === 'Employee'; }).map(function (u) {
+                return '<option value="' + escapeHtml(u.email) + '">' + escapeHtml(u.name) + '</option>';
+            }).join('');
     }
-    
     if (projectSelect) {
         projectSelect.innerHTML = '<option value="">Select project</option>' +
-            projects.map(project => 
-                `<option value="${project._id || project.id}">${project.name}</option>`
-            ).join('');
+            projects.map(function (p) {
+                return '<option value="' + escapeHtml(String(p._id || p.id)) + '">' + escapeHtml(p.name) + '</option>';
+            }).join('');
     }
+}
+
+function getProjectName(projectId) {
+    var projects = getStored('portalProjects', []);
+    var project = projects.find(function (p) { return String(p.id) == String(projectId); });
+    return project ? project.name : 'Unknown Project';
 }
 
 function renderTasks(tbody, tasks) {
     if (!tbody) return;
-    
-    tbody.innerHTML = tasks.length ? tasks.map(task => `
-        <tr>
-            <td>${task.title}</dress>
-            <td>${task.assignee}</dress>
-            <td>${getProjectName(task.project)}</dress>
-            <td><span class="priority-${task.priority}">${task.priority}</span></dress>
-            <td>${new Date(task.dueDate).toLocaleDateString()}</dress>
-            <td><span class="status-${task.status}">${task.status}</span></dress>
-            <td>
-                <button class="btn-icon" onclick="editTask(${task.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="deleteTask(${task.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="7">No tasks found</dress></tr>';
+    tbody.innerHTML = tasks.length ? tasks.map(function (task) {
+        return '<tr>' +
+            '<td>' + escapeHtml(task.title) + '</td>' +
+            '<td>' + escapeHtml(task.assignee) + '</td>' +
+            '<td>' + escapeHtml(getProjectName(task.project)) + '</td>' +
+            '<td><span class="priority-' + escapeHtml(task.priority) + '">' + escapeHtml(task.priority) + '</span></td>' +
+            '<td>' + new Date(task.dueDate).toLocaleDateString() + '</td>' +
+            '<td><span class="status-' + escapeHtml(task.status) + '">' + escapeHtml(task.status) + '</span></td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editTask(' + task.id + ')" title="Edit"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteTask(' + task.id + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="7">No tasks found</td></tr>';
 }
 
-function getProjectName(projectId) {
-    const projects = getStored('portalProjects', []);
-    const project = projects.find(p => p.id == projectId);
-    return project ? project.name : 'Unknown Project';
-}
-
-window.editTask = function(taskId) {
-    const tasks = getStored('adminTasks', []);
-    const task = tasks.find(t => t.id === taskId);
+window.editTask = function (taskId) {
+    var tasks = getStored('adminTasks', []);
+    var task = tasks.find(function (t) { return t.id === taskId; });
     if (!task) return;
-    
     document.getElementById('taskTitle').value = task.title;
     document.getElementById('taskDescription').value = task.description;
     document.getElementById('taskPriority').value = task.priority;
     document.getElementById('taskDueDate').value = task.dueDate;
-    
     populateTaskDropdowns();
-    setTimeout(() => {
+    setTimeout(function () {
         document.getElementById('taskAssignee').value = task.assignee;
         document.getElementById('taskProject').value = task.project;
     }, 100);
-    
     document.getElementById('adminAddTaskModal').classList.add('open');
 };
 
-window.deleteTask = function(taskId) {
+window.deleteTask = function (taskId) {
     if (!confirm('Delete this task?')) return;
-    
-    const tasks = getStored('adminTasks', []);
-    const updatedTasks = tasks.filter(t => t.id !== taskId);
+    var tasks = getStored('adminTasks', []);
+    var updatedTasks = tasks.filter(function (t) { return t.id !== taskId; });
     setStored('adminTasks', updatedTasks);
-    
-    const tbody = document.getElementById('adminTasksTableBody');
-    renderTasks(tbody, updatedTasks);
+    renderTasks(document.getElementById('adminTasksTableBody'), updatedTasks);
 };
 
-// Document Management Functions
+// ===== DOCUMENT MANAGEMENT =====
+
 function setupDocumentManagement() {
-    const uploadBtn = document.getElementById('adminUploadDocBtn');
-    const uploadModal = document.getElementById('adminUploadDocModal');
-    const uploadForm = document.getElementById('adminUploadDocForm');
-    const docFilters = document.querySelectorAll('.doc-categories .filter-btn');
-    const documentsTableBody = document.getElementById('adminDocumentsTableBody');
-    
+    var uploadBtn = document.getElementById('adminUploadDocBtn');
+    var uploadModal = document.getElementById('adminUploadDocModal');
+    var uploadForm = document.getElementById('adminUploadDocForm');
+    var documentsTableBody = document.getElementById('adminDocumentsTableBody');
+    var docFilters = document.querySelectorAll('.doc-categories .filter-btn');
     if (uploadBtn && uploadModal) {
-        uploadBtn.addEventListener('click', function() {
-            uploadForm.reset();
-            populateProjectDropdown('docProject');
-            uploadModal.classList.add('open');
-        });
+        uploadBtn.addEventListener('click', function () { if (uploadForm) uploadForm.reset(); populateProjectDropdown('docProject'); uploadModal.classList.add('open'); });
     }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminUploadDocModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            uploadModal.classList.remove('open'); 
-        });
-    });
-    
-    if (uploadModal) {
-        uploadModal.addEventListener('click', function(e) { 
-            if (e.target === uploadModal) uploadModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    document.querySelectorAll('[data-close="adminUploadDocModal"]').forEach(function (el) { el.addEventListener('click', function () { uploadModal.classList.remove('open'); }); });
+    if (uploadModal) uploadModal.addEventListener('click', function (e) { if (e.target === uploadModal) uploadModal.classList.remove('open'); });
     if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
+        uploadForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const fileInput = document.getElementById('docFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('Please select a file to upload');
-                return;
-            }
-            
-            const document = {
+            var fileInput = document.getElementById('docFile');
+            var file = fileInput && fileInput.files[0];
+            if (!file) { alert('Please select a file to upload'); return; }
+            var docEntry = {
                 id: Date.now(),
                 name: document.getElementById('docName').value,
                 type: document.getElementById('docType').value,
@@ -4241,151 +2871,97 @@ function setupDocumentManagement() {
                 fileName: file.name,
                 fileSize: formatFileSize(file.size),
                 version: document.getElementById('docVersion').value,
-                uploaded: new Date().toISOString(),
-                fileData: 'file://' + file.name // In real app, this would be uploaded to server
+                uploaded: new Date().toISOString()
             };
-            
-            const documents = getStored('adminDocuments', []);
-            documents.push(document);
-            setStored('adminDocuments', documents);
-            
-            renderDocuments(documentsTableBody, documents);
+            var docs = getStored('adminDocuments', []);
+            docs.push(docEntry);
+            setStored('adminDocuments', docs);
+            renderAdminDocuments(documentsTableBody, docs);
             uploadModal.classList.remove('open');
             uploadForm.reset();
         });
     }
-    
-    // Filter functionality
-    docFilters.forEach(filter => {
-        filter.addEventListener('click', function() {
-            docFilters.forEach(f => f.classList.remove('active'));
-            this.classList.add('active');
-            const filterValue = this.getAttribute('data-filter');
-            const documents = getStored('adminDocuments', []);
-            const filteredDocs = filterValue === 'all' ? documents : documents.filter(doc => doc.type === filterValue);
-            renderDocuments(documentsTableBody, filteredDocs);
+    docFilters.forEach(function (filter) {
+        filter.addEventListener('click', function () {
+            docFilters.forEach(function (f) { f.classList.remove('active'); });
+            filter.classList.add('active');
+            var filterValue = filter.getAttribute('data-filter');
+            var docs = getStored('adminDocuments', []);
+            renderAdminDocuments(documentsTableBody, filterValue === 'all' ? docs : docs.filter(function (d) { return d.type === filterValue; }));
         });
     });
-    
-    // Initial render
-    const documents = getStored('adminDocuments', []);
-    renderDocuments(documentsTableBody, documents);
+    renderAdminDocuments(documentsTableBody, getStored('adminDocuments', []));
 }
 
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    var k = 1024, sizes = ['Bytes','KB','MB','GB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function populateProjectDropdown(selectId) {
-    const projects = getStored('portalProjects', []);
-    const select = document.getElementById(selectId);
-    
+    var projects = getStored('portalProjects', []);
+    var select = document.getElementById(selectId);
     if (select) {
         select.innerHTML = '<option value="">Select project</option>' +
-            projects.map(project => 
-                `<option value="${project._id || project.id}">${project.name}</option>`
-            ).join('');
+            projects.map(function (p) { return '<option value="' + escapeHtml(String(p._id || p.id)) + '">' + escapeHtml(p.name) + '</option>'; }).join('');
     }
-}
-
-function renderDocuments(tbody, documents) {
-    if (!tbody) return;
-    
-    tbody.innerHTML = documents.length ? documents.map(doc => `
-        <tr>
-            <td><i class="fas fa-file-${getFileIcon(doc.type)}"></i> ${doc.name}</dress>
-            <td>${doc.type}</dress>
-            <td>${getProjectName(doc.project)}</dress>
-            <td>${new Date(doc.uploaded).toLocaleDateString()}</dress>
-            <td>${doc.fileSize}</dress>
-            <td>v${doc.version}</dress>
-            <td>
-                <button class="btn-icon" onclick="viewDocument(${doc.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Download">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="btn-icon" onclick="deleteDocument(${doc.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="7">No documents found</dress></tr>';
 }
 
 function getFileIcon(type) {
-    const icons = {
-        'drawings': 'drafting-compass',
-        'contracts': 'file-contract',
-        'permits': 'certificate',
-        'reports': 'file-alt'
-    };
+    var icons = { drawings: 'drafting-compass', contracts: 'file-contract', permits: 'certificate', reports: 'file-alt' };
     return icons[type] || 'alt';
 }
 
-window.viewDocument = function(docId) {
-    alert('View document functionality would open document viewer');
-};
+function renderAdminDocuments(tbody, docs) {
+    if (!tbody) return;
+    tbody.innerHTML = docs.length ? docs.map(function (doc) {
+        return '<tr>' +
+            '<td><i class="fas fa-file-' + escapeHtml(getFileIcon(doc.type)) + '"></i> ' + escapeHtml(doc.name) + '</td>' +
+            '<td>' + escapeHtml(doc.type) + '</td>' +
+            '<td>' + escapeHtml(getProjectName(doc.project)) + '</td>' +
+            '<td>' + new Date(doc.uploaded).toLocaleDateString() + '</td>' +
+            '<td>' + escapeHtml(doc.fileSize) + '</td>' +
+            '<td>v' + escapeHtml(doc.version) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewDocument(' + doc.id + ')" title="View"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="downloadAdminDocument(' + doc.id + ')" title="Download"><i class="fas fa-download"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteDocument(' + doc.id + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="7">No documents found</td></tr>';
+}
 
-window.downloadDocument = function(docId) {
-    const documents = getStored('adminDocuments', []);
-    const doc = documents.find(d => d.id === docId);
-    if (doc) {
-        // In a real app, this would trigger actual file download
-        alert(`Downloading: ${doc.fileName}\nSize: ${doc.fileSize}\nVersion: ${doc.version}`);
-    }
+window.viewDocument = function (docId) { alert('View document functionality would open document viewer'); };
+window.downloadAdminDocument = function (docId) {
+    var docs = getStored('adminDocuments', []);
+    var doc = docs.find(function (d) { return d.id === docId; });
+    if (doc) alert('Downloading: ' + doc.fileName + '\nSize: ' + doc.fileSize + '\nVersion: ' + doc.version);
 };
-
-window.deleteDocument = function(docId) {
+window.deleteDocument = function (docId) {
     if (!confirm('Delete this document?')) return;
-    
-    const documents = getStored('adminDocuments', []);
-    const updatedDocs = documents.filter(doc => doc.id !== docId);
+    var docs = getStored('adminDocuments', []);
+    var updatedDocs = docs.filter(function (d) { return d.id !== docId; });
     setStored('adminDocuments', updatedDocs);
-    
-    const tbody = document.getElementById('adminDocumentsTableBody');
-    renderDocuments(tbody, updatedDocs);
+    renderAdminDocuments(document.getElementById('adminDocumentsTableBody'), updatedDocs);
 };
 
-// Design & Drafting Functions
+// ===== DESIGN MANAGEMENT =====
+
 function setupDesignManagement() {
-    const addDesignBtn = document.getElementById('adminAddDesignBtn');
-    const designModal = document.getElementById('adminAddDesignModal');
-    const designForm = document.getElementById('adminAddDesignForm');
-    const designsTableBody = document.getElementById('adminDesignTableBody');
-    
+    var addDesignBtn = document.getElementById('adminAddDesignBtn');
+    var designModal = document.getElementById('adminAddDesignModal');
+    var designForm = document.getElementById('adminAddDesignForm');
+    var designsTableBody = document.getElementById('adminDesignTableBody');
     if (addDesignBtn && designModal) {
-        addDesignBtn.addEventListener('click', function() {
-            designForm.reset();
-            populateProjectDropdown('designProject');
-            designModal.classList.add('open');
-        });
+        addDesignBtn.addEventListener('click', function () { if (designForm) designForm.reset(); populateProjectDropdown('designProject'); designModal.classList.add('open'); });
     }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminAddDesignModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            designModal.classList.remove('open'); 
-        });
-    });
-    
-    if (designModal) {
-        designModal.addEventListener('click', function(e) { 
-            if (e.target === designModal) designModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    document.querySelectorAll('[data-close="adminAddDesignModal"]').forEach(function (el) { el.addEventListener('click', function () { designModal.classList.remove('open'); }); });
+    if (designModal) designModal.addEventListener('click', function (e) { if (e.target === designModal) designModal.classList.remove('open'); });
     if (designForm) {
-        designForm.addEventListener('submit', function(e) {
+        designForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const design = {
+            var design = {
                 id: Date.now(),
                 name: document.getElementById('designName').value,
                 type: document.getElementById('designType').value,
@@ -4395,207 +2971,124 @@ function setupDesignManagement() {
                 description: document.getElementById('designDescription').value,
                 createdDate: new Date().toISOString()
             };
-            
-            const designs = getStored('adminDesigns', []);
+            var designs = getStored('adminDesigns', []);
             designs.push(design);
             setStored('adminDesigns', designs);
-            
             renderDesigns(designsTableBody, designs);
             designModal.classList.remove('open');
             designForm.reset();
         });
     }
-    
-    // Initial render
-    const designs = getStored('adminDesigns', []);
-    renderDesigns(designsTableBody, designs);
+    renderDesigns(designsTableBody, getStored('adminDesigns', []));
 }
 
 function renderDesigns(tbody, designs) {
     if (!tbody) return;
-    
-    tbody.innerHTML = designs.length ? designs.map(design => `
-        <tr>
-            <td>${design.name}</dress>
-            <td>${design.type}</dress>
-            <td>${getProjectName(design.project)}</dress>
-            <td><span class="status-${design.status}">${design.status}</span></dress>
-            <td>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${design.progress}%"></div>
-                    <span>${design.progress}%</span>
-                </div>
-                            </dress>
-            <td>
-                <button class="btn-icon" onclick="viewDesign(${design.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="editDesign(${design.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="deleteDesign(${design.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="6">No designs found</dress></tr>';
+    tbody.innerHTML = designs.length ? designs.map(function (design) {
+        return '<tr>' +
+            '<td>' + escapeHtml(design.name) + '</td>' +
+            '<td>' + escapeHtml(design.type) + '</td>' +
+            '<td>' + escapeHtml(getProjectName(design.project)) + '</td>' +
+            '<td><span class="status-' + escapeHtml(design.status) + '">' + escapeHtml(design.status) + '</span></td>' +
+            '<td><div class="progress-bar"><div class="progress-fill" style="width:' + design.progress + '%"></div><span>' + design.progress + '%</span></div></td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewDesign(' + design.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="editDesign(' + design.id + ')"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteDesign(' + design.id + ')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="6">No designs found</td></tr>';
 }
 
-window.viewDesign = function(designId) {
-    alert('View design functionality would open design viewer');
-};
-
-window.editDesign = function(designId) {
-    const designs = getStored('adminDesigns', []);
-    const design = designs.find(d => d.id === designId);
+window.viewDesign = function (id) { alert('View design functionality would open design viewer'); };
+window.editDesign = function (designId) {
+    var designs = getStored('adminDesigns', []);
+    var design = designs.find(function (d) { return d.id === designId; });
     if (!design) return;
-    
     document.getElementById('designName').value = design.name;
     document.getElementById('designType').value = design.type;
     document.getElementById('designStatus').value = design.status;
     document.getElementById('designProgress').value = design.progress;
     document.getElementById('designDescription').value = design.description;
-    
     populateProjectDropdown('designProject');
-    setTimeout(() => {
-        document.getElementById('designProject').value = design.project;
-    }, 100);
-    
+    setTimeout(function () { document.getElementById('designProject').value = design.project; }, 100);
     document.getElementById('adminAddDesignModal').classList.add('open');
 };
-
-window.deleteDesign = function(designId) {
+window.deleteDesign = function (designId) {
     if (!confirm('Delete this design?')) return;
-    
-    const designs = getStored('adminDesigns', []);
-    const updatedDesigns = designs.filter(d => d.id !== designId);
-    setStored('adminDesigns', updatedDesigns);
-    
-    const tbody = document.getElementById('adminDesignTableBody');
-    renderDesigns(tbody, updatedDesigns);
+    var designs = getStored('adminDesigns', []).filter(function (d) { return d.id !== designId; });
+    setStored('adminDesigns', designs);
+    renderDesigns(document.getElementById('adminDesignTableBody'), designs);
 };
 
-// Communication Hub Functions
+// ===== COMMUNICATION HUB =====
+
 function setupCommunicationHub() {
-    const newMessageBtn = document.getElementById('adminNewMessageBtn');
-    const messageModal = document.getElementById('adminNewMessageModal');
-    const messageForm = document.getElementById('adminNewMessageForm');
-    const communicationTableBody = document.getElementById('adminCommunicationTableBody');
-    
+    var newMessageBtn = document.getElementById('adminNewMessageBtn');
+    var messageModal = document.getElementById('adminNewMessageModal');
+    var messageForm = document.getElementById('adminNewMessageForm');
+    var communicationTableBody = document.getElementById('adminCommunicationTableBody');
     if (newMessageBtn && messageModal) {
-        newMessageBtn.addEventListener('click', function() {
-            messageForm.reset();
-            messageModal.classList.add('open');
-        });
+        newMessageBtn.addEventListener('click', function () { if (messageForm) messageForm.reset(); messageModal.classList.add('open'); });
     }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminNewMessageModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            messageModal.classList.remove('open'); 
-        });
-    });
-    
-    if (messageModal) {
-        messageModal.addEventListener('click', function(e) { 
-            if (e.target === messageModal) messageModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    document.querySelectorAll('[data-close="adminNewMessageModal"]').forEach(function (el) { el.addEventListener('click', function () { messageModal.classList.remove('open'); }); });
+    if (messageModal) messageModal.addEventListener('click', function (e) { if (e.target === messageModal) messageModal.classList.remove('open'); });
     if (messageForm) {
-        messageForm.addEventListener('submit', function(e) {
+        messageForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const communication = {
+            var communication = {
                 id: Date.now(),
                 type: document.getElementById('messageType').value,
                 recipients: document.getElementById('messageRecipients').value,
                 subject: document.getElementById('messageSubject').value,
                 content: document.getElementById('messageContent').value,
-                date: new Date().toISOString(),
-                status: 'sent'
+                date: new Date().toISOString(), status: 'sent'
             };
-            
-            const communications = getStored('adminCommunications', []);
+            var communications = getStored('adminCommunications', []);
             communications.push(communication);
             setStored('adminCommunications', communications);
-            
             renderCommunications(communicationTableBody, communications);
             messageModal.classList.remove('open');
             messageForm.reset();
         });
     }
-    
-    // Initial render
-    const communications = getStored('adminCommunications', []);
-    renderCommunications(communicationTableBody, communications);
+    renderCommunications(communicationTableBody, getStored('adminCommunications', []));
 }
 
 function renderCommunications(tbody, communications) {
     if (!tbody) return;
-    
-    tbody.innerHTML = communications.length ? communications.map(comm => `
-        <tr>
-            <td>${comm.subject}</dress>
-            <td>${comm.participants}</dress>
-            <td><span class="type-${comm.type}">${comm.type}</span></dress>
-            <td>${new Date(comm.date).toLocaleDateString()}</dress>
-            <td><span class="status-${comm.status}">${comm.status}</span></dress>
-            <td>
-                <button class="btn-icon" onclick="viewCommunication(${comm.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="replyCommunication(${comm.id})" title="Reply">
-                    <i class="fas fa-reply"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="6">No communications found</dress></tr>';
+    tbody.innerHTML = communications.length ? communications.map(function (comm) {
+        return '<tr>' +
+            '<td>' + escapeHtml(comm.subject) + '</td>' +
+            '<td>' + escapeHtml(comm.participants || comm.recipients || '') + '</td>' +
+            '<td><span class="type-' + escapeHtml(comm.type) + '">' + escapeHtml(comm.type) + '</span></td>' +
+            '<td>' + new Date(comm.date).toLocaleDateString() + '</td>' +
+            '<td><span class="status-' + escapeHtml(comm.status) + '">' + escapeHtml(comm.status) + '</span></td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewCommunication(' + comm.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="replyCommunication(' + comm.id + ')"><i class="fas fa-reply"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="6">No communications found</td></tr>';
 }
 
-window.viewCommunication = function(commId) {
-    alert('View communication functionality would open conversation');
-};
+window.viewCommunication = function (id) { alert('View communication functionality would open conversation'); };
+window.replyCommunication = function (id) { alert('Reply functionality would open message composer'); };
 
-window.replyCommunication = function(commId) {
-    alert('Reply functionality would open message composer');
-};
+// ===== SITE MANAGEMENT =====
 
-// Site Management Functions
 function setupSiteManagement() {
-    const addSiteVisitBtn = document.getElementById('adminAddSiteVisitBtn');
-    const siteModal = document.getElementById('adminAddSiteVisitModal');
-    const siteForm = document.getElementById('adminAddSiteVisitForm');
-    const siteTableBody = document.getElementById('adminSiteManagementTableBody');
-    
+    var addSiteVisitBtn = document.getElementById('adminAddSiteVisitBtn');
+    var siteModal = document.getElementById('adminAddSiteVisitModal');
+    var siteForm = document.getElementById('adminAddSiteVisitForm');
+    var siteTableBody = document.getElementById('adminSiteManagementTableBody');
     if (addSiteVisitBtn && siteModal) {
-        addSiteVisitBtn.addEventListener('click', function() {
-            siteForm.reset();
-            populateProjectDropdown('siteVisitProject');
-            siteModal.classList.add('open');
-        });
+        addSiteVisitBtn.addEventListener('click', function () { if (siteForm) siteForm.reset(); populateProjectDropdown('siteVisitProject'); siteModal.classList.add('open'); });
     }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminAddSiteVisitModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            siteModal.classList.remove('open'); 
-        });
-    });
-    
-    if (siteModal) {
-        siteModal.addEventListener('click', function(e) { 
-            if (e.target === siteModal) siteModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    document.querySelectorAll('[data-close="adminAddSiteVisitModal"]').forEach(function (el) { el.addEventListener('click', function () { siteModal.classList.remove('open'); }); });
+    if (siteModal) siteModal.addEventListener('click', function (e) { if (e.target === siteModal) siteModal.classList.remove('open'); });
     if (siteForm) {
-        siteForm.addEventListener('submit', function(e) {
+        siteForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const siteVisit = {
+            var siteVisit = {
                 id: Date.now(),
                 name: document.getElementById('siteVisitName').value,
                 project: document.getElementById('siteVisitProject').value,
@@ -4607,66 +3100,44 @@ function setupSiteManagement() {
                 notes: document.getElementById('siteVisitNotes').value,
                 lastVisit: new Date().toISOString()
             };
-            
-            const sites = getStored('adminSites', []);
+            var sites = getStored('adminSites', []);
             sites.push(siteVisit);
             setStored('adminSites', sites);
-            
             renderSites(siteTableBody, sites);
             siteModal.classList.remove('open');
             siteForm.reset();
         });
     }
-    
-    // Initial render
-    const sites = getStored('adminSites', []);
-    renderSites(siteTableBody, sites);
+    renderSites(siteTableBody, getStored('adminSites', []));
 }
 
 function renderSites(tbody, sites) {
     if (!tbody) return;
-    
-    tbody.innerHTML = sites.length ? sites.map(site => `
-        <tr>
-            <td>${site.name}</dress>
-            <td>${getProjectName(site.project)}</dress>
-            <td>${new Date(site.lastVisit).toLocaleDateString()}</dress>
-            <td>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${site.progress}%"></div>
-                    <span>${site.progress}%</span>
-                </div>
-            </dress>
-            <td><span class="issues-${site.issues}">${site.issues} issues</span></dress>
-            <td>${site.nextVisit ? new Date(site.nextVisit).toLocaleDateString() : 'Not scheduled'}</dress>
-            <td>
-                <button class="btn-icon" onclick="viewSite(${site.id})" title="View Site">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="editSite(${site.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="deleteSite(${site.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="7">No sites found</dress></tr>';
+    tbody.innerHTML = sites.length ? sites.map(function (site) {
+        return '<tr>' +
+            '<td>' + escapeHtml(site.name) + '</td>' +
+            '<td>' + escapeHtml(getProjectName(site.project)) + '</td>' +
+            '<td>' + new Date(site.lastVisit).toLocaleDateString() + '</td>' +
+            '<td><div class="progress-bar"><div class="progress-fill" style="width:' + site.progress + '%"></div><span>' + site.progress + '%</span></div></td>' +
+            '<td><span class="issues-' + site.issues + '">' + site.issues + ' issues</span></td>' +
+            '<td>' + (site.nextVisit ? new Date(site.nextVisit).toLocaleDateString() : 'Not scheduled') + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewSite(' + site.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="editSite(' + site.id + ')"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteSite(' + site.id + ')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="7">No sites found</td></tr>';
 }
 
-window.viewSite = function(siteId) {
-    const sites = getStored('adminSites', []);
-    const site = sites.find(s => s.id === siteId);
-    if (site) {
-        alert(`Site: ${site.name}\nProject: ${getProjectName(site.project)}\nProgress: ${site.progress}%\nIssues: ${site.issues}\nNotes: ${site.notes || 'No notes'}`);
-    }
+window.viewSite = function (siteId) {
+    var sites = getStored('adminSites', []);
+    var site = sites.find(function (s) { return s.id === siteId; });
+    if (site) alert('Site: ' + site.name + '\nProject: ' + getProjectName(site.project) + '\nProgress: ' + site.progress + '%\nIssues: ' + site.issues + '\nNotes: ' + (site.notes || 'No notes'));
 };
-
-window.editSite = function(siteId) {
-    const sites = getStored('adminSites', []);
-    const site = sites.find(s => s.id === siteId);
+window.editSite = function (siteId) {
+    var sites = getStored('adminSites', []);
+    var site = sites.find(function (s) { return s.id === siteId; });
     if (!site) return;
-    
     document.getElementById('siteVisitName').value = site.name;
     document.getElementById('siteVisitType').value = site.visitType;
     document.getElementById('siteVisitProgress').value = site.progress;
@@ -4674,73 +3145,41 @@ window.editSite = function(siteId) {
     document.getElementById('siteVisitNotes').value = site.notes || '';
     document.getElementById('siteVisitDate').value = site.visitDate;
     document.getElementById('siteVisitNextDate').value = site.nextVisit || '';
-    
     populateProjectDropdown('siteVisitProject');
-    setTimeout(() => {
-        document.getElementById('siteVisitProject').value = site.project;
-    }, 100);
-    
+    setTimeout(function () { document.getElementById('siteVisitProject').value = site.project; }, 100);
     document.getElementById('adminAddSiteVisitModal').classList.add('open');
 };
-
-window.deleteSite = function(siteId) {
+window.deleteSite = function (siteId) {
     if (!confirm('Delete this site visit record?')) return;
-    
-    const sites = getStored('adminSites', []);
-    const updatedSites = sites.filter(s => s.id !== siteId);
-    setStored('adminSites', updatedSites);
-    
-    const tbody = document.getElementById('adminSiteManagementTableBody');
-    renderSites(tbody, updatedSites);
+    var sites = getStored('adminSites', []).filter(function (s) { return s.id !== siteId; });
+    setStored('adminSites', sites);
+    renderSites(document.getElementById('adminSiteManagementTableBody'), sites);
 };
 
-window.addVisit = function(siteId) {
-    alert('Add visit functionality would open new visit form for this site');
-};
+// ===== FINANCIAL MANAGEMENT =====
 
-// Financial & Billing Functions
 function setupFinancialManagement() {
-    const addFinancialBtn = document.getElementById('adminAddFinancialBtn');
-    const exportBtn = document.getElementById('adminExportFinancialBtn');
-    const financialModal = document.getElementById('adminFinancialModal');
-    const financialForm = document.getElementById('adminFinancialForm');
-    const financialTableBody = document.getElementById('adminFinancialTableBody');
-    
+    var addFinancialBtn = document.getElementById('adminAddFinancialBtn');
+    var exportBtn = document.getElementById('adminExportFinancialBtn');
+    var financialModal = document.getElementById('adminFinancialModal');
+    var financialForm = document.getElementById('adminFinancialForm');
+    var financialTableBody = document.getElementById('adminFinancialTableBody');
     if (addFinancialBtn && financialModal) {
-        addFinancialBtn.addEventListener('click', function() {
-            financialForm.reset();
+        addFinancialBtn.addEventListener('click', function () {
+            if (financialForm) financialForm.reset();
             document.getElementById('adminFinancialModalTitle').textContent = 'Add Financial Entry';
             document.getElementById('financialId').value = '';
             financialModal.classList.add('open');
         });
     }
-    
-    if (exportBtn) {
-        exportBtn.addEventListener('click', function() {
-            exportFinancialData();
-        });
-    }
-    
-    // Close modal handlers
-    document.querySelectorAll('[data-close="adminFinancialModal"]').forEach(el => {
-        el.addEventListener('click', function() { 
-            financialModal.classList.remove('open'); 
-        });
-    });
-    
-    if (financialModal) {
-        financialModal.addEventListener('click', function(e) { 
-            if (e.target === financialModal) financialModal.classList.remove('open'); 
-        });
-    }
-    
-    // Form submission
+    if (exportBtn) exportBtn.addEventListener('click', exportFinancialData);
+    document.querySelectorAll('[data-close="adminFinancialModal"]').forEach(function (el) { el.addEventListener('click', function () { financialModal.classList.remove('open'); }); });
+    if (financialModal) financialModal.addEventListener('click', function (e) { if (e.target === financialModal) financialModal.classList.remove('open'); });
     if (financialForm) {
-        financialForm.addEventListener('submit', function(e) {
+        financialForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const financialId = document.getElementById('financialId').value;
-            const financialEntry = {
+            var financialId = document.getElementById('financialId').value;
+            var entry = {
                 id: financialId || Date.now(),
                 type: document.getElementById('financialType').value,
                 description: document.getElementById('financialDescription').value,
@@ -4750,116 +3189,70 @@ function setupFinancialManagement() {
                 status: document.getElementById('financialStatus').value,
                 category: document.getElementById('financialCategory').value
             };
-            
-            const financials = getStored('adminFinancials', []);
-            
+            var financials = getStored('adminFinancials', []);
             if (financialId) {
-                // Edit existing entry
-                const index = financials.findIndex(f => f.id == financialId);
-                if (index !== -1) {
-                    financials[index] = financialEntry;
-                }
+                var idx = financials.findIndex(function (f) { return String(f.id) == String(financialId); });
+                if (idx !== -1) financials[idx] = entry;
             } else {
-                // Add new entry
-                financials.push(financialEntry);
-                
-                // If it's an invoice, add to approvals workflow
-                if (financialEntry.type === 'invoice' && financialEntry.status === 'pending') {
-                    const approvals = getStored('adminApprovals', []);
-                    approvals.push({
-                        id: Date.now(),
-                        document: financialEntry.description,
-                        type: 'invoice',
-                        project: financialEntry.client,
-                        submittedBy: 'Admin',
-                        approvalType: 'financial',
-                        status: 'pending',
-                        submitted: new Date().toISOString(),
-                        financialId: financialEntry.id
-                    });
+                financials.push(entry);
+                if (entry.type === 'invoice' && entry.status === 'pending') {
+                    var approvals = getStored('adminApprovals', []);
+                    approvals.push({ id: Date.now(), document: entry.description, type: 'invoice', project: entry.client, submittedBy: 'Admin', approvalType: 'financial', status: 'pending', submitted: new Date().toISOString(), financialId: entry.id });
                     setStored('adminApprovals', approvals);
                 }
             }
-            
             setStored('adminFinancials', financials);
-            
             renderFinancials(financialTableBody, financials);
             updateFinancialSummary();
             financialModal.classList.remove('open');
             financialForm.reset();
         });
     }
-    
-    // Initial render
-    const financials = getStored('adminFinancials', []);
-    renderFinancials(financialTableBody, financials);
+    renderFinancials(financialTableBody, getStored('adminFinancials', []));
     updateFinancialSummary();
 }
 
 function renderFinancials(tbody, financials) {
     if (!tbody) return;
-    
-    tbody.innerHTML = financials.length ? financials.map(fin => `
-        <tr>
-            <td><span class="type-${fin.type}">${fin.type}</span></dress>
-            <td>${fin.description}</dress>
-            <td>${fin.client}</dress>
-            <td>$${fin.amount.toLocaleString()}</dress>
-            <td>${new Date(fin.date).toLocaleDateString()}</dress>
-            <td><span class="status-${fin.status}">${fin.status}</span></dress>
-            <td>${fin.category}</dress>
-            <td>
-                <button class="btn-icon" onclick="viewFinancial(${fin.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="editFinancial(${fin.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="deleteFinancial(${fin.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="8">No financial entries found</dress></tr>';
+    tbody.innerHTML = financials.length ? financials.map(function (fin) {
+        return '<tr>' +
+            '<td><span class="type-' + escapeHtml(fin.type) + '">' + escapeHtml(fin.type) + '</span></td>' +
+            '<td>' + escapeHtml(fin.description) + '</td>' +
+            '<td>' + escapeHtml(fin.client) + '</td>' +
+            '<td>$' + (fin.amount || 0).toLocaleString() + '</td>' +
+            '<td>' + new Date(fin.date).toLocaleDateString() + '</td>' +
+            '<td><span class="status-' + escapeHtml(fin.status) + '">' + escapeHtml(fin.status) + '</span></td>' +
+            '<td>' + escapeHtml(fin.category) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewFinancial(' + fin.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="editFinancial(' + fin.id + ')"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteFinancial(' + fin.id + ')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="8">No financial entries found</td></tr>';
 }
 
 function updateFinancialSummary() {
-    const financials = getStored('adminFinancials', []);
-    
-    const totalRevenue = financials
-        .filter(f => f.type === 'revenue' && f.status === 'paid')
-        .reduce((sum, f) => sum + f.amount, 0);
-    
-    const pendingInvoices = financials
-        .filter(f => f.type === 'invoice' && f.status === 'pending')
-        .reduce((sum, f) => sum + f.amount, 0);
-    
-    const totalExpenses = financials
-        .filter(f => f.type === 'expense')
-        .reduce((sum, f) => sum + f.amount, 0);
-    
-    const revenueEl = document.getElementById('totalRevenueAmount');
-    const pendingEl = document.getElementById('pendingInvoiceAmount');
-    const expensesEl = document.getElementById('totalExpenses');
-    
+    var financials = getStored('adminFinancials', []);
+    var totalRevenue = financials.filter(function (f) { return f.type === 'revenue' && (f.status || '').toLowerCase() === 'paid'; }).reduce(function (sum, f) { return sum + (f.amount || 0); }, 0);
+    var pendingInvoices = financials.filter(function (f) { return f.type === 'invoice' && (f.status || '').toLowerCase() === 'pending'; }).reduce(function (sum, f) { return sum + (f.amount || 0); }, 0);
+    var totalExpenses = financials.filter(function (f) { return f.type === 'expense'; }).reduce(function (sum, f) { return sum + (f.amount || 0); }, 0);
+    var revenueEl = document.getElementById('totalRevenueAmount');
+    var pendingEl = document.getElementById('pendingInvoiceAmount');
+    var expensesEl = document.getElementById('totalExpenses');
     if (revenueEl) revenueEl.textContent = '$' + totalRevenue.toLocaleString();
     if (pendingEl) pendingEl.textContent = '$' + pendingInvoices.toLocaleString();
     if (expensesEl) expensesEl.textContent = '$' + totalExpenses.toLocaleString();
 }
 
-window.viewFinancial = function(finId) {
-    const financials = getStored('adminFinancials', []);
-    const fin = financials.find(f => f.id === finId);
-    if (fin) {
-        alert(`Type: ${fin.type}\nDescription: ${fin.description}\nClient: ${fin.client}\nAmount: $${fin.amount}\nStatus: ${fin.status}\nCategory: ${fin.category}`);
-    }
+window.viewFinancial = function (finId) {
+    var financials = getStored('adminFinancials', []);
+    var fin = financials.find(function (f) { return f.id === finId; });
+    if (fin) alert('Type: ' + fin.type + '\nDescription: ' + fin.description + '\nClient: ' + fin.client + '\nAmount: $' + fin.amount + '\nStatus: ' + fin.status + '\nCategory: ' + fin.category);
 };
-
-window.editFinancial = function(finId) {
-    const financials = getStored('adminFinancials', []);
-    const fin = financials.find(f => f.id === finId);
+window.editFinancial = function (finId) {
+    var financials = getStored('adminFinancials', []);
+    var fin = financials.find(function (f) { return f.id === finId; });
     if (!fin) return;
-    
     document.getElementById('adminFinancialModalTitle').textContent = 'Edit Financial Entry';
     document.getElementById('financialId').value = fin.id;
     document.getElementById('financialType').value = fin.type;
@@ -4869,69 +3262,47 @@ window.editFinancial = function(finId) {
     document.getElementById('financialDate').value = fin.date;
     document.getElementById('financialStatus').value = fin.status;
     document.getElementById('financialCategory').value = fin.category;
-    
     document.getElementById('adminFinancialModal').classList.add('open');
 };
-
-window.deleteFinancial = function(finId) {
+window.deleteFinancial = function (finId) {
     if (!confirm('Delete this financial entry?')) return;
-    
-    const financials = getStored('adminFinancials', []);
-    const updatedFinancials = financials.filter(f => f.id !== finId);
-    setStored('adminFinancials', updatedFinancials);
-    
-    const tbody = document.getElementById('adminFinancialTableBody');
-    renderFinancials(tbody, updatedFinancials);
+    var financials = getStored('adminFinancials', []).filter(function (f) { return f.id !== finId; });
+    setStored('adminFinancials', financials);
+    renderFinancials(document.getElementById('adminFinancialTableBody'), financials);
     updateFinancialSummary();
 };
 
 function exportFinancialData() {
-    const financials = getStored('adminFinancials', []);
-    
-    // Create CSV content
-    const headers = ['Type', 'Description', 'Client', 'Amount', 'Date', 'Status', 'Category'];
-    const csvContent = [
-        headers.join(','),
-        ...financials.map(fin => [
-            fin.type,
-            `"${fin.description}"`,
-            `"${fin.client}"`,
-            fin.amount,
-            fin.date,
-            fin.status,
-            fin.category
-        ].join(','))
-    ].join('\n');
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    var financials = getStored('adminFinancials', []);
+    var headers = ['Type','Description','Client','Amount','Date','Status','Category'];
+    var csvContent = [headers.join(',')].concat(financials.map(function (fin) {
+        return [fin.type, '"' + fin.description + '"', '"' + fin.client + '"', fin.amount, fin.date, fin.status, fin.category].join(',');
+    })).join('\n');
+    var blob = new Blob([csvContent], { type: 'text/csv' });
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
-    a.download = `financial_data_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = 'financial_data_' + new Date().toISOString().split('T')[0] + '.csv';
     a.click();
     window.URL.revokeObjectURL(url);
 }
 
-// Marketing Functions
+// ===== MARKETING MANAGEMENT =====
+
 function setupMarketingManagement() {
-    const addPortfolioBtn = document.getElementById('adminAddPortfolioBtn');
-    const marketingTableBody = document.getElementById('adminMarketingTableBody');
-    const portfolioModal = document.getElementById('adminAddPortfolioModal');
-    const portfolioForm = document.getElementById('adminAddPortfolioForm');
-    
+    var addPortfolioBtn = document.getElementById('adminAddPortfolioBtn');
+    var marketingTableBody = document.getElementById('adminMarketingTableBody');
+    var portfolioModal = document.getElementById('adminAddPortfolioModal');
+    var portfolioForm = document.getElementById('adminAddPortfolioForm');
     if (addPortfolioBtn && portfolioModal) {
-        addPortfolioBtn.addEventListener('click', function() {
-            portfolioModal.classList.add('open');
-        });
+        addPortfolioBtn.addEventListener('click', function () { portfolioModal.classList.add('open'); });
     }
-    
-    // Handle portfolio form submission
+    document.querySelectorAll('[data-close="adminAddPortfolioModal"]').forEach(function (el) { el.addEventListener('click', function () { portfolioModal.classList.remove('open'); }); });
+    if (portfolioModal) portfolioModal.addEventListener('click', function (e) { if (e.target === portfolioModal) portfolioModal.classList.remove('open'); });
     if (portfolioForm) {
-        portfolioForm.addEventListener('submit', function(e) {
+        portfolioForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const portfolioItem = {
+            var portfolioItem = {
                 id: Date.now(),
                 title: document.getElementById('portfolioTitle').value,
                 category: document.getElementById('portfolioCategory').value,
@@ -4943,480 +3314,205 @@ function setupMarketingManagement() {
                 features: document.getElementById('portfolioFeatures').value,
                 featured: document.getElementById('portfolioFeatured').checked,
                 status: document.getElementById('portfolioStatus').value,
-                views: Math.floor(Math.random() * 1000) + 100, // Random initial views
-                inquiries: Math.floor(Math.random() * 50) + 5, // Random initial inquiries
+                views: Math.floor(Math.random() * 1000) + 100,
+                inquiries: Math.floor(Math.random() * 50) + 5,
                 createdAt: new Date().toISOString()
             };
-            
-            const portfolioItems = getStored('adminPortfolio', []);
-            portfolioItems.push(portfolioItem);
-            setStored('adminPortfolio', portfolioItems);
-            
-            renderPortfolio(marketingTableBody, portfolioItems);
+            var items = getStored('adminPortfolio', []);
+            items.push(portfolioItem);
+            setStored('adminPortfolio', items);
+            renderPortfolio(marketingTableBody, items);
             portfolioModal.classList.remove('open');
             portfolioForm.reset();
-            
             alert('Portfolio item added successfully!');
         });
     }
-    
-    // Initial render
-    const portfolioItems = getStored('adminPortfolio', []);
-    renderPortfolio(marketingTableBody, portfolioItems);
+    renderPortfolio(marketingTableBody, getStored('adminPortfolio', []));
 }
 
 function renderPortfolio(tbody, portfolioItems) {
     if (!tbody) return;
-    
-    tbody.innerHTML = portfolioItems.length ? portfolioItems.map(item => `
-        <tr>
-            <td>${item.title}</dress>
-            <td>${item.category}</dress>
-            <td>${item.views}</dress>
-            <td>${item.inquiries}</dress>
-            <td><span class="featured-${item.featured}">${item.featured ? 'Yes' : 'No'}</span></dress>
-            <td>
-                <button class="btn-icon" onclick="viewPortfolio(${item.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="editPortfolio(${item.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="deletePortfolio(${item.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<td><td colspan="6">No portfolio items found</dress></tr>';
+    tbody.innerHTML = portfolioItems.length ? portfolioItems.map(function (item) {
+        return '<tr>' +
+            '<td>' + escapeHtml(item.title) + '</td>' +
+            '<td>' + escapeHtml(item.category) + '</td>' +
+            '<td>' + item.views + '</td>' +
+            '<td>' + item.inquiries + '</td>' +
+            '<td><span class="featured-' + item.featured + '">' + (item.featured ? 'Yes' : 'No') + '</span></td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewPortfolio(' + item.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="editPortfolio(' + item.id + ')"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deletePortfolio(' + item.id + ')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="6">No portfolio items found</td></tr>';
 }
 
-window.viewPortfolio = function(itemId) {
-    alert('View portfolio functionality would open portfolio item');
-};
-
-window.editPortfolio = function(itemId) {
-    alert('Edit portfolio functionality would open portfolio editor');
-};
-
-window.deletePortfolio = function(itemId) {
+window.viewPortfolio = function (id) { alert('View portfolio functionality would open portfolio item'); };
+window.editPortfolio = function (id) { alert('Edit portfolio functionality would open portfolio editor'); };
+window.deletePortfolio = function (itemId) {
     if (!confirm('Delete this portfolio item?')) return;
-    
-    const items = getStored('adminPortfolio', []);
-    const updatedItems = items.filter(item => item.id !== itemId);
-    setStored('adminPortfolio', updatedItems);
-    
-    const tbody = document.getElementById('adminMarketingTableBody');
-    renderPortfolio(tbody, updatedItems);
+    var items = getStored('adminPortfolio', []).filter(function (item) { return item.id !== itemId; });
+    setStored('adminPortfolio', items);
+    renderPortfolio(document.getElementById('adminMarketingTableBody'), items);
 };
 
-// Approvals Workflow Functions
+// ===== APPROVALS WORKFLOW =====
+
 function setupApprovalsWorkflow() {
-    const approvalsTableBody = document.getElementById('adminApprovalsWorkflowTableBody');
-    
-    // Initial render
-    const approvals = getStored('adminApprovals', []);
-    renderApprovals(approvalsTableBody, approvals);
+    var approvalsTableBody = document.getElementById('adminApprovalsWorkflowTableBody');
+    renderApprovals(approvalsTableBody, getStored('adminApprovals', []));
 }
 
 function renderApprovals(tbody, approvals) {
     if (!tbody) return;
-    
-    tbody.innerHTML = approvals.length ? approvals.map(approval => `
-        <tr>
-            <td>${approval.document}</dress>
-            <td>${approval.type}</dress>
-            <td>${approval.project}</dress>
-            <td>${approval.submittedBy}</dress>
-            <td>${approval.approvalType}</dress>
-            <td><span class="status-${approval.status}">${approval.status}</span></dress>
-            <td>${new Date(approval.submitted).toLocaleDateString()}</dress>
-            <td>
-                <button class="btn-icon" onclick="viewApproval(${approval.id})" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="approveApproval(${approval.id})" title="Approve">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="btn-icon" onclick="rejectApproval(${approval.id})" title="Reject">
-                    <i class="fas fa-times"></i>
-                </button>
-            </dress>
-        </tr>
-    `).join('') : '<tr><td colspan="8">No approvals pending</dress></tr>';
+    tbody.innerHTML = approvals.length ? approvals.map(function (approval) {
+        return '<tr>' +
+            '<td>' + escapeHtml(approval.document) + '</td>' +
+            '<td>' + escapeHtml(approval.type) + '</td>' +
+            '<td>' + escapeHtml(approval.project) + '</td>' +
+            '<td>' + escapeHtml(approval.submittedBy) + '</td>' +
+            '<td>' + escapeHtml(approval.approvalType) + '</td>' +
+            '<td><span class="status-' + escapeHtml(approval.status) + '">' + escapeHtml(approval.status) + '</span></td>' +
+            '<td>' + new Date(approval.submitted).toLocaleDateString() + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="viewApproval(' + approval.id + ')"><i class="fas fa-eye"></i></button> ' +
+            '<button class="btn-icon" onclick="approveApproval(' + approval.id + ')"><i class="fas fa-check"></i></button> ' +
+            '<button class="btn-icon" onclick="rejectApproval(' + approval.id + ')"><i class="fas fa-times"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="8">No approvals pending</td></tr>';
 }
 
-window.viewApproval = function(approvalId) {
-    alert('View approval functionality would open document viewer');
-};
-
-window.approveApproval = function(approvalId) {
+window.viewApproval = function (id) { alert('View approval functionality would open document viewer'); };
+window.approveApproval = function (approvalId) {
     if (!confirm('Approve this request?')) return;
-    
-    const approvals = getStored('adminApprovals', []);
-    const approval = approvals.find(a => a.id === approvalId);
-    if (approval) {
-        approval.status = 'approved';
-        setStored('adminApprovals', approvals);
-        
-        const tbody = document.getElementById('adminApprovalsWorkflowTableBody');
-        renderApprovals(tbody, approvals);
-    }
+    var approvals = getStored('adminApprovals', []);
+    var approval = approvals.find(function (a) { return a.id === approvalId; });
+    if (approval) { approval.status = 'approved'; setStored('adminApprovals', approvals); renderApprovals(document.getElementById('adminApprovalsWorkflowTableBody'), approvals); }
 };
-
-window.rejectApproval = function(approvalId) {
-    const reason = prompt('Reason for rejection:');
+window.rejectApproval = function (approvalId) {
+    var reason = prompt('Reason for rejection:');
     if (!reason) return;
-    
-    const approvals = getStored('adminApprovals', []);
-    const approval = approvals.find(a => a.id === approvalId);
-    if (approval) {
-        approval.status = 'rejected';
-        approval.rejectionReason = reason;
-        setStored('adminApprovals', approvals);
-        
-        const tbody = document.getElementById('adminApprovalsWorkflowTableBody');
-        renderApprovals(tbody, approvals);
-    }
+    var approvals = getStored('adminApprovals', []);
+    var approval = approvals.find(function (a) { return a.id === approvalId; });
+    if (approval) { approval.status = 'rejected'; approval.rejectionReason = reason; setStored('adminApprovals', approvals); renderApprovals(document.getElementById('adminApprovalsWorkflowTableBody'), approvals); }
 };
 
-// FAQ Management Functions
+// ===== FAQ MANAGEMENT =====
+
 function setupFAQManagement() {
-    const addFAQBtn = document.getElementById('adminAddFAQBtn');
-    const faqForm = document.getElementById('adminFAQForm');
-    const addNewFAQForm = document.getElementById('addNewFAQForm');
-    const cancelFAQBtn = document.getElementById('cancelFAQBtn');
-    
+    var addFAQBtn = document.getElementById('adminAddFAQBtn');
+    var faqForm = document.getElementById('adminFAQForm');
+    var addNewFAQForm = document.getElementById('addNewFAQForm');
+    var cancelFAQBtn = document.getElementById('cancelFAQBtn');
     if (addFAQBtn) {
-        addFAQBtn.addEventListener('click', function() {
-            if (faqForm) {
-                faqForm.style.display = faqForm.style.display === 'none' ? 'block' : 'none';
-            }
+        addFAQBtn.addEventListener('click', function () {
+            if (faqForm) faqForm.style.display = faqForm.style.display === 'none' ? 'block' : 'none';
         });
     }
-    
     if (cancelFAQBtn) {
-        cancelFAQBtn.addEventListener('click', function() {
-            if (faqForm) {
-                faqForm.style.display = 'none';
-                addNewFAQForm.reset();
-                document.getElementById('editFAQId').value = '';
-                
-                // Reset form title and button text back to "Add New FAQ"
-                const formTitle = document.getElementById('faqFormTitle');
-                const submitBtn = document.getElementById('submitFAQBtn');
-                const submitBtnText = document.getElementById('submitFAQText');
-                
-                if (formTitle) {
-                    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Add New FAQ';
-                }
-                if (submitBtn) {
-                    submitBtn.innerHTML = '<i class="fas fa-save"></i> <span id="submitFAQText">Add FAQ</span>';
-                }
-                if (submitBtnText) {
-                    submitBtnText.textContent = 'Add FAQ';
-                }
-            }
+        cancelFAQBtn.addEventListener('click', function () {
+            if (faqForm) { faqForm.style.display = 'none'; if (addNewFAQForm) addNewFAQForm.reset(); }
+            var editId = document.getElementById('editFAQId');
+            if (editId) editId.value = '';
+            var formTitle = document.getElementById('faqFormTitle');
+            if (formTitle) formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Add New FAQ';
+            var submitBtn = document.getElementById('submitFAQBtn');
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> <span id="submitFAQText">Add FAQ</span>';
         });
     }
-    
     if (addNewFAQForm) {
-        addNewFAQForm.addEventListener('submit', function(e) {
+        addNewFAQForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const category = document.getElementById('newFAQCategory').value;
-            const question = document.getElementById('newFAQQuestion').value;
-            const answer = document.getElementById('newFAQAnswer').value;
-            
-            if (!category || !question || !answer) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            // Check if we're editing an existing FAQ (hidden field for edit ID)
-            const editId = document.getElementById('editFAQId');
-            const isEdit = editId && editId.value;
-            
-            const url = isEdit ? '/api/faqs/' + category + '/' + editId.value : '/api/faqs';
-            const method = isEdit ? 'PUT' : 'POST';
-            
-            apiFetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category: category,
-                    question: question,
-                    answer: answer
+            var category = document.getElementById('newFAQCategory').value;
+            var question = document.getElementById('newFAQQuestion').value;
+            var answer = document.getElementById('newFAQAnswer').value;
+            if (!category || !question || !answer) { alert('Please fill in all fields'); return; }
+            var editId = document.getElementById('editFAQId');
+            var isEdit = editId && editId.value;
+            var url = isEdit ? '/api/faqs/' + category + '/' + editId.value : '/api/faqs';
+            var method = isEdit ? 'PUT' : 'POST';
+            apiFetch(url, { method: method, body: JSON.stringify({ category: category, question: question, answer: answer }) })
+                .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+                .then(function () {
+                    renderAdminFAQs();
+                    addNewFAQForm.reset();
+                    if (editId) editId.value = '';
+                    if (faqForm) faqForm.style.display = 'none';
+                    alert(isEdit ? 'FAQ updated successfully!' : 'FAQ added successfully!');
                 })
-            })
-            .then(function(r) {
-                return r.json().then(function(data) {
-                    if (!r.ok) throw data;
-                    return data;
-                });
-            })
-            .then(function(data) {
-                // Update admin display
-                renderAdminFAQs();
-                
-                // Reset form and hide
-                addNewFAQForm.reset();
-                if (editId) editId.value = '';
-                if (faqForm) {
-                    faqForm.style.display = 'none';
-                    
-                    // Reset form title back to "Add New FAQ"
-                    const formTitle = faqForm.querySelector('h3');
-                    if (formTitle) {
-                        formTitle.innerHTML = '<i class="fas fa-question-circle"></i> Add New FAQ';
-                    }
-                }
-                
-                alert(isEdit ? 'FAQ updated successfully!' : 'FAQ added successfully!');
-            })
-            .catch(function(err) {
-                alert('Error ' + (isEdit ? 'updating' : 'adding') + ' FAQ: ' + (err.error || err.message || 'Unknown error'));
-            });
+                .catch(function (err) { alert('Error: ' + (err.error || err.message || 'Unknown error')); });
         });
     }
-    
-    // Initial render
     renderAdminFAQs();
 }
 
 function renderAdminFAQs() {
-    // Fetch FAQs from backend
     apiFetch('/api/faqs')
-    .then(function(r) {
-        return r.json().then(function(data) {
-            if (!r.ok) throw data;
-            return data;
+        .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+        .then(function (faqs) {
+            var generalFAQs = faqs.general || [];
+            var servicesFAQs = faqs.services || [];
+            var processFAQs = faqs.process || [];
+            updateFAQStatistics(generalFAQs, servicesFAQs, processFAQs);
+            [['adminGeneralFAQs', generalFAQs, 'general'], ['adminServicesFAQs', servicesFAQs, 'services'], ['adminProcessFAQs', processFAQs, 'process']].forEach(function (item) {
+                var container = document.getElementById(item[0]);
+                var list = item[1];
+                var cat = item[2];
+                if (!container) return;
+                container.innerHTML = list.length ? list.map(function (faq) { return createAdminFAQItem(faq, cat); }).join('') :
+                    '<div class="faq-empty-state"><i class="fas fa-inbox"></i> No ' + cat + ' FAQs available.</div>';
+            });
+        })
+        .catch(function () {
+            ['adminGeneralFAQs','adminServicesFAQs','adminProcessFAQs'].forEach(function (id) {
+                var container = document.getElementById(id);
+                if (container) container.innerHTML = '<div class="faq-empty-state"><i class="fas fa-exclamation-triangle"></i> Error loading FAQs.</div>';
+            });
         });
-    })
-    .then(function(faqs) {
-        const generalFAQs = faqs.general || [];
-        const servicesFAQs = faqs.services || [];
-        const processFAQs = faqs.process || [];
-        
-        // Update statistics
-        updateFAQStatistics(generalFAQs, servicesFAQs, processFAQs);
-        
-        // Render General FAQs
-        const generalContainer = document.getElementById('adminGeneralFAQs');
-        if (generalContainer) {
-            if (generalFAQs.length === 0) {
-                generalContainer.innerHTML = `
-                    <div class="faq-empty-state">
-                        <i class="fas fa-inbox"></i>
-                        No general FAQs available. Add your first FAQ to get started.
-                    </div>
-                `;
-            } else {
-                generalContainer.innerHTML = generalFAQs.map(faq => createAdminFAQItem(faq, 'general')).join('');
-            }
-        }
-        
-        // Render Services FAQs
-        const servicesContainer = document.getElementById('adminServicesFAQs');
-        if (servicesContainer) {
-            if (servicesFAQs.length === 0) {
-                servicesContainer.innerHTML = `
-                    <div class="faq-empty-state">
-                        <i class="fas fa-inbox"></i>
-                        No service FAQs available. Add your first FAQ to get started.
-                    </div>
-                `;
-            } else {
-                servicesContainer.innerHTML = servicesFAQs.map(faq => createAdminFAQItem(faq, 'services')).join('');
-            }
-        }
-        
-        // Render Process FAQs
-        const processContainer = document.getElementById('adminProcessFAQs');
-        if (processContainer) {
-            if (processFAQs.length === 0) {
-                processContainer.innerHTML = `
-                    <div class="faq-empty-state">
-                        <i class="fas fa-inbox"></i>
-                        No process FAQs available. Add your first FAQ to get started.
-                    </div>
-                `;
-            } else {
-                processContainer.innerHTML = processFAQs.map(faq => createAdminFAQItem(faq, 'process')).join('');
-            }
-        }
-    })
-    .catch(function(err) {
-        console.error('Error fetching FAQs:', err);
-        // Show error message in each container
-        ['adminGeneralFAQs', 'adminServicesFAQs', 'adminProcessFAQs'].forEach(function(id) {
-            const container = document.getElementById(id);
-            if (container) {
-                container.innerHTML = `
-                    <div class="faq-empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Error loading FAQs. Please try again.
-                    </div>
-                `;
-            }
-        });
-    });
 }
 
-// Update FAQ statistics
 function updateFAQStatistics(generalFAQs, servicesFAQs, processFAQs) {
-    // Update individual category counts
-    const generalCount = document.getElementById('generalCount');
-    const servicesCount = document.getElementById('servicesCount');
-    const processCount = document.getElementById('processCount');
-    
-    if (generalCount) generalCount.textContent = generalFAQs.length;
-    if (servicesCount) servicesCount.textContent = servicesFAQs.length;
-    if (processCount) processCount.textContent = processFAQs.length;
-    
-    // Update total counts
-    const totalGeneral = document.getElementById('totalGeneralFAQs');
-    const totalServices = document.getElementById('totalServicesFAQs');
-    const totalProcess = document.getElementById('totalProcessFAQs');
-    const totalAll = document.getElementById('totalAllFAQs');
-    
-    if (totalGeneral) totalGeneral.textContent = generalFAQs.length;
-    if (totalServices) totalServices.textContent = servicesFAQs.length;
-    if (totalProcess) totalProcess.textContent = processFAQs.length;
-    if (totalAll) totalAll.textContent = generalFAQs.length + servicesFAQs.length + processFAQs.length;
+    var ids = { generalCount: generalFAQs.length, servicesCount: servicesFAQs.length, processCount: processFAQs.length,
+        totalGeneralFAQs: generalFAQs.length, totalServicesFAQs: servicesFAQs.length, totalProcessFAQs: processFAQs.length,
+        totalAllFAQs: generalFAQs.length + servicesFAQs.length + processFAQs.length };
+    Object.keys(ids).forEach(function (id) { var el = document.getElementById(id); if (el) el.textContent = ids[id]; });
 }
 
 function createAdminFAQItem(faq, category) {
-    return `
-        <div class="faq-item">
-            <div class="faq-item-content">
-                <div class="faq-item-main">
-                    <div class="faq-item-question">${faq.question}</div>
-                    <div class="faq-item-answer">${faq.answer}</div>
-                </div>
-                <div class="faq-item-actions">
-                    <button class="faq-action-btn edit" onclick="editFAQ('${category}', '${faq.id}')" title="Edit FAQ">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="faq-action-btn delete" onclick="deleteFAQ('${category}', '${faq.id}')" title="Delete FAQ">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    return '<div class="faq-item"><div class="faq-item-content"><div class="faq-item-main">' +
+        '<div class="faq-item-question">' + escapeHtml(faq.question) + '</div>' +
+        '<div class="faq-item-answer">' + escapeHtml(faq.answer) + '</div></div>' +
+        '<div class="faq-item-actions">' +
+        '<button class="faq-action-btn edit" onclick="editFAQ(\'' + escapeAttr(category) + '\',\'' + escapeAttr(faq.id) + '\')" title="Edit FAQ"><i class="fas fa-edit"></i></button> ' +
+        '<button class="faq-action-btn delete" onclick="deleteFAQ(\'' + escapeAttr(category) + '\',\'' + escapeAttr(faq.id) + '\')" title="Delete FAQ"><i class="fas fa-trash"></i></button>' +
+        '</div></div></div>';
 }
 
 function editFAQ(category, id) {
-    // Fetch FAQ from backend
     apiFetch('/api/faqs/' + category + '/' + id)
-    .then(function(r) {
-        return r.json().then(function(data) {
-            if (!r.ok) throw data;
-            return data;
-        });
-    })
-    .then(function(faq) {
-        // Show form and populate with existing data
-        const faqForm = document.getElementById('adminFAQForm');
-        if (faqForm) {
-            faqForm.style.display = 'block';
-            document.getElementById('editFAQId').value = faq.id;
-            document.getElementById('newFAQCategory').value = category;
-            document.getElementById('newFAQQuestion').value = faq.question;
-            document.getElementById('newFAQAnswer').value = faq.answer;
-            
-            // Change form title and button text to indicate editing
-            const formTitle = document.getElementById('faqFormTitle');
-            const submitBtn = document.getElementById('submitFAQBtn');
-            const submitBtnText = document.getElementById('submitFAQText');
-            
-            if (formTitle) {
-                formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit FAQ';
+        .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+        .then(function (faq) {
+            var faqForm = document.getElementById('adminFAQForm');
+            if (faqForm) {
+                faqForm.style.display = 'block';
+                var editId = document.getElementById('editFAQId');
+                if (editId) editId.value = faq.id;
+                document.getElementById('newFAQCategory').value = category;
+                document.getElementById('newFAQQuestion').value = faq.question;
+                document.getElementById('newFAQAnswer').value = faq.answer;
+                var formTitle = document.getElementById('faqFormTitle');
+                if (formTitle) formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit FAQ';
+                var submitBtn = document.getElementById('submitFAQBtn');
+                if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Update FAQ';
             }
-            if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-save"></i> Update FAQ';
-            }
-            if (submitBtnText) {
-                submitBtnText.textContent = 'Update FAQ';
-            }
-        }
-    })
-    .catch(function(err) {
-        alert('Error loading FAQ for editing: ' + (err.error || err.message || 'Unknown error'));
-    });
+        })
+        .catch(function (err) { alert('Error loading FAQ for editing: ' + (err.error || err.message || 'Unknown error')); });
 }
 
 function deleteFAQ(category, id) {
     if (!confirm('Are you sure you want to delete this FAQ?')) return;
-    
-    const faqs = getStored('faqs', {
-        general: [],
-        services: [],
-        process: []
-    });
-    
-    // Remove FAQ
-    faqs[category] = faqs[category].filter(f => f.id !== id);
-    
-    // Delete FAQ from backend
-    apiFetch('/api/faqs/' + category + '/' + id, {
-        method: 'DELETE'
-    })
-    .then(function(r) {
-        return r.json().then(function(data) {
-            if (!r.ok) throw data;
-            return data;
-        });
-    })
-    .then(function(data) {
-        // Update displays
-        renderAdminFAQs();
-        alert('FAQ deleted successfully!');
-    })
-    .catch(function(err) {
-        alert('Error deleting FAQ: ' + (err.error || err.message || 'Unknown error'));
-    });
+    apiFetch('/api/faqs/' + category + '/' + id, { method: 'DELETE' })
+        .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+        .then(function () { renderAdminFAQs(); alert('FAQ deleted successfully!'); })
+        .catch(function (err) { alert('Error deleting FAQ: ' + (err.error || err.message || 'Unknown error')); });
 }
-
-// Function to update CRM statistics
-function updateCRMStats() {
-    const projects = getStored('portalProjects', []);
-    const invoices = getStored('portalInvoices', []);
-    const users = getStored('portalUsers', []);
-    
-    // Calculate total clients (unique client emails from projects)
-    const uniqueClients = new Set(projects.map(p => p.client).filter(Boolean));
-    const totalClientsCountEl = document.getElementById('totalClientsCount');
-    if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
-    
-    // Calculate active projects for clients
-    const activeProjects = projects.filter(p => p.status === 'ongoing' || p.status === 'active');
-    const clientActiveProjectsEl = document.getElementById('clientActiveProjects');
-    if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
-    
-    // Calculate pending invoices
-    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
-    const pendingInvoicesEl = document.getElementById('pendingInvoices');
-    if (pendingInvoicesEl) {
-        pendingInvoicesEl.textContent = String(pendingInvoices.length);
-    }
-}
-
-// Helper function for API fetch with error handling
-function apiFetch(url, options = {}) {
-    const token = sessionStorage.getItem('authToken');
-    const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers
-    };
-    
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    return fetch((window.API_BASE || '') + url, {
-        ...options,
-        headers: headers
-    });
-}
-            
