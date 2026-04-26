@@ -1143,6 +1143,24 @@ section {
     overflow: hidden;
     text-overflow: ellipsis;
     max-height: 6.4em;
+    margin-bottom: 16px;
+}
+
+.blog-see-more {
+    align-self: flex-start;
+    padding: 10px 20px;
+    background: #0f766e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.blog-see-more:hover {
+    background: #0d5c55;
 }
 
 /* ===== Careers Section ===== */

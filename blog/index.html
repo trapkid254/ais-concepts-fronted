@@ -176,8 +176,45 @@
                 grid.innerHTML = posts.map(function(p, index) {
                     var imgSrc = p.image || 'https://via.placeholder.com/400x300?text=Blog';
                     var isEven = index % 2 === 1;
-                    return '<article class="blog-card ' + (isEven ? 'blog-card-reverse' : '') + '"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p></div></div></article>';
+                    return '<article class="blog-card ' + (isEven ? 'blog-card-reverse' : '') + '" data-post-id="' + index + '"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p><button class="blog-see-more" data-post-id="' + index + '">See More</button></div></div></article>';
                 }).join('');
+                
+                // Add see more functionality
+                document.querySelectorAll('.blog-see-more').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var postId = this.getAttribute('data-post-id');
+                        var card = document.querySelector('.blog-card[data-post-id="' + postId + '"]');
+                        var excerpt = card.querySelector('.blog-excerpt');
+                        var image = card.querySelector('.blog-image');
+                        var fullText = excerpt.textContent;
+                        
+                        if (card.classList.contains('blog-card-expanded')) {
+                            // Collapse
+                            card.classList.remove('blog-card-expanded');
+                            excerpt.style.display = '-webkit-box';
+                            excerpt.style.webkitLineClamp = '4';
+                            excerpt.style.lineClamp = '4';
+                            excerpt.style.webkitBoxOrient = 'vertical';
+                            excerpt.style.overflow = 'hidden';
+                            excerpt.style.textOverflow = 'ellipsis';
+                            excerpt.style.maxHeight = '6.4em';
+                            image.style.display = 'block';
+                            this.textContent = 'See More';
+                        } else {
+                            // Expand
+                            card.classList.add('blog-card-expanded');
+                            excerpt.style.display = 'block';
+                            excerpt.style.webkitLineClamp = 'unset';
+                            excerpt.style.lineClamp = 'unset';
+                            excerpt.style.webkitBoxOrient = 'horizontal';
+                            excerpt.style.overflow = 'visible';
+                            excerpt.style.textOverflow = 'clip';
+                            excerpt.style.maxHeight = 'none';
+                            image.style.display = 'none';
+                            this.textContent = 'See Less';
+                        }
+                    });
+                });
             });
         })();
 
