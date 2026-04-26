@@ -2576,14 +2576,54 @@ async function loadAdminDashboard() {
             var description = document.getElementById('webProjectDescription').value;
             var fileInput = document.getElementById('webProjectImage');
             var file = fileInput && fileInput.files[0];
+            var editIdField = document.getElementById('webProjectEditId');
+            var editId = editIdField ? editIdField.value : null;
+            var modalTitle = webProjModal.querySelector('h2');
+            
             function saveWebProj(image) {
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                list.push({ id: Date.now(), slug: projectSlug, title: title, category: category, categorySecondary: '', image: image, description: description });
-                setWebsiteProjects(list).then(function () { renderAdminWebsiteProjects(); webProjForm.reset(); webProjModal.classList.remove('open'); }).catch(function () { alert('Could not save project.'); });
+                
+                if (editId) {
+                    // Edit existing project
+                    var index = list.findIndex(function (p) { return String(p.id) === String(editId); });
+                    if (index !== -1) {
+                        list[index] = { 
+                            id: list[index].id, 
+                            slug: projectSlug, 
+                            title: title, 
+                            category: category, 
+                            categorySecondary: list[index].categorySecondary || '', 
+                            image: image || list[index].image, 
+                            description: description 
+                        };
+                    }
+                } else {
+                    // Create new project
+                    list.push({ id: Date.now(), slug: projectSlug, title: title, category: category, categorySecondary: '', image: image, description: description });
+                }
+                
+                setWebsiteProjects(list).then(function () { 
+                    renderAdminWebsiteProjects(); 
+                    webProjForm.reset(); 
+                    if (editIdField) editIdField.value = '';
+                    if (modalTitle) modalTitle.textContent = 'Add Website Project';
+                    webProjModal.classList.remove('open'); 
+                }).catch(function () { alert('Could not save project.'); });
             }
-            if (file) { var reader = new FileReader(); reader.onload = function () { saveWebProj(reader.result); }; reader.readAsDataURL(file); }
-            else { saveWebProj('https://via.placeholder.com/600x400?text=' + encodeURIComponent(title)); }
+            
+            if (file) { 
+                var reader = new FileReader(); 
+                reader.onload = function () { saveWebProj(reader.result); }; 
+                reader.readAsDataURL(file); 
+            } else if (editId) {
+                // Keep existing image if editing and no new file
+                var list = getWebsiteProjects();
+                var existing = list.find(function (p) { return String(p.id) === String(editId); });
+                saveWebProj(existing ? existing.image : 'https://via.placeholder.com/600x400?text=' + encodeURIComponent(title));
+            } else {
+                saveWebProj('https://via.placeholder.com/600x400?text=' + encodeURIComponent(title));
+            }
         });
     }
 
@@ -2675,7 +2715,8 @@ function renderAdminWebsiteProjects() {
         var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
         var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="editWebsiteProject(\'' + idEscaped + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
+            '<button type="button" class="btn-icon" onclick="deleteWebsiteProject(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
 }
 
@@ -2697,6 +2738,37 @@ window.deleteWebsiteProject = function (id) {
     if (!confirm('Delete this website project?')) return;
     var list = getWebsiteProjects().filter(function (p) { return String(p.id) !== String(id); });
     setWebsiteProjects(list).then(renderAdminWebsiteProjects).catch(function () { alert('Could not save changes.'); });
+};
+
+window.editWebsiteProject = function (id) {
+    if (typeof getWebsiteProjects !== 'function') return;
+    var list = getWebsiteProjects();
+    var project = list.find(function (p) { return String(p.id) === String(id); });
+    if (!project) return;
+    
+    var webProjModal = document.getElementById('adminWebsiteProjectModal');
+    var webProjForm = document.getElementById('adminWebsiteProjectForm');
+    var modalTitle = webProjModal.querySelector('h2');
+    
+    if (webProjForm) {
+        document.getElementById('webProjectTitle').value = project.title || '';
+        document.getElementById('webProjectSlug').value = project.slug || '';
+        document.getElementById('webProjectCategory').value = project.category || '';
+        document.getElementById('webProjectDescription').value = project.description || '';
+        
+        // Add hidden field for edit mode
+        var editIdField = document.getElementById('webProjectEditId');
+        if (!editIdField) {
+            editIdField = document.createElement('input');
+            editIdField.type = 'hidden';
+            editIdField.id = 'webProjectEditId';
+            webProjForm.appendChild(editIdField);
+        }
+        editIdField.value = project.id;
+        
+        if (modalTitle) modalTitle.textContent = 'Edit Website Project';
+        webProjModal.classList.add('open');
+    }
 };
 
 window.deleteWebsiteService = function (id) {
