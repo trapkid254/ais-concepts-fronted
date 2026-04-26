@@ -1435,19 +1435,43 @@ window.viewProjectWorkers = function (projectId) {
 window.deleteProject = function (projectId) {
     if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
     var authToken = sessionStorage.getItem('authToken');
+    console.log('Deleting project with ID:', projectId);
+    
+    // First check if project exists
     fetch(window.API_BASE + '/api/projects/' + projectId, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function (response) {
-        if (!response.ok) throw new Error('Failed to delete project');
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Project not found in database. It may have already been deleted.');
+            }
+            throw new Error('Failed to verify project existence');
+        }
+        return response.json();
+    }).then(function (project) {
+        console.log('Project found, proceeding with deletion:', project.name);
+        // Project exists, now delete it
+        return fetch(window.API_BASE + '/api/projects/' + projectId, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }
+        });
+    }).then(function (response) {
+        console.log('Delete response status:', response.status);
+        if (!response.ok) {
+            return response.json().then(function (err) {
+                throw new Error(err.error || 'Failed to delete project');
+            });
+        }
         return response.json();
     }).then(function () {
         var projects = getStored('portalProjects', []);
-        setStored('portalProjects', projects.filter(function (p) { return String(p.id) !== String(projectId); }));
+        setStored('portalProjects', projects.filter(function (p) { return String(p._id || p.id) !== String(projectId); }));
         renderAdminProjectsTable();
         alert('Project deleted successfully!');
-    }).catch(function () {
-        alert('Failed to delete project. Please try again.');
+    }).catch(function (error) {
+        console.error('Delete project error:', error);
+        alert('Failed to delete project: ' + error.message);
     });
 };
 
