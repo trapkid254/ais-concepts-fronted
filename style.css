@@ -1136,6 +1136,8 @@ section {
     color: var(--text-secondary);
     font-size: 1rem;
     line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
     display: -webkit-box;
     -webkit-line-clamp: 4;
     line-clamp: 4;
