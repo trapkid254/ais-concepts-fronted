@@ -1241,7 +1241,7 @@ function setupAdminInteractions(currentUser) {
                 var foremanData = {
                     name: selectedForeman.name || '', username: selectedForeman.id || '',
                     email: selectedForeman.email || ((selectedForeman.id || '').toLowerCase().replace(/\s/g, '') + '@aisconcepts.com'),
-                    password: selectedForeman.password || 'temp123',
+                    password: selectedForeman.password || 'Temp123!',
                     role: 'foreman', assignedProjects: [name], phone: selectedForeman.phone || ''
                 };
                 var authToken = sessionStorage.getItem('authToken');
