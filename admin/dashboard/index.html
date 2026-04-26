@@ -321,7 +321,7 @@
                     </div>
                     <div class="form-group">
                         <label for="assignEmployeeEmail">Employee Email</label>
-                        <input type="text" id="assignEmployeeEmail" name="assignEmployeeEmail" placeholder="employee@demo.com" >
+                        <input type="text" id="assignEmployeeEmail" name="assignEmployeeEmail" placeholder="Employee email" >
                     </div>
                     <div class="form-group">
                         <label for="assignDueDate">Due Date</label>
@@ -516,7 +516,7 @@
                         <form id="adminMessageForm" class="portal-form-grid">
                             <div class="form-group">
                                 <label for="messageTo">To (email)</label>
-                                <input type="email" id="messageTo" placeholder="client@demo.com" >
+                                <input type="email" id="messageTo" placeholder="Recipient email" >
                             </div>
                             <div class="form-group">
                                 <label for="messageProject">Project</label>
@@ -576,19 +576,14 @@
                     </div>
                     <div class="table-container card">
                         <h2>System Health</h2>
-                        <ul class="system-health-list">
-                            <li><span class="dot success"></span> Server: Online</li>
-                            <li><span class="dot success"></span> Database: Connected</li>
-                            <li><span class="dot"></span> Storage: 45% (230GB / 500GB)</li>
-                            <li><span class="dot success"></span> Last Backup: Today 03:00</li>
+                        <ul class="system-health-list" id="systemHealthList">
+                            <li><span class="dot"></span> Loading...</li>
                         </ul>
                     </div>
                     <div class="table-container card full-width">
                         <h2>Recent Activity</h2>
                         <div class="activity-list" id="adminActivityList">
-                            <div class="activity-item"><i class="fas fa-user-plus"></i> New user: Emma Watson</div>
-                            <div class="activity-item"><i class="fas fa-file-invoice"></i> Invoice INV-2024-003 paid</div>
-                            <div class="activity-item"><i class="fas fa-project-diagram"></i> Project updated: Horizon Tower</div>
+                            <div class="activity-item">Loading recent activity...</div>
                         </div>
                     </div>
                 </div>
@@ -628,14 +623,14 @@
                 <div class="card profile-form-login-style" style="max-width: 560px;">
                     <form id="adminSettingsForm" class="portal-form-grid">
                         <div class="form-group full-width">
-                            <label><input type="checkbox" id="settingEmailNotifications" checked> Email notifications for new applications</label>
+                            <label><input type="checkbox" id="settingEmailNotifications"> Email notifications for new applications</label>
                         </div>
                         <div class="form-group full-width">
                             <label><input type="checkbox" id="settingInvoiceReminders"> Send invoice reminders to clients</label>
                         </div>
                         <div class="form-group">
                             <label>Default invoice due (days)</label>
-                            <input type="number" id="settingInvoiceDueDays" value="30" min="7" max="90">
+                            <input type="number" id="settingInvoiceDueDays" min="7" max="90">
                         </div>
                         <div class="form-group form-group-action">
                             <button type="button" class="btn btn-primary" id="adminSettingsSave">Save Settings</button>
@@ -908,11 +903,11 @@
                         </div>
                         <div class="form-group">
                             <label>Budget</label>
-                            <input type="text" id="adminProjectBudget" placeholder="KSH 0.0M">
+                            <input type="text" id="adminProjectBudget" placeholder="Project budget">
                         </div>
                         <div class="form-group">
                             <label>Progress %</label>
-                            <input type="number" id="adminProjectProgress" min="0" max="100" value="0">
+                            <input type="number" id="adminProjectProgress" min="0" max="100">
                         </div>
                         <div class="form-group">
                             <label>Category</label>
@@ -925,19 +920,19 @@
                         </div>
                         <div class="form-group">
                             <label>Money Paid (client view)</label>
-                            <input type="text" id="adminProjectMoneyPaid" placeholder="e.g. KSH 10,000">
+                            <input type="text" id="adminProjectMoneyPaid" placeholder="Amount paid">
                         </div>
                         <div class="form-group">
                             <label>Money Used</label>
-                            <input type="text" id="adminProjectMoneyUsed" placeholder="e.g. KSH 8,000">
+                            <input type="text" id="adminProjectMoneyUsed" placeholder="Amount used">
                         </div>
                         <div class="form-group">
                             <label>Money Remaining</label>
-                            <input type="text" id="adminProjectMoneyRemaining" placeholder="e.g. KSH 2,000">
+                            <input type="text" id="adminProjectMoneyRemaining" placeholder="Amount remaining">
                         </div>
                         <div class="form-group">
                             <label>Money Owed</label>
-                            <input type="text" id="adminProjectMoneyOwed" placeholder="e.g. KSH 0">
+                            <input type="text" id="adminProjectMoneyOwed" placeholder="Amount owed">
                         </div>
                         <div class="form-group">
                             <label>Deadline / est. completion</label>
@@ -1046,7 +1041,7 @@
                         </div>
                         <div class="form-group">
                             <label>Amount</label>
-                            <input type="text" id="invAmount" name="invAmount"  placeholder="KSH 0">
+                            <input type="text" id="invAmount" name="invAmount"  placeholder="Invoice amount">
                         </div>
                         <div class="form-group">
                             <label>Due Date</label>
@@ -1086,7 +1081,7 @@
                         </div>
                         <div class="form-group">
                             <label>Amount</label>
-                            <input type="text" id="invEditAmount"  placeholder="KSH 0">
+                            <input type="text" id="invEditAmount"  placeholder="Invoice amount">
                         </div>
                         <div class="form-group">
                             <label>Due Date</label>
@@ -1450,17 +1445,17 @@
                     <div class="tool-card">
                         <i class="fas fa-drafting-compass"></i>
                         <h4>2D Drafting</h4>
-                        <p>Plans, sections, elevations</p>
+                        <p>Architectural drafting services</p>
                     </div>
                     <div class="tool-card">
                         <i class="fas fa-cube"></i>
                         <h4>3D Modeling</h4>
-                        <p>BIM and visualization</p>
+                        <p>Building information modeling</p>
                     </div>
                     <div class="tool-card">
                         <i class="fas fa-image"></i>
                         <h4>Rendering</h4>
-                        <p>Photorealistic outputs</p>
+                        <p>3D rendering and visualization</p>
                     </div>
                 </div>
                 <table class="data-table">
@@ -1501,8 +1496,8 @@
                                 </div>
                                 <div class="financial-stat-value" id="totalRevenueAmount">KSH 0</div>
                                 <div class="financial-stat-label">Total Revenue</div>
-                                <div class="financial-stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> +12.5% from last month
+                                <div class="financial-stat-change positive" id="totalRevenueChange">
+                                    <i class="fas fa-arrow-up"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1512,8 +1507,8 @@
                                 </div>
                                 <div class="financial-stat-value" id="pendingInvoiceAmount">KSH 0</div>
                                 <div class="financial-stat-label">Pending Invoices</div>
-                                <div class="financial-stat-change">
-                                    <i class="fas fa-minus"></i> 3 invoices awaiting payment
+                                <div class="financial-stat-change" id="pendingInvoiceChange">
+                                    <i class="fas fa-minus"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1523,8 +1518,8 @@
                                 </div>
                                 <div class="financial-stat-value" id="totalExpenses">KSH 0</div>
                                 <div class="financial-stat-label">Total Expenses</div>
-                                <div class="financial-stat-change negative">
-                                    <i class="fas fa-arrow-up"></i> +8.2% from last month
+                                <div class="financial-stat-change negative" id="totalExpensesChange">
+                                    <i class="fas fa-arrow-up"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1534,8 +1529,8 @@
                                 </div>
                                 <div class="financial-stat-value" id="netProfitAmount">KSH 0</div>
                                 <div class="financial-stat-label">Net Profit</div>
-                                <div class="financial-stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> +15.3% from last month
+                                <div class="financial-stat-change positive" id="netProfitChange">
+                                    <i class="fas fa-arrow-up"></i> Loading...
                                 </div>
                             </div>
                         </div>
@@ -1675,10 +1670,10 @@
                                 <div class="approvals-stat-icon pending">
                                     <i class="fas fa-clock"></i>
                                 </div>
-                                <div class="approvals-stat-value" id="pendingClientApprovals">5</div>
+                                <div class="approvals-stat-value" id="pendingClientApprovals">0</div>
                                 <div class="approvals-stat-label">Pending Client Approval</div>
-                                <div class="approvals-stat-change">
-                                    <i class="fas fa-info-circle"></i> Awaiting client review
+                                <div class="approvals-stat-change" id="pendingClientChange">
+                                    <i class="fas fa-info-circle"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1686,10 +1681,10 @@
                                 <div class="approvals-stat-icon authority">
                                     <i class="fas fa-gavel"></i>
                                 </div>
-                                <div class="approvals-stat-value" id="pendingAuthorityApprovals">3</div>
+                                <div class="approvals-stat-value" id="pendingAuthorityApprovals">0</div>
                                 <div class="approvals-stat-label">Pending Authority Approval</div>
-                                <div class="approvals-stat-change">
-                                    <i class="fas fa-exclamation-triangle"></i> Requires authority review
+                                <div class="approvals-stat-change" id="pendingAuthorityChange">
+                                    <i class="fas fa-exclamation-triangle"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1697,10 +1692,10 @@
                                 <div class="approvals-stat-icon approved">
                                     <i class="fas fa-check"></i>
                                 </div>
-                                <div class="approvals-stat-value" id="approvedThisMonth">12</div>
+                                <div class="approvals-stat-value" id="approvedThisMonth">0</div>
                                 <div class="approvals-stat-label">Approved This Month</div>
-                                <div class="approvals-stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> +20% from last month
+                                <div class="approvals-stat-change positive" id="approvedChange">
+                                    <i class="fas fa-arrow-up"></i> Loading...
                                 </div>
                             </div>
                             
@@ -1708,10 +1703,10 @@
                                 <div class="approvals-stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff;">
                                     <i class="fas fa-chart-line"></i>
                                 </div>
-                                <div class="approvals-stat-value" id="avgApprovalTime">2.3</div>
+                                <div class="approvals-stat-value" id="avgApprovalTime">0</div>
                                 <div class="approvals-stat-label">Avg. Approval Time (days)</div>
-                                <div class="approvals-stat-change positive">
-                                    <i class="fas fa-arrow-down"></i> -0.5 days improvement
+                                <div class="approvals-stat-change positive" id="avgApprovalChange">
+                                    <i class="fas fa-arrow-down"></i> Loading...
                                 </div>
                             </div>
                         </div>
@@ -1807,15 +1802,15 @@
                 <div class="site-overview">
                     <div class="site-stat">
                         <h4>Active Sites</h4>
-                        <span id="activeSitesCount">12</span>
+                        <span id="activeSitesCount">0</span>
                     </div>
                     <div class="site-stat">
                         <h4>This Week Visits</h4>
-                        <span id="weeklySiteVisits">8</span>
+                        <span id="weeklySiteVisits">0</span>
                     </div>
                     <div class="site-stat">
                         <h4>Open Snags</h4>
-                        <span id="openSnags">24</span>
+                        <span id="openSnags">0</span>
                     </div>
                 </div>
                 <table class="data-table">
@@ -1845,15 +1840,15 @@
                 <div class="marketing-overview">
                     <div class="marketing-stat">
                         <h4>Website Visitors</h4>
-                        <span id="websiteVisitors">12,456</span>
+                        <span id="websiteVisitors">0</span>
                     </div>
                     <div class="marketing-stat">
                         <h4>Leads Generated</h4>
-                        <span id="leadsGenerated">89</span>
+                        <span id="leadsGenerated">0</span>
                     </div>
                     <div class="marketing-stat">
                         <h4>Conversion Rate</h4>
-                        <span id="conversionRate">3.2%</span>
+                        <span id="conversionRate">0%</span>
                     </div>
                 </div>
                 <table class="data-table">
@@ -2033,7 +2028,7 @@
                         </div>
                         <div class="form-group">
                             <label>Version</label>
-                            <input type="text" id="docVersion" value="1.0" placeholder="e.g. 1.0">
+                            <input type="text" id="docVersion" placeholder="Document version">
                         </div>
                         <button type="submit" class="btn btn-primary">Upload Document</button>
                     </form>
@@ -2077,7 +2072,7 @@
                         </div>
                         <div class="form-group">
                             <label>Progress (%)</label>
-                            <input type="number" id="designProgress" min="0" max="100" value="0" >
+                            <input type="number" id="designProgress" min="0" max="100" >
                         </div>
                         <div class="form-group">
                             <label>Description</label>
@@ -2124,7 +2119,7 @@
                         </div>
                         <div class="form-group">
                             <label>Project Value</label>
-                            <input type="text" id="portfolioValue" placeholder="e.g. KSH 5,000,000">
+                            <input type="text" id="portfolioValue" placeholder="Portfolio value">
                         </div>
                         <div class="form-group">
                             <label>Description</label>
@@ -2225,11 +2220,11 @@
                         </div>
                         <div class="form-group">
                             <label>Progress (%)</label>
-                            <input type="number" id="siteVisitProgress" min="0" max="100" value="0" >
+                            <input type="number" id="siteVisitProgress" min="0" max="100" >
                         </div>
                         <div class="form-group">
                             <label>Issues Found</label>
-                            <input type="number" id="siteVisitIssues" min="0" value="0" placeholder="Number of issues">
+                            <input type="number" id="siteVisitIssues" min="0" placeholder="Number of issues">
                         </div>
                         <div class="form-group">
                             <label>Next Visit Date</label>
