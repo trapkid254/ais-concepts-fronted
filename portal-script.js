@@ -2665,13 +2665,51 @@ async function loadAdminDashboard() {
             var excerpt = document.getElementById('blogPostExcerpt').value;
             var fileInput = document.getElementById('blogPostImage');
             var file = fileInput && fileInput.files[0];
-            function addPost(image) {
+            var editIdField = document.getElementById('blogPostEditId');
+            var editId = editIdField ? editIdField.value : null;
+            var modalTitle = blogModal.querySelector('h2');
+            
+            function savePost(image) {
                 var posts = getWebsiteBlogPosts().slice();
-                posts.push({ id: Date.now(), title: title, date: date, excerpt: excerpt, image: image });
-                setWebsiteBlogPosts(posts).then(function () { renderAdminBlogPosts(); blogForm.reset(); blogModal.classList.remove('open'); }).catch(function () { alert('Could not save post.'); });
+                
+                if (editId) {
+                    // Edit existing post
+                    var index = posts.findIndex(function (p) { return String(p.id) === String(editId); });
+                    if (index !== -1) {
+                        posts[index] = { 
+                            id: posts[index].id, 
+                            title: title, 
+                            date: date, 
+                            excerpt: excerpt, 
+                            image: image || posts[index].image 
+                        };
+                    }
+                } else {
+                    // Create new post
+                    posts.push({ id: Date.now(), title: title, date: date, excerpt: excerpt, image: image });
+                }
+                
+                setWebsiteBlogPosts(posts).then(function () { 
+                    renderAdminBlogPosts(); 
+                    blogForm.reset(); 
+                    if (editIdField) editIdField.value = '';
+                    if (modalTitle) modalTitle.textContent = 'Add Blog Post';
+                    blogModal.classList.remove('open'); 
+                }).catch(function () { alert('Could not save post.'); });
             }
-            if (file) { var reader = new FileReader(); reader.onload = function () { addPost(reader.result); }; reader.readAsDataURL(file); }
-            else { addPost('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title)); }
+            
+            if (file) { 
+                var reader = new FileReader(); 
+                reader.onload = function () { savePost(reader.result); }; 
+                reader.readAsDataURL(file); 
+            } else if (editId) {
+                // Keep existing image if editing and no new file
+                var posts = getWebsiteBlogPosts();
+                var existing = posts.find(function (p) { return String(p.id) === String(editId); });
+                savePost(existing ? existing.image : 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(title));
+            } else {
+                savePost('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title));
+            }
         });
     }
 
@@ -2787,7 +2825,8 @@ function renderAdminBlogPosts() {
         var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
         var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.date || '') + '</td><td>' + escapeHtml(ex) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteBlogPost(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="editBlogPost(\'' + idEscaped + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
+            '<button type="button" class="btn-icon" onclick="deleteBlogPost(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No blog posts. Add one above.</td></tr>';
 }
 
@@ -2796,6 +2835,36 @@ window.deleteBlogPost = function (id) {
     if (!confirm('Delete this blog post?')) return;
     var posts = getWebsiteBlogPosts().filter(function (p) { return String(p.id) !== String(id); });
     setWebsiteBlogPosts(posts).then(renderAdminBlogPosts).catch(function () { alert('Could not save changes.'); });
+};
+
+window.editBlogPost = function (id) {
+    if (typeof getWebsiteBlogPosts !== 'function') return;
+    var posts = getWebsiteBlogPosts();
+    var post = posts.find(function (p) { return String(p.id) === String(id); });
+    if (!post) return;
+    
+    var blogModal = document.getElementById('adminBlogPostModal');
+    var blogForm = document.getElementById('adminBlogPostForm');
+    var modalTitle = blogModal.querySelector('h2');
+    
+    if (blogForm) {
+        document.getElementById('blogPostTitle').value = post.title || '';
+        document.getElementById('blogPostDate').value = post.date || '';
+        document.getElementById('blogPostExcerpt').value = post.excerpt || '';
+        
+        // Add hidden field for edit mode
+        var editIdField = document.getElementById('blogPostEditId');
+        if (!editIdField) {
+            editIdField = document.createElement('input');
+            editIdField.type = 'hidden';
+            editIdField.id = 'blogPostEditId';
+            blogForm.appendChild(editIdField);
+        }
+        editIdField.value = post.id;
+        
+        if (modalTitle) modalTitle.textContent = 'Edit Blog Post';
+        blogModal.classList.add('open');
+    }
 };
 
 // ===== ANALYTICS =====
