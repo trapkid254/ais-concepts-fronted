@@ -42,13 +42,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* ===== THEME (light/dark) ===== */
     (function() {
-        var saved = sessionStorage.getItem('theme');
-        if (saved === 'dark') document.body.classList.add('dark');
+        var saved = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
         var btn = document.getElementById('themeToggle');
+        var icon = btn ? btn.querySelector('i') : null;
+        
+        function updateIcon(theme) {
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+        
+        updateIcon(saved);
+        
         if (btn) {
             btn.addEventListener('click', function() {
-                document.body.classList.toggle('dark');
-                sessionStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+                var current = document.documentElement.getAttribute('data-theme') || 'light';
+                var newTheme = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
             });
         }
     })();

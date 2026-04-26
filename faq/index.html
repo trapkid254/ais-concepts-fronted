@@ -41,7 +41,7 @@
         .faq-page {
             padding-top: 120px;
             min-height: 100vh;
-            background: #f9fafb;
+            background: var(--bg-secondary);
         }
         
         .faq-container {
@@ -58,13 +58,13 @@
         .faq-title {
             font-size: 3rem;
             font-weight: 300;
-            color: #0b1120;
+            color: var(--text-primary);
             margin-bottom: 20px;
         }
         
         .faq-subtitle {
             font-size: 1.2rem;
-            color: #6b7280;
+            color: var(--text-tertiary);
             margin-bottom: 40px;
         }
         
@@ -82,8 +82,8 @@
         }
         
         .faq-item {
-            background: #ffffff;
-            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             margin-bottom: 15px;
             overflow: hidden;
@@ -91,17 +91,20 @@
         }
         
         .faq-item:hover {
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 10px 30px var(--shadow);
         }
         
         .faq-question {
-            padding: 25px 30px;
             cursor: pointer;
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 500;
-            color: #0b1120;
+            color: var(--text-primary);
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
@@ -127,10 +130,10 @@
         .faq-answer {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease;
-            padding: 0 30px;
-            color: #4b5563;
-            line-height: 1.7;
+            transition: max-height 0.3s ease;
+            padding: 0 20px;
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
         
         .faq-answer.active {
@@ -139,7 +142,7 @@
         }
         
         .admin-faq-section {
-            background: #ffffff;
+            background: var(--card-bg);
             border: 2px solid #0f766e;
             border-radius: 12px;
             padding: 30px;
@@ -224,15 +227,16 @@
             </li>
             <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
             <li><a href="../careers/" class="hiring-btn">We're Hiring</a></li>
+            <li><button id="themeToggle" class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></li>
         </ul>
         
         <!-- Social Media Icons on the Right -->
         <div class="navbar-social-icons">
-            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="https://www.fb.com/l/6lp1kJRRR" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
-            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-            <a href="https://wa.me/254719548773" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" class="instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.fb.com/l/6lp1kJRRR" class="facebook" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" class="tiktok" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" class="youtube" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="https://wa.me/254719548773" class="whatsapp" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         </div>
     </nav>
 
@@ -358,6 +362,7 @@
 
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
+    <script src="../script.js"></script>
     <script>
         // FAQ Data - Now loaded from storage
         let faqData = {
