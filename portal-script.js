@@ -282,6 +282,12 @@ function setupPortalProfile(portal, currentUser) {
 // ===== DOMContentLoaded =====
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Theme initialization - default to dark
+    (function() {
+        var saved = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+    })();
+
     // Generic close modal
     document.body.addEventListener('click', function (e) {
         var btn = e.target.closest('.close-modal');

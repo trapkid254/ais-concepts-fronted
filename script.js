@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* ===== THEME (light/dark) ===== */
     (function() {
-        var saved = localStorage.getItem('theme') || 'light';
+        var saved = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
         var btn = document.getElementById('themeToggle');
         var icon = btn ? btn.querySelector('i') : null;
