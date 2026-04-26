@@ -203,7 +203,7 @@
                 var catText = p.categorySecondary ? p.category + ' / ' + p.categorySecondary : p.category;
                 var imgSrc = p.image || 'https://via.placeholder.com/600x400?text=' + encodeURIComponent(p.title);
                 var slug = p.slug || '';
-                var detailHref = slug ? ('project-detail.html?slug=' + encodeURIComponent(slug)) : 'index.html#portfolio';
+                var detailHref = slug ? ('../project-detail.html?slug=' + encodeURIComponent(slug)) : 'index.html#portfolio';
                 var el = document.createElement('div');
                 el.className = 'portfolio-item';
                 el.innerHTML = '<div class="portfolio-card-inner">' +
