@@ -2448,6 +2448,25 @@ async function renderAdminEnquiries() {
 }
 
 async function loadAdminDashboard() {
+    // First, refresh data from backend to clear stale localStorage
+    var token = sessionStorage.getItem('authToken');
+    if (token) {
+        try {
+            var bootstrapData = await fetch((window.API_BASE || '') + '/api/portal/bootstrap', {
+                headers: { Authorization: 'Bearer ' + token }
+            });
+            if (bootstrapData.ok) {
+                var data = await bootstrapData.json();
+                Object.keys(data).forEach(function (k) {
+                    __portalCache[k] = data[k];
+                    setStored(k, data[k]);
+                });
+            }
+        } catch (e) {
+            console.warn('Failed to refresh bootstrap data:', e);
+        }
+    }
+
     try {
         if (typeof loadWebsiteProjects === 'function') await loadWebsiteProjects();
         if (typeof loadWebsiteServices === 'function') await loadWebsiteServices();
@@ -2470,7 +2489,6 @@ async function loadAdminDashboard() {
         btn.addEventListener('click', function () {
             adminProjTabs.forEach(function (b) { b.classList.remove('active'); });
             btn.classList.add('active');
-
             window._adminProjectFilter = btn.getAttribute('data-filter') || 'all';
             window.renderAdminProjectsTable();
         });
@@ -2509,23 +2527,6 @@ async function loadAdminDashboard() {
             '<td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td>' +
             '</tr>';
     }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
-    if (careersBody) {
-        var apps = [];
-        try {
-            var cr = await fetch((window.API_BASE || '') + '/api/admin/career-applications', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
-            if (cr.ok) apps = await cr.json();
-        } catch (e) { apps = getStored('careerApplications', []); }
-        careersBody.innerHTML = apps.length ? apps.map(function (a) {
-            return '<tr>' +
-                '<td>' + escapeHtml(a.name || '') + '</td>' +
-                '<td>' + escapeHtml(a.email || '') + '</td>' +
-                '<td>' + escapeHtml(a.type || '') + '</td>' +
-                '<td>' + escapeHtml(a.campus || '-') + '</td>' +
-                '<td>' + escapeHtml(a.yearOfStudy || '-') + '</td>' +
-                '<td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td>' +
-                '</tr>';
-        }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
-    }
 
     var totalUsersEl = document.getElementById('totalUsers');
     var activeProjectsEl = document.getElementById('activeProjects');
