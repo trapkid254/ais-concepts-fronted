@@ -1797,6 +1797,78 @@ td {
     color: var(--primary);
 }
 
+.deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.deadline-badge.overdue {
+    color: var(--danger);
+}
+
+.deadline-badge.soon {
+    color: var(--warning);
+}
+
+.deadline-badge i {
+    font-size: 0.85rem;
+}
+
+.action-buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.action-buttons-container .btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    padding: 0;
+}
+
+.action-buttons-container .btn-icon:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons-container .btn-icon.edit:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.action-buttons-container .btn-icon.delete:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.action-buttons-container .btn-icon.view:hover {
+    color: var(--info);
+    border-color: var(--info);
+}
+
+.action-buttons-container .btn-icon.assign:hover {
+    color: var(--success);
+    border-color: var(--success);
+}
+
 /* ===== Forms ===== */
 .btn {
     padding: 12px 25px;

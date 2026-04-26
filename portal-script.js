@@ -1581,11 +1581,12 @@ window.renderAdminProjectsTable = function () {
                 '<td>' + escapeHtml(adminPortalProjectGroup(project) === 'completed' ? '-' : project.deadline || '') + '</td>' +
                 '<td><span class="status-badge status-' + st + '">' + escapeHtml(project.status || 'Active') + '</span></td>' +
                 '<td>' +
-                '<button type="button" class="btn-icon" title="Assign" onclick="adminAssignProjectPrefill(\'' + nameEsc + '\',\'' + clientEsc + '\')"><i class="fas fa-user-plus"></i></button> ' +
-                '<button type="button" class="btn-icon" title="View Details" onclick="viewProjectDetails(\'' + idStr + '\')"><i class="fas fa-eye"></i></button> ' +
-                '<button type="button" class="btn-icon" title="Edit Project" onclick="editProject(\'' + idStr + '\')"><i class="fas fa-edit"></i></button> ' +
-                '<button type="button" class="btn-icon btn-danger" title="Delete Project" onclick="deleteProject(\'' + idStr + '\')"><i class="fas fa-trash"></i></button>' +
-                '</td></tr>';
+                '<div class="action-buttons-container">' +
+                '<button type="button" class="btn-icon assign" title="Assign" onclick="adminAssignProjectPrefill(\'' + nameEsc + '\',\'' + clientEsc + '\')"><i class="fas fa-user-plus"></i></button>' +
+                '<button type="button" class="btn-icon view" title="View Details" onclick="viewProjectDetails(\'' + idStr + '\')"><i class="fas fa-eye"></i></button>' +
+                '<button type="button" class="btn-icon edit" title="Edit Project" onclick="editProject(\'' + idStr + '\')"><i class="fas fa-edit"></i></button>' +
+                '<button type="button" class="btn-icon delete" title="Delete Project" onclick="deleteProject(\'' + idStr + '\')"><i class="fas fa-trash"></i></button>' +
+                '</div></td></tr>';
         }).join('');
     }).catch(function () {
         tbody.innerHTML = '<tr><td colspan="9" style="color:#ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
