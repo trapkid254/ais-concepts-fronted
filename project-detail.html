@@ -23,31 +23,31 @@
         </button>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
-            <li><a href="about.html">About Us</a></li>
+            <li><a href="about/">About Us</a></li>
             <li class="has-dropdown">
-                <a href="projects.html">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <a href="projects/">Portfolio <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
-                    <li><a href="projects.html">All Projects</a></li>
-                    <li><a href="projects.html?filter=residential">Residential</a></li>
-                    <li><a href="projects.html?filter=commercial">Commercial</a></li>
-                    <li><a href="projects.html?filter=urban">Urban</a></li>
-                    <li><a href="projects.html?filter=interior">Interior</a></li>
-                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
+                    <li><a href="projects/">All Projects</a></li>
+                    <li><a href="projects/?filter=residential">Residential</a></li>
+                    <li><a href="projects/?filter=commercial">Commercial</a></li>
+                    <li><a href="projects/?filter=urban">Urban</a></li>
+                    <li><a href="projects/?filter=interior">Interior</a></li>
+                    <li><a href="projects/?filter=conceptual">Conceptual</a></li>
                 </ul>
             </li>
-                        <li><a href="contact.html">Contact Us</a></li>
-            <li><a href="blog.html">Blog</a></li>
-            <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact/">Contact Us</a></li>
+            <li><a href="blog/">Blog</a></li>
+            <li><a href="faq/">FAQ</a></li>
             <li class="nav-auth-wrap">
-                <a href="client/login.html" id="loginBtn" class="nav-login-link">Client login</a>
+                <a href="client/login/" id="loginBtn" class="nav-login-link">Client login</a>
                 <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
-                    <a href="client/dashboard.html"><i class="fas fa-th-large"></i> My Portal</a>
+                    <a href="client/dashboard/"><i class="fas fa-th-large"></i> My Portal</a>
                     <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
                 <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
             </li>
             <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
-            <li><a href="careers.html" class="hiring-btn">We're Hiring</a></li>
+            <li><a href="careers/" class="hiring-btn">We're Hiring</a></li>
             <li><button id="themeToggle" class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></li>
         </ul>
         
@@ -80,7 +80,7 @@
         <div class="container" id="projectDetailRoot">
             <p id="projectDetailLoading">Loading project…</p>
             <div id="projectDetailContent" style="display:none;"></div>
-            <p id="projectDetailError" style="display:none;"><a href="projects.html">← Back to projects</a></p>
+            <p id="projectDetailError" style="display:none;"><a href="projects/">← Back to projects</a></p>
         </div>
     </main>
 
@@ -103,10 +103,10 @@
                 <div class="footer-col">
                     <h4>Latest Projects</h4>
                     <ul class="footer-links">
-                        <li><a href="projects.html">Modern Residence Design</a></li>
-                        <li><a href="projects.html">Commercial Complex</a></li>
-                        <li><a href="projects.html">Urban Planning Project</a></li>
-                        <li><a href="projects.html">Interior Design Studio</a></li>
+                        <li><a href="projects/">Modern Residence Design</a></li>
+                        <li><a href="projects/">Commercial Complex</a></li>
+                        <li><a href="projects/">Urban Planning Project</a></li>
+                        <li><a href="projects/">Interior Design Studio</a></li>
                     </ul>
                 </div>
 
@@ -178,7 +178,7 @@
                     '<h1 class="section-title" style="margin-bottom:8px;">' + (p.title || '') + '</h1>' +
                     '<p class="section-subtitle" style="margin-bottom:24px;">' + cat + '</p>' +
                     (hero ? '<img class="project-hero-img" src="' + hero + '" alt="">' : '') +
-                    '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:#374151;">' + (p.description || '') + '</p>' +
+                    '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:var(--text-secondary);">' + (p.description || '') + '</p>' +
                     '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' +
                     section('Concept sketches', p.conceptSketches) +
                     section('Site analysis', p.siteAnalysis) +
@@ -186,7 +186,7 @@
                     section('Renderings', p.renderings) +
                     section('Construction photos', p.constructionPhotos) +
                     section('Completed photos', p.completedPhotos) +
-                    '<p style="text-align:center;margin-top:40px;"><a href="projects.html" class="btn-primary">Back to portfolio</a></p>';
+                    '<p style="text-align:center;margin-top:40px;"><a href="projects/" class="btn-primary">Back to portfolio</a></p>';
             })
             .catch(function() {
                 if (loading) loading.style.display = 'none';
