@@ -188,9 +188,9 @@
                     sessionStorage.setItem('currentUser', JSON.stringify(data.user));
                     
                     if (portalType === 'admin') {
-                        window.location.href = '../admin/dashboard/';
+                        window.location.href = '../../admin/dashboard/';
                     } else {
-                        window.location.href = '../employee/dashboard/';
+                        window.location.href = '../../employee/dashboard/';
                     }
                 })
                 .catch(function (err) {

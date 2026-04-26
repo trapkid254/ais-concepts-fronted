@@ -1667,8 +1667,8 @@ color: #e5e7eb;
 .stats-section {
     position: relative;
     z-index: 5;
-    background: #f9fafb;
-    color: #111827;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     padding: 70px 0;
 }
 
@@ -1692,13 +1692,13 @@ color: #e5e7eb;
 
 .stat-suffix {
     font-size: 2rem;
-    color: #20c4b4;
+    color: var(--text-tertiary);
     font-weight: 300;
 }
 
 .stat-label {
     font-size: 1rem;
-    color: #4b5563;
+    color: var(--text-tertiary);
     margin-top: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -1711,20 +1711,20 @@ color: #e5e7eb;
 
 .careers-hero {
     padding: 60px 0 40px;
-    background: #f9fafb;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .careers-vacancies {
     font-size: 2rem;
     font-weight: 300;
-    color: #6b7280;
+    color: var(--text-tertiary);
     margin-top: 10px;
 }
 
 .careers-open-positions {
     padding: 80px 0;
-    background: #ffffff;
+    background: var(--bg-primary);
 }
 
 .careers-cards {
@@ -1735,8 +1735,8 @@ color: #e5e7eb;
 }
 
 .career-card {
-    background: #f9fafb;
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     padding: 40px;
     border-radius: 12px;
     transition: all 0.3s ease;
@@ -1750,12 +1750,12 @@ color: #e5e7eb;
 .career-card-title {
     font-size: 1.5rem;
     font-weight: 500;
-    color: #0b1120;
+    color: var(--text-primary);
     margin-bottom: 15px;
 }
 
 .career-card-desc {
-    color: #4b5563;
+    color: var(--text-secondary);
     line-height: 1.7;
     margin-bottom: 25px;
 }
@@ -1779,8 +1779,8 @@ color: #e5e7eb;
 
 .about-hero {
     padding: 60px 0 40px;
-    background: #f9fafb;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .about-hero .section-subtitle {
@@ -1789,7 +1789,7 @@ color: #e5e7eb;
 
 .about-content {
     padding: 80px 0;
-    background: #ffffff;
+    background: var(--bg-primary);
 }
 
 .about-grid {
@@ -1804,11 +1804,11 @@ color: #e5e7eb;
     font-size: 2rem;
     font-weight: 400;
     margin-bottom: 20px;
-    color: #0b1120;
+    color: var(--text-primary);
 }
 
 .about-text p {
-    color: #4b5563;
+    color: var(--text-secondary);
     line-height: 1.8;
     margin-bottom: 20px;
 }
@@ -1834,7 +1834,7 @@ color: #e5e7eb;
     font-size: 2rem;
     font-weight: 400;
     margin-bottom: 40px;
-    color: #0b1120;
+    color: var(--text-primary);
 }
 
 .values-grid {
@@ -1845,8 +1845,8 @@ color: #e5e7eb;
 
 .value-card {
     padding: 30px;
-    background: #f9fafb;
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     text-align: center;
     transition: all 0.3s ease;
@@ -1867,12 +1867,12 @@ color: #e5e7eb;
     font-size: 1.2rem;
     font-weight: 500;
     margin-bottom: 10px;
-    color: #111827;
+    color: var(--text-primary);
 }
 
 .value-card p {
     font-size: 0.95rem;
-    color: #6b7280;
+    color: var(--text-tertiary);
     line-height: 1.6;
     margin: 0;
 }
@@ -1880,13 +1880,13 @@ color: #e5e7eb;
 .about-cta {
     text-align: center;
     padding: 50px 0;
-    background: #f9fafb;
+    background: var(--bg-secondary);
     border-radius: 12px;
 }
 
 .about-cta p {
     font-size: 1.2rem;
-    color: #4b5563;
+    color: var(--text-secondary);
     margin-bottom: 20px;
 }
 
