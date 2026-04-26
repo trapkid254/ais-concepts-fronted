@@ -2673,9 +2673,9 @@ function renderAdminWebsiteProjects() {
     tbody.innerHTML = list.length ? list.map(function (p) {
         var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
         var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
-        var idJson = JSON.stringify(p.id);
+        var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + idJson + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
 }
 
@@ -2686,8 +2686,9 @@ function renderAdminWebsiteServices() {
     tbody.innerHTML = list.length ? list.map(function (s) {
         var desc = (s.description || '').slice(0, 50) + ((s.description || '').length > 50 ? '...' : '');
         var img = s.image ? '<img src="' + escapeHtml(s.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        var idEscaped = String(s.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return '<tr><td>' + img + '</td><td>' + escapeHtml(s.title || '') + '</td><td>' + escapeHtml(s.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteService(' + s.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteService(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No website services. Add one above.</td></tr>';
 }
 
@@ -2712,8 +2713,9 @@ function renderAdminBlogPosts() {
     tbody.innerHTML = posts.length ? posts.map(function (p) {
         var ex = (p.excerpt || '').slice(0, 50) + ((p.excerpt || '').length > 50 ? '...' : '');
         var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.date || '') + '</td><td>' + escapeHtml(ex) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteBlogPost(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="deleteBlogPost(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No blog posts. Add one above.</td></tr>';
 }
 
