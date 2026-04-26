@@ -2571,13 +2571,15 @@ async function loadAdminDashboard() {
         webProjForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var title = document.getElementById('webProjectTitle').value;
+            var slug = document.getElementById('webProjectSlug').value;
             var category = document.getElementById('webProjectCategory').value;
             var description = document.getElementById('webProjectDescription').value;
             var fileInput = document.getElementById('webProjectImage');
             var file = fileInput && fileInput.files[0];
             function saveWebProj(image) {
                 var list = getWebsiteProjects().slice();
-                list.push({ id: Date.now(), title: title, category: category, categorySecondary: '', image: image, description: description });
+                var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                list.push({ id: Date.now(), slug: projectSlug, title: title, category: category, categorySecondary: '', image: image, description: description });
                 setWebsiteProjects(list).then(function () { renderAdminWebsiteProjects(); webProjForm.reset(); webProjModal.classList.remove('open'); }).catch(function () { alert('Could not save project.'); });
             }
             if (file) { var reader = new FileReader(); reader.onload = function () { saveWebProj(reader.result); }; reader.readAsDataURL(file); }
