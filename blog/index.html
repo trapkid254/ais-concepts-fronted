@@ -175,7 +175,7 @@
             loadWebsiteBlogPosts().then(function(posts) {
                 grid.innerHTML = posts.map(function(p) {
                     var imgSrc = p.image || 'https://via.placeholder.com/400x300?text=Blog';
-                    return '<article class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div></div><div class="service-back"><h3>' + (p.title || '') + '</h3><p>' + (p.excerpt || '') + '</p><p style="margin-top:10px;color:#6b7280;font-size:0.9rem;">' + (p.date || '') + '</p></div></div></article>';
+                    return '<article class="blog-card"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p></div></div></article>';
                 }).join('');
             });
         })();
