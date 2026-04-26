@@ -4025,3 +4025,343 @@ body > .modal.open {
         max-height: 80vh;
     }
 }
+
+/* ===== Comprehensive Portal Mobile Responsiveness ===== */
+@media (max-width: 768px) {
+    /* Portal Layout */
+    .portal-container {
+        flex-direction: column;
+    }
+    
+    /* Sidebar improvements */
+    .sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-nav a {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    /* Main content */
+    .main-content {
+        margin-left: 0;
+        padding: 70px 15px 20px;
+    }
+    
+    /* Top bar */
+    .top-bar {
+        padding: 12px 15px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+    }
+    
+    .page-title h1 {
+        font-size: 1.3rem;
+    }
+    
+    .page-title p {
+        font-size: 0.85rem;
+        display: none;
+    }
+    
+    /* Stats cards */
+    .stats-grid,
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card,
+    .crm-stat-card {
+        padding: 16px;
+    }
+    
+    .stat-card h3 {
+        font-size: 0.9rem;
+    }
+    
+    .stat-card .value {
+        font-size: 1.5rem;
+    }
+    
+    /* Project cards */
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .project-card {
+        padding: 16px;
+    }
+    
+    /* Tables */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+        font-size: 0.85rem;
+    }
+    
+    table th,
+    table td {
+        padding: 8px 10px;
+    }
+    
+    /* Forms */
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    /* Modals */
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        padding: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal h2 {
+        font-size: 1.25rem;
+    }
+    
+    /* Tabs */
+    .tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .tab-btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+    
+    /* Filters */
+    .filter-btn,
+    .task-filters .filter-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .portfolio-filters,
+    .task-filters {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    /* Cards grid */
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    /* User info */
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .user-name {
+        font-size: 1rem;
+    }
+    
+    /* Notifications */
+    .notification-item {
+        padding: 12px;
+    }
+    
+    /* Chat/Messages */
+    .chat-container {
+        height: calc(100vh - 200px);
+    }
+    
+    .chat-message {
+        max-width: 85%;
+    }
+    
+    /* Task management */
+    .task-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* Document management */
+    .doc-categories {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .doc-item {
+        padding: 12px;
+    }
+    
+    /* Invoice management */
+    .invoice-card {
+        padding: 16px;
+    }
+    
+    /* CRM section */
+    .crm-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .crm-stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .crm-stat-info span {
+        font-size: 1.25rem;
+    }
+    
+    /* Settings */
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+    }
+    
+    .settings-actions .btn {
+        width: 100%;
+    }
+    
+    /* FAQ section */
+    .faq-form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .faq-item-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* Financial section */
+    .financial-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .financial-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .financial-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Approvals section */
+    .approvals-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .approvals-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    /* Empty states */
+    .empty-state {
+        padding: 40px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 2.5rem;
+    }
+    
+    .empty-state h3 {
+        font-size: 1rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.85rem;
+    }
+}
+
+/* ===== Extra Small Mobile (360px) ===== */
+@media (max-width: 360px) {
+    .main-content {
+        padding: 70px 10px 15px;
+    }
+    
+    .top-bar {
+        padding: 10px 12px;
+    }
+    
+    .page-title h1 {
+        font-size: 1.1rem;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+    
+    .stat-card,
+    .project-card {
+        padding: 12px;
+    }
+    
+    .sidebar-nav a {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+    
+    table {
+        font-size: 0.75rem;
+    }
+    
+    table th,
+    table td {
+        padding: 6px 8px;
+    }
+}
