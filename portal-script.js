@@ -1437,19 +1437,26 @@ window.deleteProject = function (projectId) {
     var authToken = sessionStorage.getItem('authToken');
     console.log('Deleting project with ID:', projectId);
     
-    // First check if project exists
+    // First check if project exists in database
     fetch(window.API_BASE + '/api/projects/' + projectId, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(function (response) {
         if (!response.ok) {
             if (response.status === 404) {
-                throw new Error('Project not found in database. It may have already been deleted.');
+                // Project not in database, clear from localStorage only
+                console.log('Project not in database, clearing from localStorage');
+                var projects = getStored('portalProjects', []);
+                setStored('portalProjects', projects.filter(function (p) { return String(p._id || p.id) !== String(projectId); }));
+                renderAdminProjectsTable();
+                alert('Project removed from local storage (not found in database).');
+                return;
             }
             throw new Error('Failed to verify project existence');
         }
         return response.json();
     }).then(function (project) {
+        if (!project) return; // Already handled in 404 case
         console.log('Project found, proceeding with deletion:', project.name);
         // Project exists, now delete it
         return fetch(window.API_BASE + '/api/projects/' + projectId, {
@@ -1457,6 +1464,7 @@ window.deleteProject = function (projectId) {
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }
         });
     }).then(function (response) {
+        if (!response) return; // Already handled
         console.log('Delete response status:', response.status);
         if (!response.ok) {
             return response.json().then(function (err) {
@@ -2462,6 +2470,7 @@ async function loadAdminDashboard() {
         btn.addEventListener('click', function () {
             adminProjTabs.forEach(function (b) { b.classList.remove('active'); });
             btn.classList.add('active');
+
             window._adminProjectFilter = btn.getAttribute('data-filter') || 'all';
             window.renderAdminProjectsTable();
         });
@@ -2470,14 +2479,36 @@ async function loadAdminDashboard() {
     var assignSel = document.getElementById('assignProjectName');
     if (assignSel) {
         var pl = getStored('portalProjects', []);
-        assignSel.innerHTML = pl.length ? pl.map(function (p) {
+        var assignments = getStored('assignments', []);
+        var assignedProjectNames = new Set(assignments.map(function (a) { return a.project; }));
+        var activeUnassignedProjects = pl.filter(function (p) {
+            var isActive = p.status === 'ongoing' || p.status === 'active' || p.status === 'Active';
+            var isUnassigned = !assignedProjectNames.has(p.name);
+            return isActive && isUnassigned;
+        });
+        assignSel.innerHTML = activeUnassignedProjects.length ? activeUnassignedProjects.map(function (p) {
             return '<option value="' + escapeHtml(p.name || '') + '">' + escapeHtml(p.name || '') + '</option>';
-        }).join('') : '<option value="">Add portal projects first</option>';
+        }).join('') : '<option value="">No active unassigned projects</option>';
     }
 
     renderAdminInvoices(document.getElementById('adminInvoicesBody'));
 
     var careersBody = document.getElementById('adminCareersBody');
+    var apps = [];
+    try {
+        var cr = await fetch((window.API_BASE || '') + '/api/admin/career-applications', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
+        if (cr.ok) apps = await cr.json();
+    } catch (e) { apps = getStored('careerApplications', []); }
+    careersBody.innerHTML = apps.length ? apps.map(function (a) {
+        return '<tr>' +
+            '<td>' + escapeHtml(a.name || '') + '</td>' +
+            '<td>' + escapeHtml(a.email || '') + '</td>' +
+            '<td>' + escapeHtml(a.type || '') + '</td>' +
+            '<td>' + escapeHtml(a.campus || '-') + '</td>' +
+            '<td>' + escapeHtml(a.yearOfStudy || '-') + '</td>' +
+            '<td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td>' +
+            '</tr>';
+    }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
     if (careersBody) {
         var apps = [];
         try {
@@ -2723,44 +2754,74 @@ function updateAdminDashboardStats() {
     var invoices = getStored('portalInvoices', []);
     var documents = getStored('clientDocuments', []);
     var tasks = getStored('employeeTasks', []);
-    var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
-    var totalClientsEl = document.getElementById('totalClients');
-    if (totalClientsEl) totalClientsEl.textContent = String(uniqueClients.size);
-    var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
-    var activeProjectsEl = document.getElementById('activeProjects');
-    if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects.length);
-    var pendingTasks = tasks.filter(function (t) { return t.status === 'pending' || !t.status; });
-    var pendingTasksEl = document.getElementById('pendingTasks');
-    if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTasks.length);
-    var paidInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'paid'; });
-    var totalRevenue = paidInvoices.reduce(function (sum, inv) { return sum + (parseFloat((inv.amount || '').replace(/[^0-9.]/g, '')) || 0); }, 0);
-    var totalRevenueEl = document.getElementById('totalRevenue');
-    if (totalRevenueEl) totalRevenueEl.textContent = '$' + totalRevenue.toLocaleString();
-    var totalDocumentsEl = document.getElementById('totalDocuments');
-    if (totalDocumentsEl) totalDocumentsEl.textContent = String(documents.length);
-    var teamMembers = users.filter(function (u) { return u.approvalStatus === 'approved'; });
-    var totalUsersEl = document.getElementById('totalUsers');
-    if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
-    var pendingApprovals = users.filter(function (u) { return u.approvalStatus === 'pending'; });
-    var pendingApprovalsEl = document.getElementById('pendingApprovals');
-    if (pendingApprovalsEl) pendingApprovalsEl.textContent = String(pendingApprovals.length);
-    var activeSites = projects.filter(function (p) { return p.location || p.site; });
-    var activeSitesEl = document.getElementById('activeSites');
-    if (activeSitesEl) activeSitesEl.textContent = String(activeSites.length);
+
+    // Only show stats when data exists
+    if (projects.length > 0) {
+        var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
+        var totalClientsEl = document.getElementById('totalClients');
+        if (totalClientsEl) totalClientsEl.textContent = String(uniqueClients.size);
+
+        var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
+        var activeProjectsEl = document.getElementById('activeProjects');
+        if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects.length);
+
+        var activeSites = projects.filter(function (p) { return p.location || p.site; });
+        var activeSitesEl = document.getElementById('activeSites');
+        if (activeSitesEl) activeSitesEl.textContent = String(activeSites.length);
+    }
+
+    if (documents.length > 0) {
+        var totalDocumentsEl = document.getElementById('totalDocuments');
+        if (totalDocumentsEl) totalDocumentsEl.textContent = String(documents.length);
+    }
+
+    if (tasks.length > 0) {
+        var pendingTasks = tasks.filter(function (t) { return t.status === 'pending' || !t.status; });
+        var pendingTasksEl = document.getElementById('pendingTasks');
+        if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTasks.length);
+    }
+
+    if (invoices.length > 0) {
+        var paidInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'paid'; });
+        var totalRevenue = paidInvoices.reduce(function (sum, inv) { return sum + (parseFloat((inv.amount || '').replace(/[^0-9.]/g, '')) || 0); }, 0);
+        var totalRevenueEl = document.getElementById('totalRevenue');
+        if (totalRevenueEl) totalRevenueEl.textContent = '$' + totalRevenue.toLocaleString();
+    }
+
+    if (users.length > 0) {
+        var teamMembers = users.filter(function (u) { return u.approvalStatus === 'approved'; });
+        var totalUsersEl = document.getElementById('totalUsers');
+        if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
+
+        var pendingApprovals = users.filter(function (u) { return u.approvalStatus === 'pending'; });
+        var pendingApprovalsEl = document.getElementById('pendingApprovals');
+        if (pendingApprovalsEl) pendingApprovalsEl.textContent = String(pendingApprovals.length);
+    }
 }
 
 function updateCRMStats() {
     var projects = getStored('portalProjects', []);
     var invoices = getStored('portalInvoices', []);
-    var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
-    var totalClientsCountEl = document.getElementById('totalClientsCount');
-    if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
-    var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
-    var clientActiveProjectsEl = document.getElementById('clientActiveProjects');
-    if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
-    var pendingInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'pending'; });
-    var pendingInvoicesEl = document.getElementById('pendingInvoices');
-    if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
+
+    // Only show stats when data exists
+    if (projects.length > 0) {
+        var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
+        var totalClientsCountEl = document.getElementById('totalClientsCount');
+        if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
+
+        var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
+        var clientActiveProjectsEl = document.getElementById('clientActiveProjects');
+        if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
+    }
+
+    if (invoices.length > 0) {
+        var pendingInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'pending'; });
+        var pendingInvoicesEl = document.getElementById('pendingInvoices');
+        if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
+        var totalInvoices = invoices.length;
+        var totalInvoicesEl = document.getElementById('totalInvoices');
+        if (totalInvoicesEl) totalInvoicesEl.textContent = String(totalInvoices);
+    }
 }
 
 // ===== TASK MANAGEMENT =====

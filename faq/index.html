@@ -283,6 +283,12 @@
                 <div id="processFAQs"></div>
             </div>
 
+            <!-- Style Questions Category -->
+            <div class="faq-category">
+                <h2 class="faq-category-title">What is our style</h2>
+                <div id="styleFAQs"></div>
+            </div>
+
             <!-- Admin Section for Adding FAQs -->
             <div class="admin-faq-section" id="adminFAQSection" style="display: none;">
                 <h3 class="admin-faq-title">Add New FAQ</h3>
@@ -294,6 +300,7 @@
                                 <option value="general">General</option>
                                 <option value="services">Services</option>
                                 <option value="process">Process</option>
+                                <option value="style">What is our style</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -368,7 +375,8 @@
         let faqData = {
             general: [],
             services: [],
-            process: []
+            process: [],
+            style: []
         };
 
         // Load FAQs from backend
@@ -381,13 +389,13 @@
                     });
                 })
                 .then(function(data) {
-                    faqData = data || { general: [], services: [], process: [] };
+                    faqData = data || { general: [], services: [], process: [], style: [] };
                     renderFAQs();
                 })
                 .catch(function(err) {
                     console.error('Error loading FAQs:', err);
                     // Show error message
-                    ['general', 'services', 'process'].forEach(function(category) {
+                    ['general', 'services', 'process', 'style'].forEach(function(category) {
                         const container = document.getElementById(category + 'FAQs');
                         if (container) {
                             container.innerHTML = '<p class="empty-state">Error loading FAQs. Please try again later.</p>';
