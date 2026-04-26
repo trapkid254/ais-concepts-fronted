@@ -805,6 +805,14 @@ section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.portfolio-grid:only-child,
+.portfolio-grid > *:only-child {
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 .portfolio-item {
@@ -856,10 +864,17 @@ section {
 
 .portfolio-back .portfolio-description {
     color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.5;
     margin-bottom: 16px;
     flex-grow: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 4.5em;
 }
 
 .portfolio-back .btn-primary {
