@@ -2076,8 +2076,9 @@ body > .modal.open {
 .updates-cards-list .deadline-item p { margin: 0; font-size: 0.9rem; color: var(--gray); }
 
 .empty-state { color: var(--gray); padding: 20px; text-align: center; }
-.time-remaining-bar { padding: 12px 0; margin-bottom: 16px; background: #f0fdfa; border-radius: 8px; padding: 12px 16px; border-left: 4px solid var(--primary); }
-.time-remaining-bar p { margin: 0; font-size: 0.95rem; color: #0f766e; }
+.time-remaining-bar { padding: 12px 0; margin-bottom: 16px; background: var(--bg-tertiary); border-radius: 8px; padding: 12px 16px; border-left: 4px solid var(--primary); }
+.time-remaining-bar p { margin: 0; font-size: 0.95rem; color: var(--text-primary); }
+
 .project-filter-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .project-filter-tabs .filter-btn { padding: 8px 16px; border: 1px solid rgba(15, 118, 110, 0.4); background: #fff; color: #0f766e; font-size: 0.9rem; cursor: pointer; border-radius: 6px; }
 .project-filter-tabs .filter-btn:hover,
