@@ -2662,6 +2662,7 @@ async function loadAdminDashboard() {
             e.preventDefault();
             var title = document.getElementById('blogPostTitle').value;
             var date = document.getElementById('blogPostDate').value;
+            var author = document.getElementById('blogPostAuthor').value;
             var excerpt = document.getElementById('blogPostExcerpt').value;
             var fileInput = document.getElementById('blogPostImage');
             var file = fileInput && fileInput.files[0];
@@ -2680,13 +2681,14 @@ async function loadAdminDashboard() {
                             id: posts[index].id, 
                             title: title, 
                             date: date, 
+                            author: author || posts[index].author || '',
                             excerpt: excerpt, 
                             image: image || posts[index].image 
                         };
                     }
                 } else {
                     // Create new post
-                    posts.push({ id: Date.now(), title: title, date: date, excerpt: excerpt, image: image });
+                    posts.push({ id: Date.now(), title: title, date: date, author: author || '', excerpt: excerpt, image: image });
                 }
                 
                 setWebsiteBlogPosts(posts).then(function () { 
@@ -2850,6 +2852,7 @@ window.editBlogPost = function (id) {
     if (blogForm) {
         document.getElementById('blogPostTitle').value = post.title || '';
         document.getElementById('blogPostDate').value = post.date || '';
+        document.getElementById('blogPostAuthor').value = post.author || '';
         document.getElementById('blogPostExcerpt').value = post.excerpt || '';
         
         // Add hidden field for edit mode

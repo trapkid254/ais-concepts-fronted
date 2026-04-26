@@ -1113,7 +1113,7 @@ section {
     padding: 32px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 .blog-content h3 {
@@ -1128,7 +1128,7 @@ section {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-weight: 500;
 }
 
@@ -1146,6 +1146,20 @@ section {
     text-overflow: ellipsis;
     max-height: 6.4em;
     margin-bottom: 16px;
+    flex-grow: 1;
+}
+
+.blog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: auto;
+}
+
+.blog-author {
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-style: italic;
 }
 
 .blog-see-more {

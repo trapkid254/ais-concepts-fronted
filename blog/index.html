@@ -176,7 +176,7 @@
                 grid.innerHTML = posts.map(function(p, index) {
                     var imgSrc = p.image || 'https://via.placeholder.com/400x300?text=Blog';
                     var isEven = index % 2 === 1;
-                    return '<article class="blog-card ' + (isEven ? 'blog-card-reverse' : '') + '" data-post-id="' + index + '"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p><button class="blog-see-more" data-post-id="' + index + '">See More</button></div></div></article>';
+                    return '<article class="blog-card ' + (isEven ? 'blog-card-reverse' : '') + '" data-post-id="' + index + '"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p><div class="blog-footer">' + (p.author ? '<span class="blog-author">By ' + p.author + '</span>' : '') + '</div><button class="blog-see-more" data-post-id="' + index + '">See More</button></div></div></article>';
                 }).join('');
                 
                 // Add see more functionality
