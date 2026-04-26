@@ -2673,8 +2673,9 @@ function renderAdminWebsiteProjects() {
     tbody.innerHTML = list.length ? list.map(function (p) {
         var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
         var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
+        var idJson = JSON.stringify(p.id);
         return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
+            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteProject(' + idJson + ')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
     }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
 }
 
