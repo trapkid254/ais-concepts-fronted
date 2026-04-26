@@ -2459,7 +2459,8 @@ async function loadAdminDashboard() {
                 var data = await bootstrapData.json();
                 Object.keys(data).forEach(function (k) {
                     __portalCache[k] = data[k];
-                    setStored(k, data[k]);
+                    // Don't sync keys that shouldn't be synced to backend
+                    // Only update cache to avoid 400 errors on unsupported keys
                 });
             }
         } catch (e) {
