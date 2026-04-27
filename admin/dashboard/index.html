@@ -647,6 +647,32 @@
                 <p id="adminContentStats" style="margin-bottom: 24px;"></p>
 
                 <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Site Statistics (Hero & About Page)</h3>
+                <p class="section-sub">Update the statistics displayed on the homepage hero section and about page.</p>
+                <form id="adminStatisticsForm" style="margin-top: 16px;">
+                    <div class="form-group">
+                        <label>Projects Done</label>
+                        <input type="number" id="statProjectsDone" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Happy Clients</label>
+                        <input type="number" id="statHappyClients" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Years Experience</label>
+                        <input type="number" id="statYearsExperience" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Team Members</label>
+                        <input type="number" id="statTeamMembers" min="0" required>
+                    </div>
+                    <div class="form-group form-group-action">
+                        <button type="submit" class="btn btn-primary">Save Statistics</button>
+                    </div>
+                </form>
+                </div>
+
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
                 <h3 style="margin-top: 0;">Website Projects (Homepage &amp; Projects Page)</h3>
                 <p class="section-sub">Add or delete projects shown on the frontend. Include category, image, and description.</p>
                 <button type="button" class="btn btn-primary" id="adminAddWebsiteProjectBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Website Project</button>

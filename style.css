@@ -409,6 +409,9 @@ section {
     font-size: 1.5rem;
     color: #111827;
     cursor: pointer;
+    padding: 8px 12px;
+    z-index: 1001;
+    position: relative;
 }
 
 /* ===== Navbar Dropdowns ===== */
@@ -2043,29 +2046,79 @@ color: #e5e7eb;
 }
 
 @media (max-width: 768px) {
+    .hero {
+        min-height: calc(100dvh - 56px);
+    }
+    
+    .hero-inner {
+        min-height: calc(100dvh - 56px);
+    }
+    
+    .hero-content {
+        padding: 40px 20px 30px;
+    }
+    
+    .hero-title {
+        font-size: 2rem;
+        line-height: 1.1;
+        margin-bottom: 15px;
+    }
+    
+    .hero .section-subtitle {
+        font-size: 1rem;
+        margin-bottom: 20px;
+    }
+    
+    .hero .btn-primary {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+    }
+    
+    .hero-media-wrap img {
+        object-position: center center;
+    }
+    
+    .hero-scroll-spacer {
+        height: calc(100dvh - 56px);
+    }
+    
+    .hero-fixed-wrap {
+        top: 56px;
+        height: calc(100dvh - 56px);
+    }
+    
     .hero-stats-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        gap: 12px;
+        max-width: 320px;
+        margin: 20px auto 0;
     }
     
     .hero-stat-item {
-        padding: 15px;
+        padding: 12px;
     }
     
     .hero-stat-number {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
     
     .hero-stat-suffix {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
     
     .hero-stat-label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
     
     .navbar {
         padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .navbar .logo {
+        flex-shrink: 0;
     }
     
     .navbar .nav-ticker {
@@ -2073,7 +2126,21 @@ color: #e5e7eb;
     }
     
     .navbar-social-icons {
-        display: none;
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+    }
+    
+    .navbar-social-icons a {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .nav-social-item {
+        width: 100%;
+        padding: 10px 15px;
+        border-top: 1px solid rgba(0,0,0,0.05);
     }
     
     .navbar .nav-links {
@@ -2097,10 +2164,11 @@ color: #e5e7eb;
     }
     
     .navbar.open .nav-links {
-        max-height: 400px;
+        max-height: 500px;
         opacity: 1;
         transform: translateY(0);
         padding: 15px;
+        overflow: visible;
     }
     
     .nav-links li {
@@ -2141,31 +2209,42 @@ color: #e5e7eb;
     
     /* Mobile dropdown adjustments */
     .nav-dropdown {
-        position: static;
+        position: absolute;
+        right: 0;
+        top: 100%;
         opacity: 0;
-        visibility: visible;
-        transform: none;
-        box-shadow: none;
-        border: none;
-        background: rgba(15, 118, 110, 0.05);
+        visibility: hidden;
+        transform: translateX(10px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: white;
         margin: 0;
-        padding: 0;
-        border-radius: 4px;
-        max-height: 0;
+        padding: 8px 0;
+        border-radius: 6px;
+        height: 0;
         overflow: hidden;
-        transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        min-width: 180px;
+        z-index: 10;
+    }
+    
+    .has-dropdown {
+        position: relative;
     }
     
     .has-dropdown.mobile-open .nav-dropdown {
-        max-height: 200px;
+        height: auto;
         opacity: 1;
-        padding: 8px 0;
+        visibility: visible;
+        transform: translateX(0);
     }
     
     .nav-dropdown li a {
         font-size: 0.85rem;
-        padding: 8px 25px;
+        padding: 8px 16px;
         color: #64748b;
+        white-space: nowrap;
+        display: block;
     }
     
     .nav-dropdown li a:hover {
@@ -2174,12 +2253,24 @@ color: #e5e7eb;
     }
     
     .nav-toggle {
-        display: block;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
         order: 5;
+        font-size: 1.5rem;
+        padding: 10px 15px;
+        color: #111827;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 1002;
+        position: relative;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
     }
-}
-
-@media (max-width: 768px) {
+    
     .money-overview-container {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -2198,126 +2289,7 @@ color: #e5e7eb;
     .money-amount {
         font-size: 1.5rem;
     }
-}
-
-/* ===== Mobile Responsive ===== */
-@media (max-width: 1024px) {
-    .container {
-        padding: 0 30px;
-    }
     
-    .navbar {
-        padding: 15px 30px;
-    }
-    
-    .navbar.scrolled {
-        padding: 10px 30px;
-    }
-}
-
-@media (max-width: 768px) {
-    .navbar {
-        padding: 8px 20px;
-        height: 56px;
-    }
-    
-    .navbar .nav-ticker {
-        display: none;
-    }
-    
-    .navbar-social-icons {
-        display: none;
-    }
-    
-    .navbar .nav-links {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        flex-direction: column;
-        gap: 0;
-        padding: 0;
-        min-width: 280px;
-        border-radius: 8px;
-        box-shadow: 0 8px 32px rgba(15, 23, 42, 0.15);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .navbar.open .nav-links {
-        max-height: 400px;
-        opacity: 1;
-        transform: translateY(0);
-        padding: 15px;
-    }
-    
-    .nav-links li {
-        width: 100%;
-        opacity: 0;
-        transform: translateX(-20px);
-        transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .navbar.open .nav-links li {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    
-    .navbar.open .nav-links li:nth-child(1) { transition-delay: 0.1s; }
-    .navbar.open .nav-links li:nth-child(2) { transition-delay: 0.2s; }
-    .navbar.open .nav-links li:nth-child(3) { transition-delay: 0.3s; }
-    .navbar.open .nav-links li:nth-child(4) { transition-delay: 0.4s; }
-    .navbar.open .nav-links li:nth-child(5) { transition-delay: 0.5s; }
-    .navbar.open .nav-links li:nth-child(6) { transition-delay: 0.6s; }
-    .navbar.open .nav-links li:nth-child(7) { transition-delay: 0.7s; }
-    .navbar.open .nav-links li:nth-child(8) { transition-delay: 0.8s; }
-    .navbar.open .nav-links li:nth-child(9) { transition-delay: 0.9s; }
-    .navbar.open .nav-links li:nth-child(10) { transition-delay: 1.0s; }
-    
-    .nav-links a {
-        font-size: 0.95rem;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    
-    .nav-toggle {
-        display: block;
-        order: 5;
-    }
-
-    .hero-fixed-wrap {
-        height: calc(100dvh - 56px);
-    }
-
-    .hero-scroll-spacer {
-        height: calc(100dvh - 56px);
-    }
-
-    .nav-dropdown {
-        position: static;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        box-shadow: none;
-        border: none;
-        background: #f9fafb;
-        margin-top: 8px;
-        margin-left: 16px;
-        padding: 8px 0;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-
-    .has-dropdown.open .nav-dropdown {
-        max-height: min(60vh, 420px);
-    }
-
     .nav-dropdown a {
         padding: 8px 16px;
     }
@@ -2340,14 +2312,6 @@ color: #e5e7eb;
 
     .values-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-
-    .nav-ticker {
-        display: none;
-    }
-    
-    .hero-title {
-        font-size: 2.5rem;
     }
     
     .section-title {

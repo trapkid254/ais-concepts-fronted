@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     (function() {
         const videoPlayBtn = document.getElementById('videoPlayBtn');
         const heroVideo = document.querySelector('.hero-video');
-        
+
         if (videoPlayBtn && heroVideo) {
             // Try to autoplay immediately (may be blocked)
             heroVideo.play().then(() => {
@@ -18,19 +18,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Autoplay blocked - show play button
                 console.log('Video autoplay blocked:', error);
                 videoPlayBtn.style.display = 'flex';
-                
+
                 // Add click listener for manual play
                 videoPlayBtn.addEventListener('click', function() {
                     heroVideo.play();
                     videoPlayBtn.style.display = 'none';
                 });
             });
-            
+
             // Hide play button when video starts playing
             heroVideo.addEventListener('play', function() {
                 videoPlayBtn.style.display = 'none';
             });
-            
+
             // Show play button when video is paused
             heroVideo.addEventListener('pause', function() {
                 if (!heroVideo.ended) {
@@ -39,22 +39,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     })();
-    
+
     /* ===== THEME (light/dark) ===== */
     (function() {
         var saved = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
         var btn = document.getElementById('themeToggle');
         var icon = btn ? btn.querySelector('i') : null;
-        
+
         function updateIcon(theme) {
             if (icon) {
                 icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
-        
+
         updateIcon(saved);
-        
+
         if (btn) {
             btn.addEventListener('click', function() {
                 var current = document.documentElement.getAttribute('data-theme') || 'light';
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     })();
-    
+
     /* ===== SPLASH INTRO: only when landing on home (not when navigating from about/careers/etc) ===== */
     (function() {
         const splash = document.getElementById('splashIntro');
@@ -73,13 +73,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const isHome = /index\.html?$|\/$/.test(window.location.pathname) || window.location.pathname === '' || window.location.pathname === '/';
         const referrer = document.referrer || '';
         const fromOtherPage = referrer.indexOf(window.location.origin) >= 0 && referrer.indexOf('index') === -1 && referrer.indexOf('/') !== referrer.length - 1;
-        
+
         // Always hide splash if not on home page or coming from another page
         if (!isHome || fromOtherPage) {
             splash.style.display = 'none';
             return;
         }
-        
+
         // Show splash and start animation
         splash.style.display = 'flex';
         const bar = document.getElementById('splashLoadingBar');
@@ -164,24 +164,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /* ===== MOBILE DROPDOWN TOGGLES ===== */
     const hasDropdownItems = document.querySelectorAll('.has-dropdown');
-    
+
     hasDropdownItems.forEach(function(item) {
         const link = item.querySelector('a');
         const dropdown = item.querySelector('.nav-dropdown');
-        
+
         if (link && dropdown) {
             link.addEventListener('click', function(e) {
-                // Only handle on mobile view
-                if (window.innerWidth <= 768) {
+                // Only handle on desktop view - on mobile, let it navigate normally
+                if (window.innerWidth > 768) {
                     e.preventDefault();
-                    
+
                     // Close other dropdowns
                     hasDropdownItems.forEach(function(otherItem) {
                         if (otherItem !== item) {
                             otherItem.classList.remove('mobile-open');
                         }
                     });
-                    
+
                     // Toggle current dropdown
                     item.classList.toggle('mobile-open');
                 }
@@ -255,10 +255,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
-            
+
             if (href === '#' || href === '') return;
             if (this.id === 'loginBtn') return;
-            
+
             const target = document.querySelector(href);
             if (target) {
                 e.preventDefault();
@@ -323,16 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     runStatsCounter();
 
-    /* ===== MOBILE DROPDOWN TOGGLE ===== */
-    document.querySelectorAll('.has-dropdown > a').forEach(function(a) {
-        a.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                a.parentElement.classList.toggle('mobile-open');
-            }
-        });
-    });
-
     /* ===== CONTACT FORM ===== */
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
@@ -392,15 +382,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /* ===== ACTIVE NAVIGATION HIGHLIGHTING ===== */
     const sections = document.querySelectorAll('section[id]');
-    
+
     function updateActiveNavLink() {
         let scrollY = window.pageYOffset;
-        
+
         sections.forEach(section => {
             const sectionHeight = section.offsetHeight;
             const sectionTop = section.offsetTop - 100;
             const sectionId = section.getAttribute('id');
-            
+
             if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
                 document.querySelectorAll('.nav-links a').forEach(link => {
                     link.classList.remove('active');
@@ -411,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     window.addEventListener('scroll', updateActiveNavLink);
 
     /* Legacy #login hash → client login page */

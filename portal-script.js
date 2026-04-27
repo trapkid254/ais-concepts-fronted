@@ -2740,528 +2740,67 @@ async function loadAdminDashboard() {
             if (re) s.invoiceReminders = re.checked ? '1' : '0';
             setStored('adminSettings', s);
             alert('Settings saved.');
+            settingsSaveBtn.disabled = true;
+            setTimeout(function () { settingsSaveBtn.disabled = false; }, 1000);
         });
     }
-}
 
-// ===== WEBSITE CONTENT RENDERS =====
+    // Statistics form handler
+    var statisticsForm = document.getElementById('adminStatisticsForm');
+    if (statisticsForm) {
+        fetch(window.API_BASE + '/api/statistics')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data) {
+                    var projectsDoneEl = document.getElementById('statProjectsDone');
+                    var happyClientsEl = document.getElementById('statHappyClients');
+                    var yearsExperienceEl = document.getElementById('statYearsExperience');
+                    var teamMembersEl = document.getElementById('statTeamMembers');
+                    if (projectsDoneEl) projectsDoneEl.value = data.projectsDone || 150;
+                    if (happyClientsEl) happyClientsEl.value = data.happyClients || 80;
+                    if (yearsExperienceEl) yearsExperienceEl.value = data.yearsExperience || 15;
+                    if (teamMembersEl) teamMembersEl.value = data.teamMembers || 25;
+                }
+            })
+            .catch(function (err) { console.error('Failed to load statistics:', err); });
 
-function renderAdminWebsiteProjects() {
-    var tbody = document.getElementById('adminWebsiteProjectsBody');
-    if (!tbody || typeof getWebsiteProjects !== 'function') return;
-    var list = getWebsiteProjects();
-    tbody.innerHTML = list.length ? list.map(function (p) {
-        var desc = (p.description || '').slice(0, 50) + ((p.description || '').length > 50 ? '...' : '');
-        var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
-        var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="editWebsiteProject(\'' + idEscaped + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
-            '<button type="button" class="btn-icon" onclick="deleteWebsiteProject(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="5">No website projects. Add one above.</td></tr>';
-}
-
-function renderAdminWebsiteServices() {
-    var tbody = document.getElementById('adminWebsiteServicesBody');
-    if (!tbody || typeof getWebsiteServices !== 'function') return;
-    var list = getWebsiteServices();
-    tbody.innerHTML = list.length ? list.map(function (s) {
-        var desc = (s.description || '').slice(0, 50) + ((s.description || '').length > 50 ? '...' : '');
-        var img = s.image ? '<img src="' + escapeHtml(s.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
-        var idEscaped = String(s.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return '<tr><td>' + img + '</td><td>' + escapeHtml(s.title || '') + '</td><td>' + escapeHtml(s.category || '') + '</td><td>' + escapeHtml(desc) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteWebsiteService(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="5">No website services. Add one above.</td></tr>';
-}
-
-window.deleteWebsiteProject = function (id) {
-    if (typeof getWebsiteProjects !== 'function' || typeof setWebsiteProjects !== 'function') return;
-    if (!confirm('Delete this website project?')) return;
-    var list = getWebsiteProjects().filter(function (p) { return String(p.id) !== String(id); });
-    setWebsiteProjects(list).then(renderAdminWebsiteProjects).catch(function () { alert('Could not save changes.'); });
-};
-
-window.editWebsiteProject = function (id) {
-    if (typeof getWebsiteProjects !== 'function') return;
-    var list = getWebsiteProjects();
-    var project = list.find(function (p) { return String(p.id) === String(id); });
-    if (!project) return;
-    
-    var webProjModal = document.getElementById('adminWebsiteProjectModal');
-    var webProjForm = document.getElementById('adminWebsiteProjectForm');
-    var modalTitle = webProjModal.querySelector('h2');
-    
-    if (webProjForm) {
-        document.getElementById('webProjectTitle').value = project.title || '';
-        document.getElementById('webProjectSlug').value = project.slug || '';
-        document.getElementById('webProjectCategory').value = project.category || '';
-        document.getElementById('webProjectDescription').value = project.description || '';
-        
-        // Add hidden field for edit mode
-        var editIdField = document.getElementById('webProjectEditId');
-        if (!editIdField) {
-            editIdField = document.createElement('input');
-            editIdField.type = 'hidden';
-            editIdField.id = 'webProjectEditId';
-            webProjForm.appendChild(editIdField);
-        }
-        editIdField.value = project.id;
-        
-        if (modalTitle) modalTitle.textContent = 'Edit Website Project';
-        webProjModal.classList.add('open');
-    }
-};
-
-window.deleteWebsiteService = function (id) {
-    if (typeof getWebsiteServices !== 'function' || typeof setWebsiteServices !== 'function') return;
-    if (!confirm('Delete this website service?')) return;
-    var list = getWebsiteServices().filter(function (s) { return String(s.id) !== String(id); });
-    setWebsiteServices(list).then(renderAdminWebsiteServices).catch(function () { alert('Could not save changes.'); });
-};
-
-function renderAdminBlogPosts() {
-    var tbody = document.getElementById('adminBlogPostsBody');
-    if (!tbody || typeof getWebsiteBlogPosts !== 'function') return;
-    var posts = getWebsiteBlogPosts();
-    tbody.innerHTML = posts.length ? posts.map(function (p) {
-        var ex = (p.excerpt || '').slice(0, 50) + ((p.excerpt || '').length > 50 ? '...' : '');
-        var img = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="" class="content-thumb-img" style="max-width:72px;max-height:48px;object-fit:cover;border-radius:6px;">' : '\u2014';
-        var idEscaped = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return '<tr><td>' + img + '</td><td>' + escapeHtml(p.title || '') + '</td><td>' + escapeHtml(p.date || '') + '</td><td>' + escapeHtml(ex) + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="editBlogPost(\'' + idEscaped + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
-            '<button type="button" class="btn-icon" onclick="deleteBlogPost(\'' + idEscaped + '\')" title="Delete"><i class="fas fa-trash"></i></button></td></tr>';
-    }).join('') : '<tr><td colspan="5">No blog posts. Add one above.</td></tr>';
-}
-
-window.deleteBlogPost = function (id) {
-    if (typeof getWebsiteBlogPosts !== 'function' || typeof setWebsiteBlogPosts !== 'function') return;
-    if (!confirm('Delete this blog post?')) return;
-    var posts = getWebsiteBlogPosts().filter(function (p) { return String(p.id) !== String(id); });
-    setWebsiteBlogPosts(posts).then(renderAdminBlogPosts).catch(function () { alert('Could not save changes.'); });
-};
-
-window.editBlogPost = function (id) {
-    if (typeof getWebsiteBlogPosts !== 'function') return;
-    var posts = getWebsiteBlogPosts();
-    var post = posts.find(function (p) { return String(p.id) === String(id); });
-    if (!post) return;
-    
-    var blogModal = document.getElementById('adminBlogPostModal');
-    var blogForm = document.getElementById('adminBlogPostForm');
-    var modalTitle = blogModal.querySelector('h2');
-    
-    if (blogForm) {
-        document.getElementById('blogPostTitle').value = post.title || '';
-        document.getElementById('blogPostDate').value = post.date || '';
-        document.getElementById('blogPostAuthor').value = post.author || '';
-        document.getElementById('blogPostExcerpt').value = post.excerpt || '';
-        
-        // Add hidden field for edit mode
-        var editIdField = document.getElementById('blogPostEditId');
-        if (!editIdField) {
-            editIdField = document.createElement('input');
-            editIdField.type = 'hidden';
-            editIdField.id = 'blogPostEditId';
-            blogForm.appendChild(editIdField);
-        }
-        editIdField.value = post.id;
-        
-        if (modalTitle) modalTitle.textContent = 'Edit Blog Post';
-        blogModal.classList.add('open');
-    }
-};
-
-// ===== ANALYTICS =====
-
-var adminChartsInited = false;
-function initAdminCharts() {
-    if (typeof Chart === 'undefined' || adminChartsInited) return;
-    var lineCtx = document.getElementById('chartLine');
-    var pieCtx = document.getElementById('chartPie');
-    var barCtx = document.getElementById('chartBar');
-    if (!lineCtx || !pieCtx || !barCtx) return;
-    adminChartsInited = true;
-    new Chart(lineCtx, {
-        type: 'line',
-        data: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], datasets: [{ label: 'Revenue ($K)', data: [], borderColor: '#20c4b4', fill: true, backgroundColor: 'rgba(32,196,180,0.1)' }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-    new Chart(pieCtx, {
-        type: 'pie',
-        data: { labels: ['Active','Review','Completed'], datasets: [{ data: [], backgroundColor: ['#20c4b4','#ffd43b','#51cf66'] }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-    new Chart(barCtx, {
-        type: 'bar',
-        data: { labels: ['Users','Projects','Invoices'], datasets: [{ label: 'Count', data: [], backgroundColor: '#20c4b4' }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-    });
-}
-
-// ===== STATS =====
-
-function updateAdminDashboardStats() {
-    var projects = getStored('portalProjects', []);
-    var users = getStored('portalUsers', []);
-    var invoices = getStored('portalInvoices', []);
-    var documents = getStored('clientDocuments', []);
-    var tasks = getStored('employeeTasks', []);
-
-    // Only show stats when data exists
-    if (projects.length > 0) {
-        var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
-        var totalClientsEl = document.getElementById('totalClients');
-        if (totalClientsEl) totalClientsEl.textContent = String(uniqueClients.size);
-
-        var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
-        var activeProjectsEl = document.getElementById('activeProjects');
-        if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects.length);
-
-        var activeSites = projects.filter(function (p) { return p.location || p.site; });
-        var activeSitesEl = document.getElementById('activeSites');
-        if (activeSitesEl) activeSitesEl.textContent = String(activeSites.length);
-    }
-
-    if (documents.length > 0) {
-        var totalDocumentsEl = document.getElementById('totalDocuments');
-        if (totalDocumentsEl) totalDocumentsEl.textContent = String(documents.length);
-    }
-
-    if (tasks.length > 0) {
-        var pendingTasks = tasks.filter(function (t) { return t.status === 'pending' || !t.status; });
-        var pendingTasksEl = document.getElementById('pendingTasks');
-        if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTasks.length);
-    }
-
-    if (invoices.length > 0) {
-        var paidInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'paid'; });
-        var totalRevenue = paidInvoices.reduce(function (sum, inv) { return sum + (parseFloat((inv.amount || '').replace(/[^0-9.]/g, '')) || 0); }, 0);
-        var totalRevenueEl = document.getElementById('totalRevenue');
-        if (totalRevenueEl) totalRevenueEl.textContent = '$' + totalRevenue.toLocaleString();
-    }
-
-    if (users.length > 0) {
-        var teamMembers = users.filter(function (u) { return u.approvalStatus === 'approved'; });
-        var totalUsersEl = document.getElementById('totalUsers');
-        if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
-
-        var pendingApprovals = users.filter(function (u) { return u.approvalStatus === 'pending'; });
-        var pendingApprovalsEl = document.getElementById('pendingApprovals');
-        if (pendingApprovalsEl) pendingApprovalsEl.textContent = String(pendingApprovals.length);
-    }
-}
-
-function updateCRMStats() {
-    var projects = getStored('portalProjects', []);
-    var invoices = getStored('portalInvoices', []);
-
-    // Only show stats when data exists
-    if (projects.length > 0) {
-        var uniqueClients = new Set(projects.map(function (p) { return p.client; }).filter(Boolean));
-        var totalClientsCountEl = document.getElementById('totalClientsCount');
-        if (totalClientsCountEl) totalClientsCountEl.textContent = String(uniqueClients.size);
-
-        var activeProjects = projects.filter(function (p) { return p.status === 'ongoing' || p.status === 'active'; });
-        var clientActiveProjectsEl = document.getElementById('clientActiveProjects');
-        if (clientActiveProjectsEl) clientActiveProjectsEl.textContent = String(activeProjects.length);
-    }
-
-    if (invoices.length > 0) {
-        var pendingInvoices = invoices.filter(function (inv) { return (inv.status || '').toLowerCase() === 'pending'; });
-        var pendingInvoicesEl = document.getElementById('pendingInvoices');
-        if (pendingInvoicesEl) pendingInvoicesEl.textContent = String(pendingInvoices.length);
-        var totalInvoices = invoices.length;
-        var totalInvoicesEl = document.getElementById('totalInvoices');
-        if (totalInvoicesEl) totalInvoicesEl.textContent = String(totalInvoices);
-    }
-}
-
-// ===== TASK MANAGEMENT =====
-
-function setupTaskManagement() {
-    var addTaskBtn = document.getElementById('adminAddTaskBtn');
-    var taskModal = document.getElementById('adminAddTaskModal');
-    var taskForm = document.getElementById('adminAddTaskForm');
-    var tasksTableBody = document.getElementById('adminTasksTableBody');
-    var taskFilters = document.querySelectorAll('.task-filters .filter-btn');
-    if (addTaskBtn && taskModal) {
-        addTaskBtn.addEventListener('click', function () { if (taskForm) taskForm.reset(); populateTaskDropdowns(); taskModal.classList.add('open'); });
-    }
-    document.querySelectorAll('[data-close="adminAddTaskModal"]').forEach(function (el) { el.addEventListener('click', function () { taskModal.classList.remove('open'); }); });
-    if (taskModal) taskModal.addEventListener('click', function (e) { if (e.target === taskModal) taskModal.classList.remove('open'); });
-    if (taskForm) {
-        taskForm.addEventListener('submit', function (e) {
+        statisticsForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var task = {
-                id: Date.now(),
-                title: document.getElementById('taskTitle').value,
-                description: document.getElementById('taskDescription').value,
-                assignee: document.getElementById('taskAssignee').value,
-                project: document.getElementById('taskProject').value,
-                priority: document.getElementById('taskPriority').value,
-                dueDate: document.getElementById('taskDueDate').value,
-                status: 'pending', createdDate: new Date().toISOString()
-            };
-            var tasks = getStored('adminTasks', []);
-            tasks.push(task);
-            setStored('adminTasks', tasks);
-            renderTasks(tasksTableBody, tasks);
-            taskModal.classList.remove('open');
-            taskForm.reset();
+            var projectsDone = document.getElementById('statProjectsDone').value;
+            var happyClients = document.getElementById('statHappyClients').value;
+            var yearsExperience = document.getElementById('statYearsExperience').value;
+            var teamMembers = document.getElementById('statTeamMembers').value;
+
+            fetch(window.API_BASE + '/api/admin/statistics', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectsDone: parseInt(projectsDone),
+                    happyClients: parseInt(happyClients),
+                    yearsExperience: parseInt(yearsExperience),
+                    teamMembers: parseInt(teamMembers)
+                })
+            })
+                .then(function (r) {
+                    if (r.ok) {
+                        alert('Statistics saved successfully.');
+                        statisticsForm.reset();
+                        renderAdminWebsiteProjects();
+                        renderAdminWebsiteServices();
+                        renderAdminBlogPosts();
+                    } else {
+                        throw new Error('Failed to save statistics');
+                    }
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    alert('Failed to save statistics. Please try again.');
+                });
         });
     }
-    taskFilters.forEach(function (filter) {
-        filter.addEventListener('click', function () {
-            taskFilters.forEach(function (f) { f.classList.remove('active'); });
-            filter.classList.add('active');
-            var filterValue = filter.getAttribute('data-filter');
-            var tasks = getStored('adminTasks', []);
-            renderTasks(tasksTableBody, filterValue === 'all' ? tasks : tasks.filter(function (t) { return t.status === filterValue; }));
-        });
-    });
-    renderTasks(tasksTableBody, getStored('adminTasks', []));
+
+    setupCommunicationHub();
 }
-
-function populateTaskDropdowns() {
-    var users = getStored('portalUsers', []);
-    var projects = getStored('portalProjects', []);
-    var assigneeSelect = document.getElementById('taskAssignee');
-    var projectSelect = document.getElementById('taskProject');
-    if (assigneeSelect) {
-        assigneeSelect.innerHTML = '<option value="">Select team member</option>' +
-            users.filter(function (u) { return u.role === 'Employee'; }).map(function (u) {
-                return '<option value="' + escapeHtml(u.email) + '">' + escapeHtml(u.name) + '</option>';
-            }).join('');
-    }
-    if (projectSelect) {
-        projectSelect.innerHTML = '<option value="">Select project</option>' +
-            projects.map(function (p) {
-                return '<option value="' + escapeHtml(String(p._id || p.id)) + '">' + escapeHtml(p.name) + '</option>';
-            }).join('');
-    }
-}
-
-function getProjectName(projectId) {
-    var projects = getStored('portalProjects', []);
-    var project = projects.find(function (p) { return String(p.id) == String(projectId); });
-    return project ? project.name : 'Unknown Project';
-}
-
-function renderTasks(tbody, tasks) {
-    if (!tbody) return;
-    tbody.innerHTML = tasks.length ? tasks.map(function (task) {
-        return '<tr>' +
-            '<td>' + escapeHtml(task.title) + '</td>' +
-            '<td>' + escapeHtml(task.assignee) + '</td>' +
-            '<td>' + escapeHtml(getProjectName(task.project)) + '</td>' +
-            '<td><span class="priority-' + escapeHtml(task.priority) + '">' + escapeHtml(task.priority) + '</span></td>' +
-            '<td>' + new Date(task.dueDate).toLocaleDateString() + '</td>' +
-            '<td><span class="status-' + escapeHtml(task.status) + '">' + escapeHtml(task.status) + '</span></td>' +
-            '<td>' +
-            '<button class="btn-icon" onclick="editTask(' + task.id + ')" title="Edit"><i class="fas fa-edit"></i></button> ' +
-            '<button class="btn-icon" onclick="deleteTask(' + task.id + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
-            '</td></tr>';
-    }).join('') : '<tr><td colspan="7">No tasks found</td></tr>';
-}
-
-window.editTask = function (taskId) {
-    var tasks = getStored('adminTasks', []);
-    var task = tasks.find(function (t) { return t.id === taskId; });
-    if (!task) return;
-    document.getElementById('taskTitle').value = task.title;
-    document.getElementById('taskDescription').value = task.description;
-    document.getElementById('taskPriority').value = task.priority;
-    document.getElementById('taskDueDate').value = task.dueDate;
-    populateTaskDropdowns();
-    setTimeout(function () {
-        document.getElementById('taskAssignee').value = task.assignee;
-        document.getElementById('taskProject').value = task.project;
-    }, 100);
-    document.getElementById('adminAddTaskModal').classList.add('open');
-};
-
-window.deleteTask = function (taskId) {
-    if (!confirm('Delete this task?')) return;
-    var tasks = getStored('adminTasks', []);
-    var updatedTasks = tasks.filter(function (t) { return t.id !== taskId; });
-    setStored('adminTasks', updatedTasks);
-    renderTasks(document.getElementById('adminTasksTableBody'), updatedTasks);
-};
-
-// ===== DOCUMENT MANAGEMENT =====
-
-function setupDocumentManagement() {
-    var uploadBtn = document.getElementById('adminUploadDocBtn');
-    var uploadModal = document.getElementById('adminUploadDocModal');
-    var uploadForm = document.getElementById('adminUploadDocForm');
-    var documentsTableBody = document.getElementById('adminDocumentsTableBody');
-    var docFilters = document.querySelectorAll('.doc-categories .filter-btn');
-    if (uploadBtn && uploadModal) {
-        uploadBtn.addEventListener('click', function () { if (uploadForm) uploadForm.reset(); populateProjectDropdown('docProject'); uploadModal.classList.add('open'); });
-    }
-    document.querySelectorAll('[data-close="adminUploadDocModal"]').forEach(function (el) { el.addEventListener('click', function () { uploadModal.classList.remove('open'); }); });
-    if (uploadModal) uploadModal.addEventListener('click', function (e) { if (e.target === uploadModal) uploadModal.classList.remove('open'); });
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var fileInput = document.getElementById('docFile');
-            var file = fileInput && fileInput.files[0];
-            if (!file) { alert('Please select a file to upload'); return; }
-            var docEntry = {
-                id: Date.now(),
-                name: document.getElementById('docName').value,
-                type: document.getElementById('docType').value,
-                project: document.getElementById('docProject').value,
-                fileName: file.name,
-                fileSize: formatFileSize(file.size),
-                version: document.getElementById('docVersion').value,
-                uploaded: new Date().toISOString()
-            };
-            var docs = getStored('adminDocuments', []);
-            docs.push(docEntry);
-            setStored('adminDocuments', docs);
-            renderAdminDocuments(documentsTableBody, docs);
-            uploadModal.classList.remove('open');
-            uploadForm.reset();
-        });
-    }
-    docFilters.forEach(function (filter) {
-        filter.addEventListener('click', function () {
-            docFilters.forEach(function (f) { f.classList.remove('active'); });
-            filter.classList.add('active');
-            var filterValue = filter.getAttribute('data-filter');
-            var docs = getStored('adminDocuments', []);
-            renderAdminDocuments(documentsTableBody, filterValue === 'all' ? docs : docs.filter(function (d) { return d.type === filterValue; }));
-        });
-    });
-    renderAdminDocuments(documentsTableBody, getStored('adminDocuments', []));
-}
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    var k = 1024, sizes = ['Bytes','KB','MB','GB'];
-    var i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function populateProjectDropdown(selectId) {
-    var projects = getStored('portalProjects', []);
-    var select = document.getElementById(selectId);
-    if (select) {
-        select.innerHTML = '<option value="">Select project</option>' +
-            projects.map(function (p) { return '<option value="' + escapeHtml(String(p._id || p.id)) + '">' + escapeHtml(p.name) + '</option>'; }).join('');
-    }
-}
-
-function getFileIcon(type) {
-    var icons = { drawings: 'drafting-compass', contracts: 'file-contract', permits: 'certificate', reports: 'file-alt' };
-    return icons[type] || 'alt';
-}
-
-function renderAdminDocuments(tbody, docs) {
-    if (!tbody) return;
-    tbody.innerHTML = docs.length ? docs.map(function (doc) {
-        return '<tr>' +
-            '<td><i class="fas fa-file-' + escapeHtml(getFileIcon(doc.type)) + '"></i> ' + escapeHtml(doc.name) + '</td>' +
-            '<td>' + escapeHtml(doc.type) + '</td>' +
-            '<td>' + escapeHtml(getProjectName(doc.project)) + '</td>' +
-            '<td>' + new Date(doc.uploaded).toLocaleDateString() + '</td>' +
-            '<td>' + escapeHtml(doc.fileSize) + '</td>' +
-            '<td>v' + escapeHtml(doc.version) + '</td>' +
-            '<td>' +
-            '<button class="btn-icon" onclick="viewDocument(' + doc.id + ')" title="View"><i class="fas fa-eye"></i></button> ' +
-            '<button class="btn-icon" onclick="downloadAdminDocument(' + doc.id + ')" title="Download"><i class="fas fa-download"></i></button> ' +
-            '<button class="btn-icon" onclick="deleteDocument(' + doc.id + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
-            '</td></tr>';
-    }).join('') : '<tr><td colspan="7">No documents found</td></tr>';
-}
-
-window.viewDocument = function (docId) { alert('View document functionality would open document viewer'); };
-window.downloadAdminDocument = function (docId) {
-    var docs = getStored('adminDocuments', []);
-    var doc = docs.find(function (d) { return d.id === docId; });
-    if (doc) alert('Downloading: ' + doc.fileName + '\nSize: ' + doc.fileSize + '\nVersion: ' + doc.version);
-};
-window.deleteDocument = function (docId) {
-    if (!confirm('Delete this document?')) return;
-    var docs = getStored('adminDocuments', []);
-    var updatedDocs = docs.filter(function (d) { return d.id !== docId; });
-    setStored('adminDocuments', updatedDocs);
-    renderAdminDocuments(document.getElementById('adminDocumentsTableBody'), updatedDocs);
-};
-
-// ===== DESIGN MANAGEMENT =====
-
-function setupDesignManagement() {
-    var addDesignBtn = document.getElementById('adminAddDesignBtn');
-    var designModal = document.getElementById('adminAddDesignModal');
-    var designForm = document.getElementById('adminAddDesignForm');
-    var designsTableBody = document.getElementById('adminDesignTableBody');
-    if (addDesignBtn && designModal) {
-        addDesignBtn.addEventListener('click', function () { if (designForm) designForm.reset(); populateProjectDropdown('designProject'); designModal.classList.add('open'); });
-    }
-    document.querySelectorAll('[data-close="adminAddDesignModal"]').forEach(function (el) { el.addEventListener('click', function () { designModal.classList.remove('open'); }); });
-    if (designModal) designModal.addEventListener('click', function (e) { if (e.target === designModal) designModal.classList.remove('open'); });
-    if (designForm) {
-        designForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var design = {
-                id: Date.now(),
-                name: document.getElementById('designName').value,
-                type: document.getElementById('designType').value,
-                project: document.getElementById('designProject').value,
-                status: document.getElementById('designStatus').value,
-                progress: parseInt(document.getElementById('designProgress').value),
-                description: document.getElementById('designDescription').value,
-                createdDate: new Date().toISOString()
-            };
-            var designs = getStored('adminDesigns', []);
-            designs.push(design);
-            setStored('adminDesigns', designs);
-            renderDesigns(designsTableBody, designs);
-            designModal.classList.remove('open');
-            designForm.reset();
-        });
-    }
-    renderDesigns(designsTableBody, getStored('adminDesigns', []));
-}
-
-function renderDesigns(tbody, designs) {
-    if (!tbody) return;
-    tbody.innerHTML = designs.length ? designs.map(function (design) {
-        return '<tr>' +
-            '<td>' + escapeHtml(design.name) + '</td>' +
-            '<td>' + escapeHtml(design.type) + '</td>' +
-            '<td>' + escapeHtml(getProjectName(design.project)) + '</td>' +
-            '<td><span class="status-' + escapeHtml(design.status) + '">' + escapeHtml(design.status) + '</span></td>' +
-            '<td><div class="progress-bar"><div class="progress-fill" style="width:' + design.progress + '%"></div><span>' + design.progress + '%</span></div></td>' +
-            '<td>' +
-            '<button class="btn-icon" onclick="viewDesign(' + design.id + ')"><i class="fas fa-eye"></i></button> ' +
-            '<button class="btn-icon" onclick="editDesign(' + design.id + ')"><i class="fas fa-edit"></i></button> ' +
-            '<button class="btn-icon" onclick="deleteDesign(' + design.id + ')"><i class="fas fa-trash"></i></button>' +
-            '</td></tr>';
-    }).join('') : '<tr><td colspan="6">No designs found</td></tr>';
-}
-
-window.viewDesign = function (id) { alert('View design functionality would open design viewer'); };
-window.editDesign = function (designId) {
-    var designs = getStored('adminDesigns', []);
-    var design = designs.find(function (d) { return d.id === designId; });
-    if (!design) return;
-    document.getElementById('designName').value = design.name;
-    document.getElementById('designType').value = design.type;
-    document.getElementById('designStatus').value = design.status;
-    document.getElementById('designProgress').value = design.progress;
-    document.getElementById('designDescription').value = design.description;
-    populateProjectDropdown('designProject');
-    setTimeout(function () { document.getElementById('designProject').value = design.project; }, 100);
-    document.getElementById('adminAddDesignModal').classList.add('open');
-};
-window.deleteDesign = function (designId) {
-    if (!confirm('Delete this design?')) return;
-    var designs = getStored('adminDesigns', []).filter(function (d) { return d.id !== designId; });
-    setStored('adminDesigns', designs);
-    renderDesigns(document.getElementById('adminDesignTableBody'), designs);
-};
 
 // ===== COMMUNICATION HUB =====
 
