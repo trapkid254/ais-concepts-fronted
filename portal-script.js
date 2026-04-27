@@ -2534,9 +2534,7 @@ async function loadAdminDashboard() {
     if (totalUsersEl) totalUsersEl.textContent = String(directoryUsers.length);
     if (activeProjectsEl) activeProjectsEl.textContent = '0';
 
-    updateAdminDashboardStats();
     updateFinancialSummary();
-    updateCRMStats();
 
     var pendingCount = 0;
     try {
