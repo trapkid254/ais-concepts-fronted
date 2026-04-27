@@ -2544,10 +2544,6 @@ async function loadAdminDashboard() {
     var pendingTasks = document.getElementById('pendingTasks');
     if (pendingTasks) pendingTasks.textContent = String(pendingCount);
 
-    if (typeof getWebsiteProjects === 'function') renderAdminWebsiteProjects();
-    if (typeof getWebsiteServices === 'function') renderAdminWebsiteServices();
-    if (typeof getWebsiteBlogPosts === 'function') renderAdminBlogPosts();
-
     await renderAdminEnquiries();
     await renderPendingApprovals();
 
@@ -2602,7 +2598,6 @@ async function loadAdminDashboard() {
                 }
                 
                 setWebsiteProjects(list).then(function () { 
-                    renderAdminWebsiteProjects(); 
                     webProjForm.reset(); 
                     if (editIdField) editIdField.value = '';
                     if (modalTitle) modalTitle.textContent = 'Add Website Project';
@@ -2636,7 +2631,7 @@ async function loadAdminDashboard() {
             function saveWebServ(image) {
                 var list = getWebsiteServices().slice();
                 list.push({ id: Date.now(), title: title, category: category, image: image, description: description });
-                setWebsiteServices(list).then(function () { renderAdminWebsiteServices(); webServForm.reset(); webServModal.classList.remove('open'); }).catch(function () { alert('Could not save service.'); });
+                setWebsiteServices(list).then(function () { webServForm.reset(); webServModal.classList.remove('open'); }).catch(function () { alert('Could not save service.'); });
             }
             if (file) { var reader = new FileReader(); reader.onload = function () { saveWebServ(reader.result); }; reader.readAsDataURL(file); }
             else { saveWebServ('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title)); }
@@ -2690,7 +2685,6 @@ async function loadAdminDashboard() {
                 }
                 
                 setWebsiteBlogPosts(posts).then(function () { 
-                    renderAdminBlogPosts(); 
                     blogForm.reset(); 
                     if (editIdField) editIdField.value = '';
                     if (modalTitle) modalTitle.textContent = 'Add Blog Post';
@@ -2783,9 +2777,6 @@ async function loadAdminDashboard() {
                     if (r.ok) {
                         alert('Statistics saved successfully.');
                         statisticsForm.reset();
-                        renderAdminWebsiteProjects();
-                        renderAdminWebsiteServices();
-                        renderAdminBlogPosts();
                     } else {
                         throw new Error('Failed to save statistics');
                     }
