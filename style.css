@@ -461,7 +461,7 @@ section {
 .nav-dropdown a {
     display: block;
     padding: 10px 20px;
-    color: #111827 !important;
+    color: var(--text-primary) !important;
     font-size: 0.9rem;
     text-transform: none;
     letter-spacing: 0.3px;
