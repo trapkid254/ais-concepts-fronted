@@ -2759,10 +2759,11 @@ async function loadAdminDashboard() {
             var happyClients = document.getElementById('statHappyClients').value;
             var yearsExperience = document.getElementById('statYearsExperience').value;
             var teamMembers = document.getElementById('statTeamMembers').value;
+            var token = sessionStorage.getItem('authToken');
 
             fetch(window.API_BASE + '/api/admin/statistics', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({
                     projectsDone: parseInt(projectsDone),
                     happyClients: parseInt(happyClients),
