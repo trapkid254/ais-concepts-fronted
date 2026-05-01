@@ -341,7 +341,13 @@
                     }
                 }
                 // Run counter after data is loaded
-                if (typeof runStatsCounter === 'function') runStatsCounter();
+                console.log('About to call runStatsCounter, typeof:', typeof runStatsCounter);
+                if (typeof runStatsCounter === 'function') {
+                    console.log('runStatsCounter is a function, calling it');
+                    runStatsCounter();
+                } else {
+                    console.error('runStatsCounter is not a function!');
+                }
             })
             .catch(function(err) {
                 console.error('Error fetching statistics:', err);
