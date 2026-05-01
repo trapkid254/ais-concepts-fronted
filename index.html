@@ -319,6 +319,33 @@
     <script src="script.js"></script>
     <script>
     document.title = document.title || 'AIS Concepts | Architecture & Design';
+    
+    // Simple typewriter animation function
+    function animateStats() {
+        const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
+        console.log('animateStats called, found', numbers.length, 'elements');
+        if (numbers.length > 0) {
+            numbers.forEach(function(target) {
+                const count = parseInt(target.getAttribute('data-count'));
+                const countStr = count.toString();
+                console.log('Animating:', target, 'with count:', count, 'as string:', countStr);
+                target.textContent = '0';
+                let i = 0;
+                const typeNumber = () => {
+                    if (i < countStr.length) {
+                        target.textContent = countStr.substring(0, i + 1);
+                        console.log('Setting textContent to:', countStr.substring(0, i + 1));
+                        i++;
+                        setTimeout(typeNumber, 100);
+                    } else {
+                        console.log('Animation complete for', target);
+                    }
+                };
+                typeNumber();
+            });
+        }
+    }
+    
     (function() {
         // Load statistics from API first, then run counter
         fetch((window.API_BASE || '') + '/api/statistics')
@@ -341,18 +368,13 @@
                     }
                 }
                 // Run counter after data is loaded
-                console.log('About to call runStatsCounter, typeof:', typeof runStatsCounter);
-                if (typeof runStatsCounter === 'function') {
-                    console.log('runStatsCounter is a function, calling it');
-                    runStatsCounter();
-                } else {
-                    console.error('runStatsCounter is not a function!');
-                }
+                console.log('About to call animateStats');
+                animateStats();
             })
             .catch(function(err) {
                 console.error('Error fetching statistics:', err);
                 // Run counter with default values on error
-                if (typeof runStatsCounter === 'function') runStatsCounter();
+                animateStats();
             });
     })();
     (function() {
