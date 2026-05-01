@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /* ===== STATS COUNTER ===== */
+    /* ===== STATS COUNTER - TYPEWRITER STYLE ===== */
     function runStatsCounter() {
         const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
         if (numbers.length > 0) {
@@ -306,15 +306,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (entry.isIntersecting) {
                         const target = entry.target;
                         const count = parseInt(target.getAttribute('data-count'));
-                        let current = 0;
-                        const increment = () => {
-                            if (current <= count) {
-                                target.textContent = current;
-                                current++;
-                                setTimeout(increment, 50);
+                        const countStr = count.toString();
+                        target.textContent = '0';
+                        let i = 0;
+                        const typeNumber = () => {
+                            if (i < countStr.length) {
+                                target.textContent = countStr.substring(0, i + 1);
+                                i++;
+                                setTimeout(typeNumber, 100);
                             }
                         };
-                        increment();
+                        typeNumber();
                     }
                 });
             }, { threshold: 0.3 });
@@ -353,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /* ===== TYPWRITER EFFECT ===== */
     function runTypewriter() {
-        const els = document.querySelectorAll('.typewriter');
+        const els = document.querySelectorAll('[data-typewriter]');
         let delay = 0;
         els.forEach(function(el) {
             if (el.closest('.careers-hero')) return;

@@ -328,13 +328,13 @@
                     var heroStats = document.querySelectorAll('.hero-stat-number');
                     if (heroStats.length >= 4) {
                         heroStats[0].setAttribute('data-count', data.projectsDone || 150);
-                        heroStats[0].textContent = data.projectsDone || 150;
+                        heroStats[0].textContent = '0';
                         heroStats[1].setAttribute('data-count', data.happyClients || 80);
-                        heroStats[1].textContent = data.happyClients || 80;
+                        heroStats[1].textContent = '0';
                         heroStats[2].setAttribute('data-count', data.yearsExperience || 15);
-                        heroStats[2].textContent = data.yearsExperience || 15;
+                        heroStats[2].textContent = '0';
                         heroStats[3].setAttribute('data-count', data.teamMembers || 25);
-                        heroStats[3].textContent = data.teamMembers || 25;
+                        heroStats[3].textContent = '0';
                     }
                 }
                 // Run counter after data is loaded
