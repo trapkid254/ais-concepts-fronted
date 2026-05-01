@@ -300,17 +300,22 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ===== STATS COUNTER - TYPEWRITER STYLE ===== */
     function runStatsCounter() {
         const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
+        console.log('runStatsCounter called, found', numbers.length, 'elements');
         if (numbers.length > 0) {
             numbers.forEach(function(target) {
                 const count = parseInt(target.getAttribute('data-count'));
                 const countStr = count.toString();
+                console.log('Animating:', target, 'with count:', count, 'as string:', countStr);
                 target.textContent = '0';
                 let i = 0;
                 const typeNumber = () => {
                     if (i < countStr.length) {
                         target.textContent = countStr.substring(0, i + 1);
+                        console.log('Setting textContent to:', countStr.substring(0, i + 1));
                         i++;
                         setTimeout(typeNumber, 100);
+                    } else {
+                        console.log('Animation complete for', target);
                     }
                 };
                 typeNumber();
