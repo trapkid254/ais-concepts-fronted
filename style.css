@@ -155,7 +155,7 @@ section {
     padding: 8px 40px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     transition: all 0.3s ease;
     height: 64px;
 }
@@ -190,6 +190,7 @@ section {
     align-items: center;
     order: 1;
     height: 100%;
+    margin-right: 16px;
 }
 
 .navbar .logo-img {
@@ -241,8 +242,7 @@ section {
     margin: 0;
     padding: 0;
     order: 3;
-    flex: 1;
-    justify-content: center;
+    margin-left: auto;
 }
 
 .navbar .nav-links li {
@@ -688,7 +688,7 @@ section {
 .nav-ticker {
     flex: 1;
     max-width: 420px;
-    margin: 0 24px;
+    margin: 0 4px;
     color: #6b7280;
     font-size: 0.9rem;
     white-space: nowrap;
@@ -696,6 +696,7 @@ section {
     position: relative;
     height: 24px;
     z-index: 1;
+    order: 2;
 }
 .navbar .nav-links {
     position: relative;
