@@ -416,13 +416,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if (path.includes('/admin/')) {
         setupAdminInteractions(currentUser);
-        setupTaskManagement();
-        setupDocumentManagement();
-        setupDesignManagement();
         setupCommunicationHub();
         setupSiteManagement();
-        setupMarketingManagement();
         setupFinancialManagement();
+        setupMarketingManagement();
         setupApprovalsWorkflow();
         setupFAQManagement();
     }
