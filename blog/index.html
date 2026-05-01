@@ -131,7 +131,21 @@
                 <h2 class="section-title typewriter-title" data-typewriter="Studio Insights">Studio Insights</h2>
                 <p class="section-subtitle typewriter-text" data-typewriter="Perspectives on architecture, interiors, and cities">Perspectives on architecture, interiors, and cities</p>
 
-                <div class="services-grid" id="blogPostsGrid"></div>
+                <div class="blog-rotator-container">
+                    <div class="blog-rotator" id="blogRotator">
+                        <div class="rotator-loading">Loading blogs...</div>
+                    </div>
+                    <div class="rotator-controls">
+                        <button class="rotator-btn prev-btn" id="prevBlogBtn" aria-label="Previous blog">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="rotator-dots" id="rotatorDots"></div>
+                        <button class="rotator-btn next-btn" id="nextBlogBtn" aria-label="Next blog">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="rotator-progress" id="rotatorProgress"></div>
+                </div>
             </div>
         </section>
     </main>
@@ -191,53 +205,179 @@
     <script src="../script.js"></script>
     <script>
         (function() {
-            var grid = document.getElementById('blogPostsGrid');
-            if (!grid || typeof loadWebsiteBlogPosts !== 'function') return;
-            loadWebsiteBlogPosts().then(function(posts) {
-                grid.innerHTML = posts.map(function(p, index) {
-                    var imgSrc = p.image || 'https://via.placeholder.com/400x300?text=Blog';
-                    var isEven = index % 2 === 1;
-                    var author = p.author || 'AIS Concepts';
-                    return '<article class="blog-card ' + (isEven ? 'blog-card-reverse' : '') + '" data-post-id="' + index + '"><div class="blog-card-inner"><div class="blog-image"><img src="' + imgSrc + '" alt="' + (p.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Blog\'"></div><div class="blog-content"><h3>' + (p.title || '') + '</h3><p class="blog-date">' + (p.date || '') + '</p><p class="blog-excerpt">' + (p.excerpt || '') + '</p><div class="blog-footer"><span class="blog-author">By ' + author + '</span></div><button class="blog-see-more" data-post-id="' + index + '">See More</button></div></div></article>';
-                }).join('');
-                
-                // Add see more functionality
-                document.querySelectorAll('.blog-see-more').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        var postId = this.getAttribute('data-post-id');
-                        var card = document.querySelector('.blog-card[data-post-id="' + postId + '"]');
-                        var excerpt = card.querySelector('.blog-excerpt');
-                        var image = card.querySelector('.blog-image');
-                        var fullText = excerpt.textContent;
-                        
-                        if (card.classList.contains('blog-card-expanded')) {
-                            // Collapse
-                            card.classList.remove('blog-card-expanded');
-                            excerpt.style.display = '-webkit-box';
-                            excerpt.style.webkitLineClamp = '4';
-                            excerpt.style.lineClamp = '4';
-                            excerpt.style.webkitBoxOrient = 'vertical';
-                            excerpt.style.overflow = 'hidden';
-                            excerpt.style.textOverflow = 'ellipsis';
-                            excerpt.style.maxHeight = '6.4em';
-                            image.style.display = 'block';
-                            this.textContent = 'See More';
-                        } else {
-                            // Expand
-                            card.classList.add('blog-card-expanded');
-                            excerpt.style.display = 'block';
-                            excerpt.style.webkitLineClamp = 'unset';
-                            excerpt.style.lineClamp = 'unset';
-                            excerpt.style.webkitBoxOrient = 'horizontal';
-                            excerpt.style.overflow = 'visible';
-                            excerpt.style.textOverflow = 'clip';
-                            excerpt.style.maxHeight = 'none';
-                            image.style.display = 'none';
-                            this.textContent = 'See Less';
-                        }
-                    });
+            var rotator = document.getElementById('blogRotator');
+            var dotsContainer = document.getElementById('rotatorDots');
+            var progress = document.getElementById('rotatorProgress');
+            var prevBtn = document.getElementById('prevBlogBtn');
+            var nextBtn = document.getElementById('nextBlogBtn');
+            
+            if (!rotator || !dotsContainer || !progress || typeof loadWebsiteBlogPosts !== 'function') return;
+            
+            var currentBlogIndex = 0;
+            var blogs = [];
+            var rotationInterval;
+            var progressInterval;
+            var isPaused = false;
+            var timeRemaining = 60; // seconds
+            
+            // Initialize rotator
+            function initRotator() {
+                loadWebsiteBlogPosts().then(function(posts) {
+                    blogs = posts || [];
+                    if (blogs.length === 0) {
+                        rotator.innerHTML = '<div class="no-blogs">No blog posts available.</div>';
+                        return;
+                    }
+                    
+                    createDots();
+                    showBlog(0);
+                    startRotation();
+                }).catch(function(error) {
+                    console.error('Error loading blogs:', error);
+                    rotator.innerHTML = '<div class="no-blogs">Error loading blog posts.</div>';
                 });
+            }
+            
+            // Create navigation dots
+            function createDots() {
+                dotsContainer.innerHTML = '';
+                blogs.forEach(function(_, index) {
+                    var dot = document.createElement('button');
+                    dot.className = 'rotator-dot' + (index === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', 'Go to blog ' + (index + 1));
+                    dot.addEventListener('click', function() {
+                        showBlog(index);
+                        restartRotation();
+                    });
+                    dotsContainer.appendChild(dot);
+                });
+            }
+            
+            // Show specific blog
+            function showBlog(index) {
+                if (index < 0 || index >= blogs.length) return;
+                
+                currentBlogIndex = index;
+                var blog = blogs[index];
+                var imgSrc = blog.image || 'https://via.placeholder.com/600x400?text=Blog';
+                var author = blog.author || 'AIS Concepts';
+                
+                rotator.innerHTML = '\n                    <div class="blog-slide">\n                        <div class="blog-slide-content">\n                            <div class="blog-details">\n                                <div class="blog-meta">\n                                    <span class="blog-date">' + (blog.date || '') + '</span>\n                                    <span class="blog-author">By ' + author + '</span>\n                                </div>\n                                <h2 class="blog-title">' + (blog.title || '') + '</h2>\n                                <div class="blog-excerpt">' + (blog.excerpt || '') + '</div>\n                                <button class="blog-read-more" onclick="window.location.href=\'blog-detail.html?id=' + index + '\'">Read More</button>\n                            </div>\n                            <div class="blog-image">\n                                <img src="' + imgSrc + '" alt="' + (blog.title || '') + '" onerror="this.src=\'https://via.placeholder.com/600x400?text=Blog\'">\n                            </div>\n                        </div>\n                    </div>\n                ';
+                
+                // Update dots
+                dotsContainer.querySelectorAll('.rotator-dot').forEach(function(dot, i) {
+                    dot.classList.toggle('active', i === index);
+                });
+                
+                // Add fade-in animation
+                var slide = rotator.querySelector('.blog-slide');
+                slide.style.opacity = '0';
+                slide.style.transform = 'translateY(20px)';
+                setTimeout(function() {
+                    slide.style.opacity = '1';
+                    slide.style.transform = 'translateY(0)';
+                }, 50);
+            }
+            
+            // Start auto-rotation
+            function startRotation() {
+                clearInterval(rotationInterval);
+                clearInterval(progressInterval);
+                timeRemaining = 60;
+                
+                if (!isPaused && blogs.length > 1) {
+                    // Progress bar animation
+                    progress.style.width = '0%';
+                    progressInterval = setInterval(function() {
+                        if (!isPaused) {
+                            timeRemaining--;
+                            var progressPercent = ((60 - timeRemaining) / 60) * 100;
+                            progress.style.width = progressPercent + '%';
+                            
+                            if (timeRemaining <= 0) {
+                                nextBlog();
+                            }
+                        }
+                    }, 1000);
+                    
+                    // Auto-rotate every 60 seconds
+                    rotationInterval = setInterval(function() {
+                        if (!isPaused) {
+                            nextBlog();
+                        }
+                    }, 60000);
+                }
+            }
+            
+            // Restart rotation
+            function restartRotation() {
+                timeRemaining = 60;
+                startRotation();
+            }
+            
+            // Navigation functions
+            function nextBlog() {
+                var nextIndex = (currentBlogIndex + 1) % blogs.length;
+                showBlog(nextIndex);
+                restartRotation();
+            }
+            
+            function prevBlog() {
+                var prevIndex = (currentBlogIndex - 1 + blogs.length) % blogs.length;
+                showBlog(prevIndex);
+                restartRotation();
+            }
+            
+            // Event listeners
+            if (prevBtn) prevBtn.addEventListener('click', prevBlog);
+            if (nextBtn) nextBtn.addEventListener('click', nextBlog);
+            
+            // Pause on hover
+            rotator.addEventListener('mouseenter', function() {
+                isPaused = true;
             });
+            
+            rotator.addEventListener('mouseleave', function() {
+                isPaused = false;
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft') {
+                    prevBlog();
+                } else if (e.key === 'ArrowRight') {
+                    nextBlog();
+                }
+            });
+            
+            // Touch/swipe support
+            var touchStartX = 0;
+            var touchEndX = 0;
+            
+            rotator.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+            
+            rotator.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+            
+            function handleSwipe() {
+                var swipeThreshold = 50;
+                var diff = touchStartX - touchEndX;
+                
+                if (Math.abs(diff) > swipeThreshold) {
+                    if (diff > 0) {
+                        nextBlog(); // Swipe left - next
+                    } else {
+                        prevBlog(); // Swipe right - previous
+                    }
+                }
+            }
+            
+            // Initialize on load
+            initRotator();
         })();
 
         // Search functionality

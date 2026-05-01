@@ -1225,14 +1225,41 @@ function setupAdminInteractions(currentUser) {
                 completionDate: deadline || ''
             };
 
+            var authToken = sessionStorage.getItem('authToken');
+            
             if (id) {
-                var idx = projects.findIndex(function (p) { return String(p.id) === id; });
-                if (idx >= 0) projects[idx] = Object.assign({}, projects[idx], projectObj);
+                // Update existing project
+                fetch(window.API_BASE + '/api/projects/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify(projectObj)
+                }).then(function(response) {
+                    if (!response.ok) throw new Error('Failed to update project');
+                    return response.json();
+                }).then(function(updatedProject) {
+                    alert('Project updated successfully!');
+                    renderAdminProjectsTable();
+                }).catch(function(error) {
+                    console.error('Update project error:', error);
+                    alert('Failed to update project: ' + error.message);
+                });
             } else {
-                projectObj.id = Date.now();
-                projects.push(projectObj);
+                // Create new project
+                fetch(window.API_BASE + '/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify(projectObj)
+                }).then(function(response) {
+                    if (!response.ok) throw new Error('Failed to create project');
+                    return response.json();
+                }).then(function(newProject) {
+                    alert('Project created successfully!');
+                    renderAdminProjectsTable();
+                }).catch(function(error) {
+                    console.error('Create project error:', error);
+                    alert('Failed to create project: ' + error.message);
+                });
             }
-            setStored('portalProjects', projects);
 
             if (shouldCreateForemanAccount && selectedForeman && !(selectedForeman._id || selectedForeman.approvalStatus === 'approved')) {
                 var foremanData = {
@@ -1587,6 +1614,17 @@ window.renderAdminProjectsTable = function () {
         if (!response.ok) throw new Error('Failed to load projects');
         return response.json();
     }).then(function (projects) {
+        // Clear localStorage projects that aren't in database
+        var localProjects = getStored('portalProjects', []);
+        var validLocalProjects = localProjects.filter(function(lp) {
+            return projects.some(function(dbProject) {
+                return String(dbProject._id) === String(lp._id || lp.id);
+            });
+        });
+        if (validLocalProjects.length !== localProjects.length) {
+            setStored('portalProjects', validLocalProjects);
+        }
+        
         var f = window._adminProjectFilter || 'all';
         var filtered = f === 'all' ? projects : projects.filter(function (p) { return adminPortalProjectGroup(p) === f; });
         if (!projects.length) {
@@ -1606,7 +1644,7 @@ window.renderAdminProjectsTable = function () {
                 '<td>' + escapeHtml(locStr) + '</td>' +
                 '<td>' + escapeHtml(foremanStr) + '</td>' +
                 '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + (project.workerCount || 0) + ' workers</a></td>' +
-                '<td><div style="width:100px;"><div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div></div></td>' +
+                '<td><div style="width:100px;"><div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div></td>' +
                 '<td>' + escapeHtml(adminPortalProjectGroup(project) === 'completed' ? '-' : project.deadline || '') + '</td>' +
                 '<td><span class="status-badge status-' + st + '">' + escapeHtml(project.status || 'Active') + '</span></td>' +
                 '<td>' +

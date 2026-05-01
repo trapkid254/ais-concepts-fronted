@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Worker | AIS Concepts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../portal-styles.css">
+    <style>
+        .registration-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .camera-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .camera-preview {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .camera-preview .face-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #4CAF50;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .captured-images {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .captured-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            position: relative;
+        }
+        
+        .captured-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        .captured-image .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .location-status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .location-status.valid {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .location-status.invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .liveness-challenge {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .liveness-challenge h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        
+        .progress-step::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
+        .progress-step:last-child::after {
+            display: none;
+        }
+        
+        .progress-step.active::after {
+            background: #4CAF50;
+        }
+        
+        .progress-step .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            position: relative;
+            z-index: 2;
+            font-weight: 600;
+        }
+        
+        .progress-step.active .step-number {
+            background: #4CAF50;
+        }
+        
+        .progress-step.completed .step-number {
+            background: #4CAF50;
+        }
+        
+        .btn-camera {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        .btn-camera:hover {
+            background: #45a049;
+        }
+        
+        .btn-camera:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 768px) {
+            .registration-container {
+                padding: 10px;
+            }
+            
+            .camera-preview {
+                height: 250px;
+            }
+            
+            .captured-images {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../index.html" class="logo">
+                    <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img src="" alt="User Avatar">
+                </div>
+                <div class="user-name">Loading...</div>
+                <div class="user-email">Loading...</div>
+                <span class="user-role">Foreman</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="portal/index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="portal/index.html#foreman-projects"><i class="fas fa-building"></i> My Projects</a></li>
+                    <li><a href="portal/index.html#foreman-workers"><i class="fas fa-users"></i> Workers</a></li>
+                    <li><a href="portal/index.html#foreman-attendance"><i class="fas fa-user-check"></i> Attendance</a></li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Register New Worker</h1>
+                    <p>Add a worker to your project with face verification</p>
+                </div>
+                <div class="top-bar-actions">
+                    <a href="portal/index.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Portal
+                    </a>
+                </div>
+            </div>
+            
+            <div class="registration-container">
+                <!-- Progress Indicator -->
+                <div class="progress-indicator">
+                    <div class="progress-step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div>Worker Info</div>
+                    </div>
+                    <div class="progress-step" id="step2">
+                        <div class="step-number">2</div>
+                        <div>Face Capture</div>
+                    </div>
+                    <div class="progress-step" id="step3">
+                        <div class="step-number">3</div>
+                        <div>Liveness Check</div>
+                    </div>
+                    <div class="progress-step" id="step4">
+                        <div class="step-number">4</div>
+                        <div>Confirmation</div>
+                    </div>
+                </div>
+                
+                <!-- Step 1: Worker Information -->
+                <div id="step1-content" class="registration-step">
+                    <div class="card">
+                        <h3>Worker Information</h3>
+                        <form id="workerInfoForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="workerName">Full Name *</label>
+                                    <input type="text" id="workerName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="workerNationalId">National ID Number *</label>
+                                    <input type="text" id="workerNationalId" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="workerPhone">Phone Number *</label>
+                                    <input type="tel" id="workerPhone" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="workerProject">Assigned Project *</label>
+                                    <select id="workerProject" required>
+                                        <option value="">Select Project</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="workerDailyRate">Daily Rate (KES) *</label>
+                                    <input type="number" id="workerDailyRate" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="workerSkills">Skills (Optional)</label>
+                                    <input type="text" id="workerSkills" placeholder="e.g., Masonry, Carpentry">
+                                </div>
+                            </div>
+                            <div class="location-status" id="locationStatus">
+                                <i class="fas fa-map-marker-alt"></i> Checking location...
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                Continue to Face Capture <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Face Capture -->
+                <div id="step2-content" class="registration-step" style="display: none;">
+                    <div class="card">
+                        <h3>Face Capture</h3>
+                        <p>Please capture 3 clear photos of the worker's face from different angles</p>
+                        
+                        <div class="camera-section">
+                            <div class="camera-preview">
+                                <video id="cameraVideo" autoplay></video>
+                                <div class="face-overlay"></div>
+                            </div>
+                            
+                            <div class="camera-controls">
+                                <button type="button" class="btn-camera" id="startCamera">
+                                    <i class="fas fa-camera"></i> Start Camera
+                                </button>
+                                <button type="button" class="btn-camera" id="capturePhoto" disabled>
+                                    <i class="fas fa-camera"></i> Capture Photo
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="retakePhoto" style="display: none;">
+                                    <i class="fas fa-redo"></i> Retake
+                                </button>
+                            </div>
+                            
+                            <div class="captured-images" id="capturedImages">
+                                <!-- Captured images will appear here -->
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="backToInfo">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-primary" id="proceedToLiveness" disabled>
+                                Continue to Liveness Check <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Liveness Check -->
+                <div id="step3-content" class="registration-step" style="display: none;">
+                    <div class="card">
+                        <h3>Liveness Verification</h3>
+                        <div class="liveness-challenge">
+                            <h4><i class="fas fa-user-check"></i> Liveness Challenge</h4>
+                            <p id="livenessInstruction">Please follow the instructions below to verify this is a live person</p>
+                            <div id="livenessChallenge"></div>
+                        </div>
+                        
+                        <div class="camera-section">
+                            <div class="camera-preview">
+                                <video id="livenessVideo" autoplay></video>
+                                <div class="face-overlay"></div>
+                            </div>
+                            
+                            <div class="camera-controls">
+                                <button type="button" class="btn-camera" id="startLivenessCamera">
+                                    <i class="fas fa-camera"></i> Start Camera
+                                </button>
+                                <button type="button" class="btn-camera" id="startLiveness" disabled>
+                                    <i class="fas fa-play"></i> Start Liveness Check
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="backToCapture">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-primary" id="proceedToConfirm" disabled>
+                                Review & Register <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Confirmation -->
+                <div id="step4-content" class="registration-step" style="display: none;">
+                    <div class="card">
+                        <h3>Review & Register Worker</h3>
+                        <div id="workerReview">
+                            <!-- Worker details will be populated here -->
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="backToLiveness">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-primary" id="registerWorker">
+                                <i class="fas fa-user-plus"></i> Register Worker
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="../api-config.js"></script>
+    <script src="../api-client.js"></script>
+    <script>
+        // Worker Registration Script
+        (function() {
+            let currentStep = 1;
+            let workerData = {};
+            let capturedImages = [];
+            let cameraStream = null;
+            let livenessStream = null;
+            let currentLocation = null;
+            let selectedProject = null;
+            
+            // Initialize
+            document.addEventListener('DOMContentLoaded', function() {
+                checkAuth();
+                loadProjects();
+                setupEventListeners();
+                checkLocation();
+            });
+            
+            function checkAuth() {
+                const token = sessionStorage.getItem('authToken');
+                const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                
+                if (!token || !user || user.role !== 'foreman') {
+                    window.location.href = '../staff/login/';
+                    return;
+                }
+                
+                // Update user info
+                document.querySelector('.user-name').textContent = user.name || user.email;
+                document.querySelector('.user-email').textContent = user.email;
+            }
+            
+            async function loadProjects() {
+                try {
+                    const response = await fetch(window.API_BASE + '/api/projects', {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to load projects');
+                    
+                    const projects = await response.json();
+                    const select = document.getElementById('workerProject');
+                    
+                    projects.forEach(project => {
+                        const option = document.createElement('option');
+                        option.value = project._id;
+                        option.textContent = project.name;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading projects:', error);
+                }
+            }
+            
+            async function checkLocation() {
+                const statusEl = document.getElementById('locationStatus');
+                
+                if (!navigator.geolocation) {
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Geolocation not supported on this device';
+                    return;
+                }
+                
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+                    
+                    currentLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    
+                    // Check if within 50m of any assigned project
+                    const projectId = document.getElementById('workerProject').value;
+                    if (projectId) {
+                        await validateProjectLocation(projectId);
+                    } else {
+                        statusEl.className = 'location-status valid';
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Location access granted';
+                    }
+                } catch (error) {
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to get location. Please enable location services.';
+                }
+            }
+            
+            async function validateProjectLocation(projectId) {
+                const statusEl = document.getElementById('locationStatus');
+                
+                try {
+                    const response = await fetch(window.API_BASE + '/api/projects/' + projectId, {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to load project');
+                    
+                    const project = await response.json();
+                    
+                    if (!project.location || !project.location.latitude || !project.location.longitude) {
+                        statusEl.className = 'location-status invalid';
+                        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Project location not set';
+                        return false;
+                    }
+                    
+                    const distance = calculateDistance(
+                        currentLocation.latitude,
+                        currentLocation.longitude,
+                        project.location.latitude,
+                        project.location.longitude
+                    );
+                    
+                    if (distance <= 50) {
+                        statusEl.className = 'location-status valid';
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Within project radius (' + Math.round(distance) + 'm)';
+                        selectedProject = project;
+                        return true;
+                    } else {
+                        statusEl.className = 'location-status invalid';
+                        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Too far from project (' + Math.round(distance) + 'm). Must be within 50m.';
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error validating location:', error);
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error checking location';
+                    return false;
+                }
+            }
+            
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // Earth's radius in meters
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+                
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                
+                return R * c; // Distance in meters
+            }
+            
+            function setupEventListeners() {
+                // Form submission
+                document.getElementById('workerInfoForm').addEventListener('submit', handleWorkerInfoSubmit);
+                
+                // Navigation buttons
+                document.getElementById('backToInfo').addEventListener('click', () => goToStep(1));
+                document.getElementById('backToCapture').addEventListener('click', () => goToStep(2));
+                document.getElementById('backToLiveness').addEventListener('click', () => goToStep(3));
+                
+                // Camera controls
+                document.getElementById('startCamera').addEventListener('click', startCamera);
+                document.getElementById('capturePhoto').addEventListener('click', capturePhoto);
+                document.getElementById('retakePhoto').addEventListener('click', retakePhoto);
+                document.getElementById('proceedToLiveness').addEventListener('click', () => goToStep(3));
+                
+                // Liveness controls
+                document.getElementById('startLivenessCamera').addEventListener('click', startLivenessCamera);
+                document.getElementById('startLiveness').addEventListener('click', startLivenessCheck);
+                document.getElementById('proceedToConfirm').addEventListener('click', showConfirmation);
+                
+                // Final registration
+                document.getElementById('registerWorker').addEventListener('click', registerWorker);
+                
+                // Project selection change
+                document.getElementById('workerProject').addEventListener('change', async function() {
+                    if (currentLocation) {
+                        await validateProjectLocation(this.value);
+                    }
+                });
+            }
+            
+            function handleWorkerInfoSubmit(e) {
+                e.preventDefault();
+                
+                if (!currentLocation || !selectedProject) {
+                    alert('Please ensure you are within 50m of the project location and have selected a valid project.');
+                    return;
+                }
+                
+                workerData = {
+                    name: document.getElementById('workerName').value,
+                    nationalId: document.getElementById('workerNationalId').value,
+                    phone: document.getElementById('workerPhone').value,
+                    projectId: document.getElementById('workerProject').value,
+                    dailyRate: document.getElementById('workerDailyRate').value,
+                    skills: document.getElementById('workerSkills').value,
+                    location: currentLocation,
+                    project: selectedProject
+                };
+                
+                goToStep(2);
+            }
+            
+            function goToStep(step) {
+                // Hide all steps
+                document.querySelectorAll('.registration-step').forEach(el => el.style.display = 'none');
+                
+                // Show current step
+                document.getElementById(`step${step}-content`).style.display = 'block';
+                
+                // Update progress indicators
+                document.querySelectorAll('.progress-step').forEach((el, index) => {
+                    el.classList.remove('active', 'completed');
+                    if (index < step - 1) {
+                        el.classList.add('completed');
+                    } else if (index === step - 1) {
+                        el.classList.add('active');
+                    }
+                });
+                
+                currentStep = step;
+                
+                // Initialize step-specific features
+                if (step === 2) {
+                    // Auto-start camera when reaching face capture step
+                    setTimeout(startCamera, 500);
+                } else if (step === 3) {
+                    // Auto-start liveness camera
+                    setTimeout(startLivenessCamera, 500);
+                    generateLivenessChallenge();
+                } else if (step === 4) {
+                    populateConfirmation();
+                }
+            }
+            
+            async function startCamera() {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'user',
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        } 
+                    });
+                    
+                    const video = document.getElementById('cameraVideo');
+                    video.srcObject = cameraStream;
+                    
+                    document.getElementById('startCamera').style.display = 'none';
+                    document.getElementById('capturePhoto').disabled = false;
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    alert('Unable to access camera. Please ensure camera permissions are granted.');
+                }
+            }
+            
+            function capturePhoto() {
+                const video = document.getElementById('cameraVideo');
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                capturedImages.push(imageData);
+                
+                updateCapturedImages();
+                
+                if (capturedImages.length >= 3) {
+                    stopCamera();
+                    document.getElementById('capturePhoto').style.display = 'none';
+                    document.getElementById('proceedToLiveness').disabled = false;
+                } else {
+                    document.getElementById('capturePhoto').innerHTML = 
+                        `<i class="fas fa-camera"></i> Capture Photo (${capturedImages.length}/3)`;
+                }
+            }
+            
+            function retakePhoto() {
+                capturedImages.pop();
+                updateCapturedImages();
+                
+                if (capturedImages.length < 3) {
+                    document.getElementById('capturePhoto').style.display = 'block';
+                    document.getElementById('capturePhoto').disabled = false;
+                    document.getElementById('capturePhoto').innerHTML = 
+                        `<i class="fas fa-camera"></i> Capture Photo (${capturedImages.length}/3)`;
+                    document.getElementById('proceedToLiveness').disabled = true;
+                    
+                    if (capturedImages.length === 0) {
+                        startCamera();
+                    }
+                }
+            }
+            
+            function updateCapturedImages() {
+                const container = document.getElementById('capturedImages');
+                container.innerHTML = '';
+                
+                capturedImages.forEach((imageData, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'captured-image';
+                    div.innerHTML = `
+                        <img src="${imageData}" alt="Captured face ${index + 1}">
+                        <button type="button" class="remove-btn" onclick="removeCapturedImage(${index})">×</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            function removeCapturedImage(index) {
+                capturedImages.splice(index, 1);
+                updateCapturedImages();
+                retakePhoto();
+            }
+            
+            function stopCamera() {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    cameraStream = null;
+                }
+            }
+            
+            async function startLivenessCamera() {
+                try {
+                    livenessStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'user',
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        } 
+                    });
+                    
+                    const video = document.getElementById('livenessVideo');
+                    video.srcObject = livenessStream;
+                    
+                    document.getElementById('startLivenessCamera').style.display = 'none';
+                    document.getElementById('startLiveness').disabled = false;
+                } catch (error) {
+                    console.error('Error accessing liveness camera:', error);
+                    alert('Unable to access camera for liveness check.');
+                }
+            }
+            
+            function generateLivenessChallenge() {
+                const challenges = [
+                    { type: 'blink', instruction: 'Please blink slowly 3 times' },
+                    { type: 'smile', instruction: 'Please smile naturally' },
+                    { type: 'turn_left', instruction: 'Please slowly turn your head to the left' },
+                    { type: 'turn_right', instruction: 'Please slowly turn your head to the right' },
+                    { type: 'nod', instruction: 'Please nod your head up and down' }
+                ];
+                
+                const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+                document.getElementById('livenessInstruction').textContent = challenge.instruction;
+                document.getElementById('livenessChallenge').innerHTML = 
+                    `<div class="challenge-type">${challenge.type.replace('_', ' ').toUpperCase()}</div>`;
+            }
+            
+            async function startLivenessCheck() {
+                const button = document.getElementById('startLiveness');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                
+                // Simulate liveness detection (in real implementation, this would use AI)
+                setTimeout(() => {
+                    // Capture a frame for liveness verification
+                    const video = document.getElementById('livenessVideo');
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+                    
+                    const livenessImage = canvas.toDataURL('image/jpeg', 0.8);
+                    workerData.livenessImage = livenessImage;
+                    workerData.livenessPassed = true; // In real implementation, this would be determined by AI
+                    
+                    stopLivenessCamera();
+                    
+                    document.getElementById('startLiveness').innerHTML = 
+                        '<i class="fas fa-check"></i> Liveness Verified';
+                    document.getElementById('proceedToConfirm').disabled = false;
+                }, 3000);
+            }
+            
+            function stopLivenessCamera() {
+                if (livenessStream) {
+                    livenessStream.getTracks().forEach(track => track.stop());
+                    livenessStream = null;
+                }
+            }
+            
+            function populateConfirmation() {
+                const reviewEl = document.getElementById('workerReview');
+                reviewEl.innerHTML = `
+                    <div class="worker-details">
+                        <h4>Worker Information</h4>
+                        <p><strong>Name:</strong> ${workerData.name}</p>
+                        <p><strong>National ID:</strong> ${workerData.nationalId}</p>
+                        <p><strong>Phone:</strong> ${workerData.phone}</p>
+                        <p><strong>Daily Rate:</strong> KES ${workerData.dailyRate}</p>
+                        <p><strong>Skills:</strong> ${workerData.skills || 'Not specified'}</p>
+                        <p><strong>Project:</strong> ${workerData.project.name}</p>
+                        <p><strong>Location:</strong> ${workerData.project.location.name}</p>
+                    </div>
+                    <div class="face-preview">
+                        <h4>Captured Faces</h4>
+                        <div class="captured-images">
+                            ${capturedImages.map((img, i) => 
+                                `<div class="captured-image"><img src="${img}" alt="Face ${i+1}"></div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <div class="liveness-status">
+                        <h4>Liveness Verification</h4>
+                        <p><i class="fas fa-check-circle" style="color: green;"></i> Liveness check passed</p>
+                    </div>
+                `;
+            }
+            
+            async function registerWorker() {
+                const button = document.getElementById('registerWorker');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('name', workerData.name);
+                    formData.append('nationalId', workerData.nationalId);
+                    formData.append('phone', workerData.phone);
+                    formData.append('projectId', workerData.projectId);
+                    formData.append('dailyRate', workerData.dailyRate);
+                    formData.append('skills', workerData.skills);
+                    formData.append('location', JSON.stringify(workerData.location));
+                    formData.append('livenessPassed', workerData.livenessPassed);
+                    
+                    // Add face images
+                    capturedImages.forEach((imageData, index) => {
+                        const blob = dataURLtoBlob(imageData);
+                        formData.append(`faceImage${index}`, blob, `face_${index}.jpg`);
+                    });
+                    
+                    // Add liveness image
+                    if (workerData.livenessImage) {
+                        const livenessBlob = dataURLtoBlob(workerData.livenessImage);
+                        formData.append('livenessImage', livenessBlob, 'liveness.jpg');
+                    }
+                    
+                    const response = await fetch(window.API_BASE + '/api/workers/register', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to register worker');
+                    
+                    const result = await response.json();
+                    
+                    alert('Worker registered successfully!');
+                    window.location.href = 'portal/index.html#foreman-workers';
+                    
+                } catch (error) {
+                    console.error('Error registering worker:', error);
+                    alert('Failed to register worker: ' + error.message);
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-user-plus"></i> Register Worker';
+                }
+            }
+            
+            function dataURLtoBlob(dataURL) {
+                const arr = dataURL.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new Blob([u8arr], { type: mime });
+            }
+        })();
+    </script>
+</body>
+</html>

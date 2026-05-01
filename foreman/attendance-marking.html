@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance | AIS Concepts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../portal-styles.css">
+    <style>
+        .attendance-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .project-selector {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .location-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .location-status.valid {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .location-status.invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .worker-scanner {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .camera-preview {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin: 0 auto 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .camera-preview .face-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #4CAF50;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .scanner-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn-scan {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-scan:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .btn-scan:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .worker-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .worker-info.show {
+            display: block;
+        }
+        
+        .verification-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            background: white;
+        }
+        
+        .verification-status.success {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .verification-status.error {
+            border-left: 4px solid #f44336;
+        }
+        
+        .verification-status.pending {
+            border-left: 4px solid #ff9800;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+        }
+        
+        .status-icon.success { color: #4CAF50; }
+        .status-icon.error { color: #f44336; }
+        .status-icon.pending { color: #ff9800; }
+        
+        .today-summary {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .summary-card.present {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .summary-card.absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .recent-attendance {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .attendance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .attendance-item:last-child {
+            border-bottom: none;
+        }
+        
+        .worker-details {
+            flex: 1;
+        }
+        
+        .worker-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .worker-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .attendance-time {
+            font-weight: 500;
+            color: #4CAF50;
+        }
+        
+        .liveness-challenge {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .liveness-challenge.show {
+            display: block;
+        }
+        
+        .liveness-challenge h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .attendance-container {
+                padding: 10px;
+            }
+            
+            .camera-preview {
+                height: 250px;
+            }
+            
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .btn-scan {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../index.html" class="logo">
+                    <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img src="" alt="User Avatar">
+                </div>
+                <div class="user-name">Loading...</div>
+                <div class="user-email">Loading...</div>
+                <span class="user-role">Foreman</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="portal/index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="portal/index.html#foreman-projects"><i class="fas fa-building"></i> My Projects</a></li>
+                    <li><a href="portal/index.html#foreman-workers"><i class="fas fa-users"></i> Workers</a></li>
+                    <li><a href="portal/index.html#foreman-attendance"><i class="fas fa-user-check"></i> Attendance</a></li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Mark Attendance</h1>
+                    <p>Face recognition attendance verification</p>
+                </div>
+                <div class="top-bar-actions">
+                    <a href="portal/index.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Portal
+                    </a>
+                </div>
+            </div>
+            
+            <div class="attendance-container">
+                <!-- Project Selection -->
+                <div class="project-selector">
+                    <h3><i class="fas fa-map-marker-alt"></i> Select Project</h3>
+                    <div class="form-group">
+                        <select id="projectSelect" required>
+                            <option value="">Loading projects...</option>
+                        </select>
+                    </div>
+                    <div class="location-status" id="locationStatus">
+                        <i class="fas fa-spinner fa-spin"></i> Checking location...
+                    </div>
+                </div>
+                
+                <!-- Today's Summary -->
+                <div class="today-summary">
+                    <h3><i class="fas fa-chart-bar"></i> Today's Summary</h3>
+                    <div class="summary-grid" id="summaryGrid">
+                        <div class="summary-card">
+                            <div class="summary-number" id="totalWorkers">0</div>
+                            <div>Total Workers</div>
+                        </div>
+                        <div class="summary-card present">
+                            <div class="summary-number" id="presentWorkers">0</div>
+                            <div>Present</div>
+                        </div>
+                        <div class="summary-card absent">
+                            <div class="summary-number" id="absentWorkers">0</div>
+                            <div>Absent</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Worker Scanner -->
+                <div class="worker-scanner">
+                    <h3><i class="fas fa-camera"></i> Face Scanner</h3>
+                    <p>Position worker's face in the circle and click "Start Scan"</p>
+                    
+                    <div class="camera-preview">
+                        <video id="scannerVideo" autoplay></video>
+                        <div class="face-overlay"></div>
+                    </div>
+                    
+                    <div class="scanner-controls">
+                        <button type="button" class="btn-scan" id="startCamera">
+                            <i class="fas fa-camera"></i> Start Camera
+                        </button>
+                        <button type="button" class="btn-scan" id="scanWorker" disabled>
+                            <i class="fas fa-user-check"></i> Start Scan
+                        </button>
+                    </div>
+                    
+                    <!-- Liveness Challenge -->
+                    <div class="liveness-challenge" id="livenessChallenge">
+                        <h4><i class="fas fa-user-check"></i> Liveness Verification</h4>
+                        <p id="livenessInstruction">Please follow the instructions below</p>
+                        <div id="livenessTask"></div>
+                    </div>
+                    
+                    <!-- Worker Info Display -->
+                    <div class="worker-info" id="workerInfo">
+                        <h4>Worker Information</h4>
+                        <div id="workerDetails"></div>
+                        
+                        <div class="verification-results">
+                            <div class="verification-status pending" id="locationVerification">
+                                <span><i class="fas fa-map-marker-alt"></i> Location</span>
+                                <span class="status-icon pending"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                            <div class="verification-status pending" id="faceVerification">
+                                <span><i class="fas fa-user"></i> Face Recognition</span>
+                                <span class="status-icon pending"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                            <div class="verification-status pending" id="livenessVerification">
+                                <span><i class="fas fa-eye"></i> Liveness Check</span>
+                                <span class="status-icon pending"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancelScan">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" id="confirmAttendance" disabled>
+                                <i class="fas fa-check"></i> Mark Attendance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Attendance -->
+                <div class="recent-attendance">
+                    <h3><i class="fas fa-clock"></i> Recent Check-ins</h3>
+                    <div id="recentAttendanceList">
+                        <p style="text-align: center; color: #666;">No check-ins yet today</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="../api-config.js"></script>
+    <script src="../api-client.js"></script>
+    <script>
+        // Attendance Marking Script
+        (function() {
+            let cameraStream = null;
+            let currentProject = null;
+            let currentLocation = null;
+            let selectedWorker = null;
+            let scanInProgress = false;
+            
+            // Initialize
+            document.addEventListener('DOMContentLoaded', function() {
+                checkAuth();
+                loadProjects();
+                setupEventListeners();
+                checkLocation();
+                loadTodayAttendance();
+            });
+            
+            function checkAuth() {
+                const token = sessionStorage.getItem('authToken');
+                const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                
+                if (!token || !user || user.role !== 'foreman') {
+                    window.location.href = '../staff/login/';
+                    return;
+                }
+                
+                // Update user info
+                document.querySelector('.user-name').textContent = user.name || user.email;
+                document.querySelector('.user-email').textContent = user.email;
+            }
+            
+            async function loadProjects() {
+                try {
+                    const response = await fetch(window.API_BASE + '/api/projects', {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to load projects');
+                    
+                    const projects = await response.json();
+                    const select = document.getElementById('projectSelect');
+                    
+                    select.innerHTML = '<option value="">Select Project</option>';
+                    
+                    projects.forEach(project => {
+                        const option = document.createElement('option');
+                        option.value = project._id;
+                        option.textContent = project.name;
+                        select.appendChild(option);
+                    });
+                    
+                    select.addEventListener('change', handleProjectChange);
+                    
+                } catch (error) {
+                    console.error('Error loading projects:', error);
+                }
+            }
+            
+            async function checkLocation() {
+                const statusEl = document.getElementById('locationStatus');
+                
+                if (!navigator.geolocation) {
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Geolocation not supported on this device';
+                    return;
+                }
+                
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+                    
+                    currentLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    
+                    statusEl.className = 'location-status valid';
+                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Location access granted';
+                    
+                    // If project is selected, validate location
+                    const projectId = document.getElementById('projectSelect').value;
+                    if (projectId) {
+                        await validateProjectLocation(projectId);
+                    }
+                    
+                } catch (error) {
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Unable to get location. Please enable location services.';
+                }
+            }
+            
+            async function validateProjectLocation(projectId) {
+                const statusEl = document.getElementById('locationStatus');
+                
+                try {
+                    const response = await fetch(window.API_BASE + '/api/projects/' + projectId, {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to load project');
+                    
+                    const project = await response.json();
+                    
+                    if (!project.location || !project.location.latitude || !project.location.longitude) {
+                        statusEl.className = 'location-status invalid';
+                        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Project location not set';
+                        return false;
+                    }
+                    
+                    const distance = calculateDistance(
+                        currentLocation.latitude,
+                        currentLocation.longitude,
+                        project.location.latitude,
+                        project.location.longitude
+                    );
+                    
+                    if (distance <= 50) {
+                        statusEl.className = 'location-status valid';
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Within project radius (' + Math.round(distance) + 'm)';
+                        currentProject = project;
+                        return true;
+                    } else {
+                        statusEl.className = 'location-status invalid';
+                        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Too far from project (' + Math.round(distance) + 'm). Must be within 50m.';
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error validating location:', error);
+                    statusEl.className = 'location-status invalid';
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error checking location';
+                    return false;
+                }
+            }
+            
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // Earth's radius in meters
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+                
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                
+                return R * c; // Distance in meters
+            }
+            
+            function setupEventListeners() {
+                document.getElementById('startCamera').addEventListener('click', startCamera);
+                document.getElementById('scanWorker').addEventListener('click', startWorkerScan);
+                document.getElementById('cancelScan').addEventListener('click', cancelScan);
+                document.getElementById('confirmAttendance').addEventListener('click', markAttendance);
+            }
+            
+            async function handleProjectChange(e) {
+                const projectId = e.target.value;
+                if (projectId && currentLocation) {
+                    await validateProjectLocation(projectId);
+                    await loadTodayAttendance(projectId);
+                }
+            }
+            
+            async function loadTodayAttendance(projectId = null) {
+                try {
+                    const url = projectId ? 
+                        `${window.API_BASE}/api/attendance/today?projectId=${projectId}` :
+                        `${window.API_BASE}/api/attendance/today`;
+                    
+                    const response = await fetch(url, {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to load attendance');
+                    
+                    const data = await response.json();
+                    
+                    // Update summary
+                    document.getElementById('totalWorkers').textContent = data.summary.total;
+                    document.getElementById('presentWorkers').textContent = data.summary.present;
+                    document.getElementById('absentWorkers').textContent = data.summary.absent;
+                    
+                    // Update recent attendance list
+                    const listEl = document.getElementById('recentAttendanceList');
+                    if (data.present.length === 0) {
+                        listEl.innerHTML = '<p style="text-align: center; color: #666;">No check-ins yet today</p>';
+                    } else {
+                        listEl.innerHTML = data.present.map(attendance => `
+                            <div class="attendance-item">
+                                <div class="worker-details">
+                                    <div class="worker-name">${attendance.workerId.name}</div>
+                                    <div class="worker-meta">${attendance.workerId.nationalId} • ${attendance.projectId.name}</div>
+                                </div>
+                                <div class="attendance-time">${attendance.time}</div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading attendance:', error);
+                }
+            }
+            
+            async function startCamera() {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'user',
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        } 
+                    });
+                    
+                    const video = document.getElementById('scannerVideo');
+                    video.srcObject = cameraStream;
+                    
+                    document.getElementById('startCamera').style.display = 'none';
+                    document.getElementById('scanWorker').disabled = false;
+                    
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    alert('Unable to access camera. Please ensure camera permissions are granted.');
+                }
+            }
+            
+            async function startWorkerScan() {
+                if (!currentProject) {
+                    alert('Please select a project first.');
+                    return;
+                }
+                
+                if (scanInProgress) return;
+                
+                scanInProgress = true;
+                const scanBtn = document.getElementById('scanWorker');
+                scanBtn.disabled = true;
+                scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+                
+                // Show liveness challenge
+                const livenessChallenge = document.getElementById('livenessChallenge');
+                livenessChallenge.classList.add('show');
+                
+                const challenges = [
+                    { type: 'blink', instruction: 'Please blink slowly 3 times' },
+                    { type: 'smile', instruction: 'Please smile naturally' },
+                    { type: 'turn_left', instruction: 'Please slowly turn your head to the left' }
+                ];
+                
+                const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+                document.getElementById('livenessInstruction').textContent = challenge.instruction;
+                document.getElementById('livenessTask').innerHTML = 
+                    `<div class="challenge-type">${challenge.type.replace('_', ' ').toUpperCase()}</div>`;
+                
+                // Simulate face recognition and liveness detection
+                setTimeout(async () => {
+                    // Capture a frame for processing
+                    const video = document.getElementById('scannerVideo');
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+                    
+                    const faceImage = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Mock worker identification (in production, use actual face recognition)
+                    const mockWorkers = [
+                        { _id: '1', name: 'John Doe', nationalId: '12345678', phone: '0712345678' },
+                        { _id: '2', name: 'Jane Smith', nationalId: '87654321', phone: '0723456789' },
+                        { _id: '3', name: 'Mike Johnson', nationalId: '11223344', phone: '0734567890' }
+                    ];
+                    
+                    selectedWorker = mockWorkers[Math.floor(Math.random() * mockWorkers.length)];
+                    
+                    // Show worker info
+                    showWorkerInfo();
+                    
+                    // Perform verification checks
+                    await performVerificationChecks(faceImage);
+                    
+                    scanBtn.innerHTML = '<i class="fas fa-camera"></i> Scan Another';
+                    scanBtn.disabled = false;
+                    scanInProgress = false;
+                    
+                }, 3000);
+            }
+            
+            function showWorkerInfo() {
+                const workerInfo = document.getElementById('workerInfo');
+                const workerDetails = document.getElementById('workerDetails');
+                
+                workerDetails.innerHTML = `
+                    <p><strong>Name:</strong> ${selectedWorker.name}</p>
+                    <p><strong>National ID:</strong> ${selectedWorker.nationalId}</p>
+                    <p><strong>Phone:</strong> ${selectedWorker.phone}</p>
+                    <p><strong>Project:</strong> ${currentProject.name}</p>
+                `;
+                
+                workerInfo.classList.add('show');
+                livenessChallenge.classList.remove('show');
+            }
+            
+            async function performVerificationChecks(faceImage) {
+                // Location verification
+                const locationStatus = document.getElementById('locationVerification');
+                const locationValid = currentLocation && currentProject;
+                
+                if (locationValid) {
+                    locationStatus.className = 'verification-status success';
+                    locationStatus.querySelector('.status-icon').className = 'status-icon success';
+                    locationStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    locationStatus.className = 'verification-status error';
+                    locationStatus.querySelector('.status-icon').className = 'status-icon error';
+                    locationStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-times"></i>';
+                }
+                
+                // Face recognition verification
+                const faceStatus = document.getElementById('faceVerification');
+                const faceMatch = true; // Mock successful match
+                
+                if (faceMatch) {
+                    faceStatus.className = 'verification-status success';
+                    faceStatus.querySelector('.status-icon').className = 'status-icon success';
+                    faceStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    faceStatus.className = 'verification-status error';
+                    faceStatus.querySelector('.status-icon').className = 'status-icon error';
+                    faceStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-times"></i>';
+                }
+                
+                // Liveness verification
+                const livenessStatus = document.getElementById('livenessVerification');
+                const livenessPassed = true; // Mock successful liveness
+                
+                if (livenessPassed) {
+                    livenessStatus.className = 'verification-status success';
+                    livenessStatus.querySelector('.status-icon').className = 'status-icon success';
+                    livenessStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    livenessStatus.className = 'verification-status error';
+                    livenessStatus.querySelector('.status-icon').className = 'status-icon error';
+                    livenessStatus.querySelector('.status-icon').innerHTML = '<i class="fas fa-times"></i>';
+                }
+                
+                // Enable confirm button if all checks pass
+                const allPassed = locationValid && faceMatch && livenessPassed;
+                document.getElementById('confirmAttendance').disabled = !allPassed;
+            }
+            
+            async function markAttendance() {
+                if (!selectedWorker || !currentProject) return;
+                
+                const confirmBtn = document.getElementById('confirmAttendance');
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+                
+                try {
+                    const response = await fetch(window.API_BASE + '/api/attendance/mark', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + sessionStorage.getItem('authToken')
+                        },
+                        body: JSON.stringify({
+                            projectId: currentProject._id,
+                            workerId: selectedWorker._id,
+                            location: currentLocation,
+                            faceImage: 'mock_face_data',
+                            livenessData: { passed: true }
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to mark attendance');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    alert(`Attendance marked successfully for ${selectedWorker.name}!`);
+                    
+                    // Reset for next scan
+                    cancelScan();
+                    loadTodayAttendance(currentProject._id);
+                    
+                } catch (error) {
+                    console.error('Error marking attendance:', error);
+                    alert('Failed to mark attendance: ' + error.message);
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fas fa-check"></i> Mark Attendance';
+                }
+            }
+            
+            function cancelScan() {
+                selectedWorker = null;
+                scanInProgress = false;
+                
+                // Hide worker info
+                document.getElementById('workerInfo').classList.remove('show');
+                
+                // Reset verification statuses
+                document.querySelectorAll('.verification-status').forEach(status => {
+                    status.className = 'verification-status pending';
+                    status.querySelector('.status-icon').className = 'status-icon pending';
+                    status.querySelector('.status-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                });
+                
+                // Reset scan button
+                const scanBtn = document.getElementById('scanWorker');
+                scanBtn.innerHTML = '<i class="fas fa-user-check"></i> Start Scan';
+                scanBtn.disabled = false;
+                
+                // Hide liveness challenge
+                document.getElementById('livenessChallenge').classList.remove('show');
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -189,60 +189,46 @@
                 !menuToggle.contains(e.target) &&
                 !overlay.contains(e.target)) {
                 sidebar.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
+                overlay.classList.remove('active');
             }
         });
         
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            const sidebar = document.querySelector('.sidebar');
-            const overlay = document.querySelector('.sidebar-overlay');
-            
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
-            }
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        
+        // Project selection
+        document.getElementById('foremanSelectProjectBtn').addEventListener('click', selectProject);
+        
+        // Worker management - Updated to use face registration
+        document.getElementById('foremanAddWorkerBtn').addEventListener('click', function() {
+            window.location.href = 'worker-registration.html';
         });
+        document.getElementById('foremanImportWorkersBtn').addEventListener('click', importWorkers);
+        
+        // Attendance management - Updated to use face scanning
+        document.getElementById('foremanMarkAttendanceBtn').addEventListener('click', function() {
+            window.location.href = 'attendance-marking.html';
+        });
+        document.getElementById('foremanAttendanceReportBtn').addEventListener('click', generateAttendanceReport);
+        
+        // Payroll management
+        document.getElementById('foremanGeneratePayrollBtn').addEventListener('click', generatePayroll);
+        document.getElementById('foremanPayrollReportBtn').addEventListener('click', downloadPayrollReport);
+        
+        // Reports
+        document.getElementById('foremanGenerateReportBtn').addEventListener('click', generateReport);
+    }
 
-        // Add Project Button
-        const addProjectBtn = document.getElementById('foremanAddProjectBtn');
-        if (addProjectBtn) {
-            addProjectBtn.addEventListener('click', showAddProjectModal);
-        }
+    // Profile Form
+    const profileForm = document.getElementById('foremanProfileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', updateForemanProfile);
+    }
 
-        // Register Worker Button
-        const addWorkerBtn = document.getElementById('foremanAddWorkerBtn');
-        if (addWorkerBtn) {
-            addWorkerBtn.addEventListener('click', showRegisterWorkerModal);
-        }
-
-        // Mark Attendance Button
-        const markAttendanceBtn = document.getElementById('foremanMarkAttendanceBtn');
-        if (markAttendanceBtn) {
-            markAttendanceBtn.addEventListener('click', showMarkAttendanceModal);
-        }
-
-        // Liveness verification setup
-        let livenessStream = null;
-        let livenessCaptured = false;
-
-        // Generate Payroll Button
-        const generatePayrollBtn = document.getElementById('foremanGeneratePayrollBtn');
-        if (generatePayrollBtn) {
-            generatePayrollBtn.addEventListener('click', generatePayroll);
-        }
-
-        // Profile Form
-        const profileForm = document.getElementById('foremanProfileForm');
-        if (profileForm) {
-            profileForm.addEventListener('submit', updateForemanProfile);
-        }
-
-        // Settings Form
-        const settingsForm = document.getElementById('foremanSettingsForm');
-        if (settingsForm) {
-            settingsForm.addEventListener('submit', updateForemanSettings);
-        }
+    // Settings Form
+    const settingsForm = document.getElementById('foremanSettingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', updateForemanSettings);
     }
 
     // Load foreman projects
