@@ -320,6 +320,25 @@
     <script>
     document.title = document.title || 'AIS Concepts | Architecture & Design';
     (function() {
+        // Load statistics from API
+        fetch((window.API_BASE || '') + '/api/statistics')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data) {
+                    var heroStats = document.querySelectorAll('.hero-stat-number');
+                    if (heroStats.length >= 4) {
+                        heroStats[0].setAttribute('data-count', data.projectsDone || 150);
+                        heroStats[1].setAttribute('data-count', data.happyClients || 80);
+                        heroStats[2].setAttribute('data-count', data.yearsExperience || 15);
+                        heroStats[3].setAttribute('data-count', data.teamMembers || 25);
+                    }
+                }
+            })
+            .catch(function() {
+                // Keep default values on error
+            });
+    })();
+    (function() {
         var sg = document.getElementById('homeServicesGrid');
         if (!sg || typeof loadWebsiteServices !== 'function') return;
         loadWebsiteServices().then(function(services) {
