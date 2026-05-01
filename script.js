@@ -301,26 +301,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function runStatsCounter() {
         const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
         if (numbers.length > 0) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const target = entry.target;
-                        const count = parseInt(target.getAttribute('data-count'));
-                        const countStr = count.toString();
-                        target.textContent = '0';
-                        let i = 0;
-                        const typeNumber = () => {
-                            if (i < countStr.length) {
-                                target.textContent = countStr.substring(0, i + 1);
-                                i++;
-                                setTimeout(typeNumber, 100);
-                            }
-                        };
-                        typeNumber();
+            numbers.forEach(function(target) {
+                const count = parseInt(target.getAttribute('data-count'));
+                const countStr = count.toString();
+                target.textContent = '0';
+                let i = 0;
+                const typeNumber = () => {
+                    if (i < countStr.length) {
+                        target.textContent = countStr.substring(0, i + 1);
+                        i++;
+                        setTimeout(typeNumber, 100);
                     }
-                });
-            }, { threshold: 0.3 });
-            numbers.forEach(function(n) { observer.observe(n); });
+                };
+                typeNumber();
+            });
         }
     }
     // runStatsCounter() will be called after API data is loaded
