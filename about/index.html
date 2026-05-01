@@ -331,8 +331,10 @@
         fetch((window.API_BASE || '') + '/api/statistics')
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                console.log('Statistics data received:', data);
                 if (data) {
                     var stats = document.querySelectorAll('.stat-number');
+                    console.log('Stats elements found:', stats.length);
                     if (stats.length >= 4) {
                         stats[0].setAttribute('data-count', data.projectsDone || 150);
                         stats[0].textContent = '0';
@@ -342,12 +344,14 @@
                         stats[2].textContent = '0';
                         stats[3].setAttribute('data-count', data.teamMembers || 25);
                         stats[3].textContent = '0';
+                        console.log('Statistics updated');
                     }
                 }
                 // Run counter after data is loaded
                 if (typeof runStatsCounter === 'function') runStatsCounter();
             })
-            .catch(function() {
+            .catch(function(err) {
+                console.error('Error fetching statistics:', err);
                 // Run counter with default values on error
                 if (typeof runStatsCounter === 'function') runStatsCounter();
             });
