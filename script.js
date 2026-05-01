@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /* ===== STATS COUNTER ===== */
     function runStatsCounter() {
-        const numbers = document.querySelectorAll('.stat-number');
+        const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
         if (numbers.length > 0) {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
             numbers.forEach(function(n) { observer.observe(n); });
         }
     }
-    runStatsCounter();
+    // runStatsCounter() will be called after API data is loaded
 
     /* ===== CONTACT FORM ===== */
     const contactForm = document.getElementById('contactForm');
