@@ -277,18 +277,19 @@ section {
 }
 
 .navbar-social-icons a {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-tertiary);
+    background: transparent;
     color: var(--text-secondary);
-    border-radius: 50%;
+    border-radius: 50% !important;
     text-decoration: none;
     transition: all 0.3s ease;
     font-size: 14px;
     border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
 .navbar-social-icons a.instagram {
@@ -2132,9 +2133,11 @@ color: #e5e7eb;
     }
     
     .navbar-social-icons a {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+        border-radius: 50% !important;
+        overflow: hidden;
     }
     
     .nav-social-item {
