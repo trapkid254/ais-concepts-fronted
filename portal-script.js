@@ -2233,11 +2233,12 @@ window.applyClientProjectFilter = function () {
 };
 
 function updateMoneyOverview(projects) {
-    var totalPaid = 0, totalUsed = 0, totalBudget = 0;
+    var totalPaid = 0, totalUsed = 0, totalBudget = 0, totalOwed = 0;
     projects.forEach(function (project) {
         totalPaid += parseFloat(project.moneyPaid) || 0;
         totalUsed += parseFloat(project.moneyUsed) || 0;
-        totalBudget += (parseFloat(project.moneyPaid) || 0) + (parseFloat(project.moneyRemaining) || 0);
+        totalBudget += parseFloat(project.budget) || 0;
+        totalOwed += parseFloat(project.moneyOwed) || 0;
     });
     var totalLeft = totalBudget - totalUsed;
     function fmtMoney(n) {
@@ -2249,9 +2250,13 @@ function updateMoneyOverview(projects) {
     var tpEl = document.getElementById('totalPaid');
     var muEl = document.getElementById('moneyUsed');
     var mlEl = document.getElementById('moneyLeft');
+    var tbEl = document.getElementById('totalBudget');
+    var moEl = document.getElementById('moneyOwed');
     if (tpEl) tpEl.textContent = fmtMoney(totalPaid);
     if (muEl) muEl.textContent = fmtMoney(totalUsed);
     if (mlEl) mlEl.textContent = fmtMoney(totalLeft);
+    if (tbEl) tbEl.textContent = fmtMoney(totalBudget);
+    if (moEl) moEl.textContent = fmtMoney(totalOwed);
 }
 
 function loadClientDashboard() {

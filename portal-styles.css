@@ -2207,7 +2207,7 @@ body > .modal.open {
 /* ===== Money Overview Section ===== */
 .money-overview-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -2248,6 +2248,14 @@ body > .modal.open {
     background: linear-gradient(90deg, #ffd43b 0%, #fab005 100%);
 }
 
+.money-overview-card.money-budget::before {
+    background: linear-gradient(90deg, #845ef7 0%, #7048e8 100%);
+}
+
+.money-overview-card.money-owed::before {
+    background: linear-gradient(90deg, #ff6b6b 0%, #f03e3e 100%);
+}
+
 .money-overview-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
@@ -2276,6 +2284,14 @@ body > .modal.open {
     background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
 }
 
+.money-budget .money-icon {
+    background: linear-gradient(135deg, #845ef7 0%, #7048e8 100%);
+}
+
+.money-owed .money-icon {
+    background: linear-gradient(135deg, #ff6b6b 0%, #f03e3e 100%);
+}
+
 .money-info h3 {
     font-size: 0.9rem;
     font-weight: 500;
@@ -2294,7 +2310,7 @@ body > .modal.open {
 
 @media (max-width: 768px) {
     .money-overview-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
     }
     
