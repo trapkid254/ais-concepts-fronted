@@ -126,7 +126,7 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ email, password })
+                        body: JSON.stringify({ email, password, portalType: 'foreman' })
                     });
                     
                     const result = await response.json();

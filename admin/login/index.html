@@ -124,6 +124,7 @@
                 const isEmail = identifier.includes('@');
                 const loginData = {
                     password: password,
+                    portalType: 'admin',
                     [isEmail ? 'email' : 'username']: identifier
                 };
                 

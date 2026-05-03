@@ -163,13 +163,13 @@
                     name: document.getElementById('name').value,
                     email: document.getElementById('email').value,
                     phone: document.getElementById('phone').value,
-                    employeeId: document.getElementById('employeeId').value,
+                    username: document.getElementById('employeeId').value,
                     password: password,
                     role: 'employee'
                 };
                 
                 try {
-                    const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    const response = await fetch(`${API_BASE}/api/auth/register-employee`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
