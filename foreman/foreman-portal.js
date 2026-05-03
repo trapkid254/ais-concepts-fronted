@@ -206,13 +206,7 @@
             }
         });
         
-        // Logout button
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            sessionStorage.removeItem('authToken');
-            sessionStorage.removeItem('currentUser');
-            window.location.href = '../login/';
-        });
-        
+                
         // Project selection
         document.getElementById('foremanSelectProjectBtn').addEventListener('click', function() {
             alert('Project selection - Implementation needed');
