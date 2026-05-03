@@ -194,7 +194,11 @@
         });
         
         // Logout button
-        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('currentUser');
+            window.location.href = '../login/';
+        });
         
         // Project selection
         document.getElementById('foremanSelectProjectBtn').addEventListener('click', selectProject);
@@ -234,7 +238,12 @@
     // Load foreman projects
     async function loadForemanProjects() {
         try {
-            const response = await fetch(`${window.API_BASE}/api/foreman/${currentUser._id}/projects`, {
+            if (!currentUser || !currentUser._id) {
+                console.error('Current user not found');
+                return;
+            }
+            
+            const response = await fetch(`${window.API_BASE}/api/projects`, {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             
@@ -271,6 +280,11 @@
     // Load foreman workers
     async function loadForemanWorkers() {
         try {
+            if (!currentUser || !authToken) {
+                console.error('User not authenticated');
+                return;
+            }
+            
             const response = await fetch(`${window.API_BASE}/api/workers`, {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
@@ -314,8 +328,16 @@
     // Load attendance stats
     async function loadAttendanceStats() {
         try {
+            if (!currentUser || !authToken) {
+                console.error('User not authenticated');
+                document.getElementById('presentTodayCount').textContent = '0';
+                document.getElementById('absentTodayCount').textContent = '0';
+                document.getElementById('lateTodayCount').textContent = '0';
+                return;
+            }
+            
             const today = new Date().toISOString().split('T')[0];
-            const response = await fetch(`${window.API_BASE}/api/attendance/foreman/${currentUser._id}/stats?date=${today}`, {
+            const response = await fetch(`${window.API_BASE}/api/attendance/stats`, {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             
@@ -339,8 +361,14 @@
     // Load payroll info
     async function loadPayrollInfo() {
         try {
+            if (!currentUser || !authToken) {
+                console.error('User not authenticated');
+                document.getElementById('monthlyPayroll').textContent = '$0';
+                return;
+            }
+            
             const currentMonth = new Date().toISOString().slice(0, 7);
-            const response = await fetch(`${window.API_BASE}/api/payroll/foreman/${currentUser._id}?month=${currentMonth}`, {
+            const response = await fetch(`${window.API_BASE}/api/payroll/stats`, {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             
