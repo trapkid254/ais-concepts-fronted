@@ -191,7 +191,22 @@ function apiFetch(url, options) {
 function logout() {
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('currentUser');
-    window.location.href = '../index.html';
+    
+    // Determine correct login page based on current path
+    var currentPath = window.location.pathname;
+    
+    if (currentPath.includes('/admin/')) {
+        window.location.href = '../staff/login/';
+    } else if (currentPath.includes('/client/')) {
+        window.location.href = '../login/';
+    } else if (currentPath.includes('/employee/')) {
+        window.location.href = '../staff/login/';
+    } else if (currentPath.includes('/foreman/')) {
+        window.location.href = '../login/';
+    } else {
+        // Fallback to main index
+        window.location.href = '../index.html';
+    }
 }
 
 function displayUserInfo(user) {
