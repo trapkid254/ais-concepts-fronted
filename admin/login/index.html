@@ -94,8 +94,8 @@
                 
                 <form id="adminLoginForm">
                     <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required autocomplete="email" placeholder="Enter your email">
+                        <label for="identifier">Email or Username</label>
+                        <input type="text" id="identifier" name="identifier" required autocomplete="username" placeholder="Enter your email or username">
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
@@ -117,8 +117,15 @@
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const email = document.getElementById('email').value;
+                const identifier = document.getElementById('identifier').value;
                 const password = document.getElementById('password').value;
+                
+                // Check if identifier is email or username
+                const isEmail = identifier.includes('@');
+                const loginData = {
+                    password: password,
+                    [isEmail ? 'email' : 'username']: identifier
+                };
                 
                 try {
                     const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -126,7 +133,7 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ email, password })
+                        body: JSON.stringify(loginData)
                     });
                     
                     const result = await response.json();
