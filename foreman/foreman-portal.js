@@ -156,12 +156,18 @@
     function setupEventListeners() {
         // Logout
         const logoutBtn = document.getElementById('logoutBtn');
+        console.log('Logout button found:', logoutBtn);
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Logout clicked - clearing session');
                 sessionStorage.removeItem('authToken');
                 sessionStorage.removeItem('currentUser');
-                window.location.href = '../login/';
+                console.log('Session cleared, redirecting to login');
+                window.location.href = '../../foreman/login/';
             });
+        } else {
+            console.error('Logout button not found');
         }
 
         // Mobile menu toggle with overlay
