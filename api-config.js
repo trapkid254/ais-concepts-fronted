@@ -16,8 +16,8 @@
   
   // Local development
   if (h === 'localhost' || h === '127.0.0.1') {
-    // Allow any localhost port for development
-    window.API_BASE = 'http://localhost:3000';
+    // Use production backend for local development
+    window.API_BASE = 'https://ais-concepts-backend.onrender.com';
     return;
   }
   
