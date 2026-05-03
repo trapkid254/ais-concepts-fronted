@@ -331,7 +331,7 @@
                     <td>${worker.name}</td>
                     <td>${worker.nationalId || 'N/A'}</td>
                     <td>${worker.phone}</td>
-                    <td>$${worker.dailyRate}</td>
+                    <td>KSH ${worker.dailyRate}</td>
                     <td>${worker.assignedProjects ? worker.assignedProjects.length : 0}</td>
                     <td><span class="status-badge status-active">Active</span></td>
                     <td>
@@ -387,7 +387,7 @@
         try {
             if (!currentUser || !authToken) {
                 console.error('User not authenticated');
-                document.getElementById('monthlyPayroll').textContent = '$0';
+                document.getElementById('monthlyPayroll').textContent = 'KSH 0';
                 return;
             }
             
@@ -397,12 +397,12 @@
             });
             
             if (!response.ok) {
-                document.getElementById('monthlyPayroll').textContent = '$0';
+                document.getElementById('monthlyPayroll').textContent = 'KSH 0';
                 return;
             }
 
             const data = await response.json();
-            document.getElementById('monthlyPayroll').textContent = `$${data.totalPayroll || 0}`;
+            document.getElementById('monthlyPayroll').textContent = `KSH ${data.totalPayroll || 0}`;
         } catch (error) {
             console.error('Error loading payroll info:', error);
         }
