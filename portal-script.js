@@ -2245,6 +2245,14 @@ function loadClientDashboard() {
     }
 
     if (authToken && currentUser) {
+        // Clear any existing client data from localStorage to prevent showing old static data
+        setStored('clientProjects', []);
+        setStored('clientDocuments', []);
+        setStored('clientInvoices', []);
+        setStored('clientTransactions', []);
+        setStored('clientNotifications', []);
+        setStored('clientSupportTickets', []);
+        
         // Load client's own projects
         fetch(window.API_BASE + '/api/projects?client=true', {
             headers: { 'Authorization': 'Bearer ' + authToken }
