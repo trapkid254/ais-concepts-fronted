@@ -6,18 +6,26 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
         authToken = sessionStorage.getItem('authToken');
-        currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        const userStr = sessionStorage.getItem('currentUser');
+        currentUser = userStr ? JSON.parse(userStr) : null;
+        
+        console.log('Debug - Auth token:', authToken ? 'exists' : 'missing');
+        console.log('Debug - User string:', userStr);
+        console.log('Debug - Current user:', currentUser);
         
         if (!authToken || !currentUser) {
+            console.log('Redirecting to login - missing auth or user');
             window.location.href = '../login/';
             return;
         }
 
         if (currentUser.role !== 'foreman') {
+            console.log('Redirecting to login - not foreman role:', currentUser.role);
             window.location.href = '../login/';
             return;
         }
 
+        console.log('Authentication successful, loading data...');
         loadForemanData();
         setupNavigation();
         setupEventListeners();
@@ -319,9 +327,9 @@
             const tableBody = document.getElementById('foremanWorkersTableBody');
             tableBody.innerHTML = workers.map(worker => `
                 <tr>
-                    <td><img src="${worker.faceData?.faceImage || '/images/default-avatar.png'}" alt="${worker.name}" style="width: 40px; height: 40px; border-radius: 50%;"></td>
+                    <td><img src="${worker.faceData?.faceImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(worker.name) + '&background=20c4b4&color=fff&size=40'}" alt="${worker.name}" style="width: 40px; height: 40px; border-radius: 50%;"></td>
                     <td>${worker.name}</td>
-                    <td>${worker.nationalId}</td>
+                    <td>${worker.nationalId || 'N/A'}</td>
                     <td>${worker.phone}</td>
                     <td>$${worker.dailyRate}</td>
                     <td>${worker.assignedProjects ? worker.assignedProjects.length : 0}</td>
