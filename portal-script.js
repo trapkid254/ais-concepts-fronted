@@ -2196,12 +2196,31 @@ window.applyClientProjectFilter = function () {
             }).join('') + '</div>' : '';
         var pid = escapeAttr(String(project._id || project.id));
         var pname = escapeAttr(project.name || '');
+        var budget = parseFloat(project.budget) || 0;
+        var paid = parseFloat(project.moneyPaid) || 0;
+        var used = parseFloat(project.moneyUsed) || 0;
+        var remaining = parseFloat(project.moneyRemaining) || 0;
+        var owed = parseFloat(project.moneyOwed) || 0;
+        function fmtMoney(n) {
+            if (n >= 1000000000) return 'KES ' + (n / 1000000000).toFixed(2) + 'B';
+            if (n >= 1000000) return 'KES ' + (n / 1000000).toFixed(2) + 'M';
+            if (n >= 1000) return 'KES ' + (n / 1000).toFixed(1) + 'K';
+            return 'KES ' + n.toLocaleString();
+        }
+        var financeHtml = budget > 0 ? '<div class="project-finances">' +
+            '<p><strong>Budget:</strong> ' + fmtMoney(budget) + '</p>' +
+            '<p><strong>Paid:</strong> ' + fmtMoney(paid) + '</p>' +
+            '<p><strong>Used:</strong> ' + fmtMoney(used) + '</p>' +
+            '<p><strong>Remaining:</strong> ' + fmtMoney(remaining) + '</p>' +
+            (owed > 0 ? '<p><strong>Owed:</strong> ' + fmtMoney(owed) + '</p>' : '') +
+            '</div>' : '';
         return '<div class="project-card">' +
             '<div class="project-image"><img src="' + escapeHtml(project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
             '<div class="project-details">' +
             '<h3>' + escapeHtml(project.name) + '</h3>' +
             '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
             '<p><strong>Deadline:</strong> ' + escapeHtml(deadline) + '</p>' +
+            financeHtml +
             '<div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div>' +
             '<p>Progress: ' + (project.progress || 0) + '%</p>' +
             '<p><strong>Next Milestone:</strong> ' + escapeHtml(project.nextMilestone || '-') + '</p>' +
@@ -2221,12 +2240,18 @@ function updateMoneyOverview(projects) {
         totalBudget += (parseFloat(project.moneyPaid) || 0) + (parseFloat(project.moneyRemaining) || 0);
     });
     var totalLeft = totalBudget - totalUsed;
+    function fmtMoney(n) {
+        if (n >= 1000000000) return 'KES ' + (n / 1000000000).toFixed(2) + 'B';
+        if (n >= 1000000) return 'KES ' + (n / 1000000).toFixed(2) + 'M';
+        if (n >= 1000) return 'KES ' + (n / 1000).toFixed(1) + 'K';
+        return 'KES ' + n.toLocaleString();
+    }
     var tpEl = document.getElementById('totalPaid');
     var muEl = document.getElementById('moneyUsed');
     var mlEl = document.getElementById('moneyLeft');
-    if (tpEl) tpEl.textContent = 'KES ' + totalPaid.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    if (muEl) muEl.textContent = 'KES ' + totalUsed.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    if (mlEl) mlEl.textContent = 'KES ' + totalLeft.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (tpEl) tpEl.textContent = fmtMoney(totalPaid);
+    if (muEl) muEl.textContent = fmtMoney(totalUsed);
+    if (mlEl) mlEl.textContent = fmtMoney(totalLeft);
 }
 
 function loadClientDashboard() {

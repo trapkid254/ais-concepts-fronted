@@ -37,7 +37,11 @@ class SocketClient {
             auth: {
                 token: token
             },
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
         });
 
         this.setupEventListeners();
@@ -60,12 +64,10 @@ class SocketClient {
         this.socket.on('disconnect', () => {
             console.log('Disconnected from notifications server');
             this.isConnected = false;
-            this.handleReconnect();
         });
 
         this.socket.on('connect_error', (error) => {
             console.error('WebSocket connection error:', error);
-            this.handleReconnect();
         });
 
         this.socket.on('new-notification', (notification) => {
@@ -74,16 +76,8 @@ class SocketClient {
     }
 
     handleReconnect() {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-            
-            setTimeout(() => {
-                this.connect();
-            }, this.reconnectDelay * this.reconnectAttempts);
-        } else {
-            console.error('Max reconnection attempts reached');
-        }
+        // Socket.IO handles reconnection internally - no manual reconnect needed
+        console.log('Waiting for Socket.IO to reconnect...');
     }
 
     handleNewNotification(notification) {
