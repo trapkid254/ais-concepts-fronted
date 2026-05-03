@@ -288,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.documentElement.setAttribute('data-theme', saved);
     })();
 
+    // Setup notification button event listeners
+    setupNotificationButtons();
+
     // Generic close modal
     document.body.addEventListener('click', function (e) {
         var btn = e.target.closest('.close-modal');
@@ -3322,4 +3325,39 @@ function deleteFAQ(category, id) {
         .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
         .then(function () { renderAdminFAQs(); alert('FAQ deleted successfully!'); })
         .catch(function (err) { alert('Error deleting FAQ: ' + (err.error || err.message || 'Unknown error')); });
+}
+
+function setupNotificationButtons() {
+    var path = window.location.pathname || '';
+    
+    // Setup notification button click handlers
+    var notificationBtn = null;
+    var modalId = null;
+    
+    if (path.indexOf('/admin/') !== -1) {
+        notificationBtn = document.getElementById('adminNotificationsBtn');
+        modalId = 'adminNotificationsModal';
+    } else if (path.indexOf('/client/') !== -1) {
+        notificationBtn = document.getElementById('clientNotificationBtn');
+        modalId = 'clientNotificationsModal';
+    } else if (path.indexOf('/employee/') !== -1) {
+        notificationBtn = document.getElementById('employeeNotificationsBtn');
+        modalId = 'employeeNotificationsModal';
+    } else if (path.indexOf('/foreman/') !== -1) {
+        notificationBtn = document.getElementById('foremanNotificationsBtn');
+        modalId = 'foremanNotificationsModal';
+    }
+    
+    if (notificationBtn && modalId) {
+        notificationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openPortalNotificationsModal(modalId);
+        });
+    }
+    
+    // Initial badge refresh
+    refreshNotificationsBadge();
+    
+    // Refresh badge every 30 seconds
+    setInterval(refreshNotificationsBadge, 30000);
 }
