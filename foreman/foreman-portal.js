@@ -9,12 +9,12 @@
         currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
         
         if (!authToken || !currentUser) {
-            window.location.href = '../staff/login/';
+            window.location.href = '../login/';
             return;
         }
 
         if (currentUser.role !== 'foreman') {
-            window.location.href = '../staff/login/';
+            window.location.href = '../login/';
             return;
         }
 
@@ -147,7 +147,7 @@
             logoutBtn.addEventListener('click', function() {
                 sessionStorage.removeItem('authToken');
                 sessionStorage.removeItem('currentUser');
-                window.location.href = '../staff/login/';
+                window.location.href = '../login/';
             });
         }
 

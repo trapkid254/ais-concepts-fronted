@@ -985,6 +985,29 @@ function setupAdminInteractions(currentUser) {
     var selectedForemanNameEl = document.querySelector('.selected-foreman-name');
     var selectedForeman = null;
 
+    // Load clients for project creation dropdown
+    function loadClientsForProject() {
+        var clientSelect = document.getElementById('adminProjectClient');
+        if (!clientSelect) return;
+        
+        fetch((window.API_BASE || '') + '/api/users?role=client&status=approved', {
+            headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('authToken') || '') }
+        }).then(function(r) {
+            if (!r.ok) throw new Error('Failed to load clients');
+            return r.json();
+        }).then(function(clients) {
+            clientSelect.innerHTML = '<option value="">Select a client</option>';
+            clients.forEach(function(client) {
+                var option = document.createElement('option');
+                option.value = client._id;
+                option.textContent = client.name + ' (' + client.email + ')';
+                clientSelect.appendChild(option);
+            });
+        }).catch(function(err) {
+            console.error('Error loading clients:', err);
+        });
+    }
+
     if (newProjectBtn && projectModal) {
         newProjectBtn.addEventListener('click', function () {
             document.getElementById('adminProjectModalTitle').textContent = 'New Project';
@@ -996,6 +1019,7 @@ function setupAdminInteractions(currentUser) {
             document.getElementById('projectLocationName').value = '';
             document.getElementById('projectLatitude').value = '';
             document.getElementById('projectLongitude').value = '';
+            loadClientsForProject();
             projectModal.classList.add('open');
         });
     }
@@ -2206,25 +2230,30 @@ function loadClientDashboard() {
     }
 
     if (authToken && currentUser) {
-        fetch(window.API_BASE + '/api/projects?client=' + encodeURIComponent(currentUser.email), {
+        // Load client's own projects
+        fetch(window.API_BASE + '/api/projects?client=true', {
             headers: { 'Authorization': 'Bearer ' + authToken }
-        }).then(function (response) {
-            if (!response.ok) throw new Error('Failed to load projects');
-            return response.json();
+        }).then(function (r) {
+            if (!r.ok) throw new Error('Failed');
+            return r.json();
         }).then(function (projects) {
-            var clientProjects = projects.filter(function (p) {
-                var clientEmail = (p.client || '').toLowerCase();
-                return clientEmail === currentUser.email.toLowerCase() || clientEmail === (currentUser.name || '').toLowerCase();
-            });
-            window._clientProjectsList = clientProjects.map(function (p) {
+            // Projects are already filtered by client user ID from backend
+            window._clientProjectsList = projects.map(function (p) {
                 return {
-                    id: p._id || p.id, name: p.name, image: p.image || '/images/project1.jpg',
-                    progress: p.progress || 0, status: p.status || 'Active',
+                    id: p._id || p.id, 
+                    name: p.name, 
+                    image: p.image || '/images/project1.jpg',
+                    progress: p.progress || 0, 
+                    status: p.status || 'Active',
                     nextMilestone: p.nextMilestone || '-',
-                    completionDate: p.completionDate || '-', deadline: p.deadline || p.completionDate || '',
+                    completionDate: p.completionDate || '-', 
+                    deadline: p.endDate || p.completionDate || '',
                     description: p.description || '',
-                    moneyPaid: p.moneyPaid || '-', moneyUsed: p.moneyUsed || '-',
-                    moneyRemaining: p.moneyRemaining || '-', moneyOwed: p.moneyOwed || '-'
+                    moneyPaid: p.moneyPaid || 0,
+                    moneyUsed: p.moneyUsed || 0,
+                    moneyRemaining: p.moneyRemaining || 0,
+                    moneyOwed: p.moneyOwed || 0,
+                    budget: p.budget || 0
                 };
             });
             window._clientProjectFilter = window._clientProjectFilter || 'all';
@@ -2258,7 +2287,7 @@ function loadClientDashboard() {
 
     function loadClientDocuments() {
         if (!authToken || !currentUser) { renderClientDocuments([]); return; }
-        fetch(window.API_BASE + '/api/documents?client=' + encodeURIComponent(currentUser.email), {
+        fetch(window.API_BASE + '/api/documents?client=true', {
             headers: { 'Authorization': 'Bearer ' + authToken }
         }).then(function (r) {
             if (!r.ok) throw new Error('Failed');
@@ -2318,7 +2347,7 @@ function loadClientDashboard() {
 
     function loadClientInvoices() {
         if (!authToken || !currentUser) { renderClientInvoices([]); return; }
-        fetch(window.API_BASE + '/api/invoices?client=' + encodeURIComponent(currentUser.email), {
+        fetch(window.API_BASE + '/api/invoices?client=true', {
             headers: { 'Authorization': 'Bearer ' + authToken }
         }).then(function (r) {
             if (!r.ok) throw new Error('Failed');
