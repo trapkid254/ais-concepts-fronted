@@ -2232,15 +2232,24 @@ function loadClientDashboard() {
             return (i.status || '').toLowerCase().indexOf('pending') !== -1 || (i.status || '').toLowerCase() === 'due';
         }).length;
         var docCount = (getStored('clientDocuments', []) || []).length;
-        var ongoing = projects.filter(function (p) { return clientPortalProjectGroup(p) !== 'completed'; }).length;
+        var activeProjects = projects.filter(function (p) { return clientPortalProjectGroup(p) === 'ongoing'; }).length;
+        // Count actual milestones from projects, not just ongoing projects
+        var milestones = 0;
+        projects.forEach(function(p) {
+            if (p.milestones && Array.isArray(p.milestones)) {
+                milestones += p.milestones.filter(function(m) {
+                    return m.status !== 'completed';
+                }).length;
+            }
+        });
         var elP = document.getElementById('clientStatProjects');
         var elD = document.getElementById('clientStatDocs');
         var elI = document.getElementById('clientStatInvoices');
         var elM = document.getElementById('clientStatMilestones');
-        if (elP) elP.textContent = String(projects.length);
+        if (elP) elP.textContent = String(activeProjects);
         if (elD) elD.textContent = String(docCount);
         if (elI) elI.textContent = String(pendingInv);
-        if (elM) elM.textContent = String(ongoing);
+        if (elM) elM.textContent = String(milestones);
         updateMoneyOverview(projects);
     }
 
@@ -2260,6 +2269,8 @@ function loadClientDashboard() {
             if (!r.ok) throw new Error('Failed');
             return r.json();
         }).then(function (projects) {
+            console.log('Client projects received:', projects);
+            console.log('Number of projects:', projects.length);
             // Projects are already filtered by client user ID from backend
             window._clientProjectsList = projects.map(function (p) {
                 return {
