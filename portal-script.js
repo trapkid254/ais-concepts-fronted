@@ -1292,7 +1292,14 @@ function setupAdminInteractions(currentUser) {
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
                     body: JSON.stringify(projectObj)
                 }).then(function(response) {
-                    if (!response.ok) throw new Error('Failed to create project');
+                    if (!response.ok) {
+                        return response.json().then(function(errData) {
+                            throw new Error(errData.error || errData.details || 'Failed to create project');
+                        }).catch(function(parseErr) {
+                            if (parseErr.message && parseErr.message !== 'Failed to create project') throw parseErr;
+                            throw new Error('Failed to create project (status ' + response.status + ')');
+                        });
+                    }
                     return response.json();
                 }).then(function(newProject) {
                     alert('Project created successfully!');
@@ -1370,7 +1377,7 @@ window.editProject = function (projectId) {
         document.getElementById('adminProjectBudget').value = project.budget || '';
         document.getElementById('adminProjectProgress').value = project.progress || 0;
         if (document.getElementById('adminProjectCategory')) document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
-        document.getElementById('adminProjectStatus').value = project.status || 'Active';
+        document.getElementById('adminProjectStatus').value = project.status || 'active';
         if (document.getElementById('adminProjectDeadline')) document.getElementById('adminProjectDeadline').value = project.deadline || project.completionDate || '';
         if (project.location && typeof project.location === 'object') {
             document.getElementById('projectLocationName').value = project.location.name || '';
