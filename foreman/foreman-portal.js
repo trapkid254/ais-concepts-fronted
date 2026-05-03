@@ -67,7 +67,12 @@
                     resolve(currentUser.location);
                 },
                 error => {
-                    console.warn('Error getting location:', error);
+                    if (error.code === 1) {
+                        // Permission denied - don't show error in console, just handle gracefully
+                        console.log('Location permission denied - using default location');
+                    } else {
+                        console.warn('Error getting location:', error);
+                    }
                     resolve(null);
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
@@ -262,7 +267,7 @@
     // Load foreman projects
     async function loadForemanProjects() {
         try {
-            if (!currentUser || !currentUser._id) {
+            if (!currentUser) {
                 console.error('Current user not found');
                 return;
             }
