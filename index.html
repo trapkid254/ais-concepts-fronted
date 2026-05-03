@@ -10,6 +10,7 @@
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;">
     
     <!-- Primary SEO Meta Tags -->
     <title>AIS Concepts | Architecture & Design Firm in Kenya - Sustainable Urban Planning</title>
@@ -151,7 +152,7 @@
             <li><a href="blog/">Blog</a></li>
             <li><a href="faq/">FAQ</a></li>
             <li class="nav-auth-wrap">
-                <a href="client/login/" id="loginBtn" class="nav-login-link">Client login</a>
+                <a href="#" id="loginBtn" class="nav-login-link">Login</a>
                 <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
                     <a href="client/dashboard/"><i class="fas fa-th-large"></i> My Portal</a>
                     <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -185,6 +186,53 @@
                 <button type="submit" class="btn-primary">Search</button>
             </form>
             <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Login Options Modal -->
+    <div id="loginOptionsModal" class="modal">
+        <div class="modal-content login-options-content">
+            <span class="close-modal" id="loginOptionsClose">&times;</span>
+            <h2>Select Login Type</h2>
+            <p class="login-subtitle">Choose your portal to access your dashboard</p>
+            
+            <div class="login-options-grid">
+                <div class="login-option-card" data-role="client">
+                    <div class="login-option-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3>Client Portal</h3>
+                    <p>View your projects, track progress, and manage documents</p>
+                    <button class="btn-primary login-option-btn">Login as Client</button>
+                </div>
+                
+                <div class="login-option-card" data-role="admin">
+                    <div class="login-option-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Admin Portal</h3>
+                    <p>Manage system settings, users, and overall operations</p>
+                    <button class="btn-primary login-option-btn">Login as Admin</button>
+                </div>
+                
+                <div class="login-option-card" data-role="employee">
+                    <div class="login-option-icon">
+                        <i class="fas fa-user-hard-hat"></i>
+                    </div>
+                    <h3>Employee Portal</h3>
+                    <p>Access work assignments, timesheets, and company resources</p>
+                    <button class="btn-primary login-option-btn">Login as Employee</button>
+                </div>
+                
+                <div class="login-option-card" data-role="foreman">
+                    <div class="login-option-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <h3>Foreman Portal</h3>
+                    <p>Manage construction sites, workers, and project progress</p>
+                    <button class="btn-primary login-option-btn">Login as Foreman</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -622,6 +670,80 @@
                     '</div></div></div>';
             }).join('');
         }).catch(function() {});
+    })();
+
+    // Login Options Modal Functionality
+    (function() {
+        const loginBtn = document.getElementById('loginBtn');
+        const loginOptionsModal = document.getElementById('loginOptionsModal');
+        const loginOptionsClose = document.getElementById('loginOptionsClose');
+        const loginOptionCards = document.querySelectorAll('.login-option-card');
+        const loginOptionBtns = document.querySelectorAll('.login-option-btn');
+
+        // Open login options modal
+        if (loginBtn) {
+            loginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginOptionsModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        // Close login options modal
+        function closeLoginModal() {
+            loginOptionsModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        if (loginOptionsClose) {
+            loginOptionsClose.addEventListener('click', closeLoginModal);
+        }
+
+        // Close modal when clicking outside
+        loginOptionsModal.addEventListener('click', function(e) {
+            if (e.target === loginOptionsModal) {
+                closeLoginModal();
+            }
+        });
+
+        // Handle login option selection
+        function handleLoginSelection(role) {
+            const loginPaths = {
+                'client': 'client/login/',
+                'admin': 'admin/login/',
+                'employee': 'employee/login/',
+                'foreman': 'foreman/login/'
+            };
+
+            const loginPath = loginPaths[role];
+            if (loginPath) {
+                window.location.href = loginPath;
+            }
+        }
+
+        // Add click handlers to login option cards and buttons
+        loginOptionCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+                handleLoginSelection(role);
+            });
+        });
+
+        loginOptionBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.login-option-card');
+                const role = card.getAttribute('data-role');
+                handleLoginSelection(role);
+            });
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && loginOptionsModal.style.display === 'block') {
+                closeLoginModal();
+            }
+        });
     })();
     </script>
 </body>
