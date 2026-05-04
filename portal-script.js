@@ -2912,6 +2912,22 @@ async function loadAdminDashboard() {
     } catch (e) { console.warn(e); }
     __portalCache.portalUsers = directoryUsers;
     renderAdminUsers(document.querySelector('.users-list tbody'), directoryUsers);
+    
+    // Update admin dashboard stats
+    var clients = directoryUsers.filter(function (u) { return u.role === 'client'; });
+    var totalClientsEl = document.getElementById('totalClients');
+    if (totalClientsEl) totalClientsEl.textContent = String(clients.length);
+    
+    var activeProjects = 0;
+    try {
+        var pr = await fetch((window.API_BASE || '') + '/api/projects', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
+        if (pr.ok) {
+            var projects = await pr.json();
+            activeProjects = projects.filter(function (p) { return p.status === 'active' || p.status === 'ongoing'; }).length;
+        }
+    } catch (e) { console.warn(e); }
+    var activeProjectsEl = document.getElementById('activeProjects');
+    if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects);
 
     window._adminProjectFilter = 'all';
     window.renderAdminProjectsTable();

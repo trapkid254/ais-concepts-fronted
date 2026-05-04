@@ -312,6 +312,28 @@
                     </tr>
                 `).join('');
             }
+            
+            // Populate project select dropdowns for worker and attendance sections
+            const workerProjectSelect = document.getElementById('workerProjectSelect');
+            const attendanceProjectSelect = document.getElementById('attendanceProjectSelect');
+            
+            if (workerProjectSelect) {
+                if (myProjects.length === 0) {
+                    workerProjectSelect.innerHTML = '<option value="">No projects assigned</option>';
+                } else {
+                    workerProjectSelect.innerHTML = '<option value="">Select a project</option>' + 
+                        myProjects.map(project => `<option value="${project._id}">${project.name}</option>`).join('');
+                }
+            }
+            
+            if (attendanceProjectSelect) {
+                if (myProjects.length === 0) {
+                    attendanceProjectSelect.innerHTML = '<option value="">No projects assigned</option>';
+                } else {
+                    attendanceProjectSelect.innerHTML = '<option value="">Select a project</option>' + 
+                        myProjects.map(project => `<option value="${project._id}">${project.name}</option>`).join('');
+                }
+            }
         } catch (error) {
             console.error('Error loading projects:', error);
         }
