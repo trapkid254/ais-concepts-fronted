@@ -728,29 +728,48 @@ function setupAdminInteractions(currentUser) {
     renderAdminClientsTable();
     renderAdminForemenTable();
 
-    function renderAdminClientsTable() {
-        var clients = getStored('portalClients', []);
+    async function renderAdminClientsTable() {
         var tbody = adminClientsTableBody;
         if (!tbody) return;
+        
+        // Fetch actual client users from database
+        var clients = [];
+        try {
+            var response = await fetch((window.API_BASE || '') + '/api/admin/users?role=client', {
+                headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
+            });
+            if (response.ok) {
+                clients = await response.json();
+            }
+        } catch (e) {
+            console.warn('Failed to fetch clients:', e);
+        }
+        
+        // Filter to only show clients
+        clients = clients.filter(function(u) {
+            return (u.role || '').toLowerCase() === 'client';
+        });
+        
         if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No clients added yet. Click "Add Client" to get started.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No clients found. Clients will appear here when they register accounts.</td></tr>';
             return;
         }
+        
         tbody.innerHTML = clients.map(function (client) {
-            var budget = client.projects ? client.projects.reduce(function (sum, p) {
-                return sum + (parseFloat((p.budget || '').replace(/[^0-9.]/g, '')) || 0);
-            }, 0) : 0;
             return '<tr>' +
-                '<td>' + escapeHtml(client.name) + '</td>' +
+                '<td>' + escapeHtml(client.name || client.email) + '</td>' +
                 '<td>' + escapeHtml(client.email) + '</td>' +
-                '<td>' + (client.projects ? client.projects.length : 0) + '</td>' +
-                '<td>KES ' + budget.toLocaleString() + '</td>' +
-                '<td>' + new Date(client.date).toLocaleDateString() + '</td>' +
-                '<td>' +
-                '<button class="btn-icon" onclick="editClient(' + client.id + ')" title="Edit client"><i class="fas fa-edit"></i></button> ' +
-                '<button class="btn-icon" onclick="deleteClient(' + client.id + ')" title="Delete client"><i class="fas fa-trash"></i></button>' +
-                '</td></tr>';
+                '<td>' + escapeHtml(client.phone || '-') + '</td>' +
+                '<td>0</td>' +
+                '<td>KES 0</td>' +
+                '<td>' + (client.status || 'Active') + '</td>' +
+                '<td>' + (client.lastLogin && client.lastLogin !== '-' ? new Date(client.lastLogin).toLocaleDateString() : 'Never') + '</td>' +
+                '</tr>';
         }).join('');
+        
+        // Update stats
+        var totalClientsCount = document.getElementById('totalClientsCount');
+        if (totalClientsCount) totalClientsCount.textContent = String(clients.length);
     }
 
     window.editClient = function (clientId) {
@@ -1238,7 +1257,6 @@ function setupAdminInteractions(currentUser) {
             }
 
             var id = document.getElementById('adminProjectId').value;
-            var projects = getStored('portalProjects', []);
             var name = document.getElementById('adminProjectName').value;
             var client = document.getElementById('adminProjectClient').value;
             var locationName = document.getElementById('projectLocationName').value;
@@ -1259,28 +1277,47 @@ function setupAdminInteractions(currentUser) {
             var moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
             var moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
             var moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
-            var projectObj = {
-                name: name, client: client, location: location, budget: budget, deadline: deadline,
-                assignedForeman: assignedForeman, createForemanAccount: shouldCreateForemanAccount,
-                progress: progress || 0, status: status, category: category,
-                moneyPaid: moneyPaid, moneyUsed: moneyUsed, moneyRemaining: moneyRemaining, moneyOwed: moneyOwed,
-                completionDate: deadline || ''
-            };
-
+            
+            var imageInput = document.getElementById('adminProjectImages');
+            var images = imageInput && imageInput.files ? Array.prototype.slice.call(imageInput.files) : [];
+            
             var authToken = sessionStorage.getItem('authToken');
+            
+            // Create FormData for file upload
+            var formData = new FormData();
+            formData.append('name', name);
+            formData.append('client', client);
+            formData.append('location', JSON.stringify(location));
+            formData.append('budget', budget);
+            formData.append('deadline', deadline);
+            formData.append('assignedForeman', JSON.stringify(assignedForeman));
+            formData.append('progress', progress || 0);
+            formData.append('status', status);
+            formData.append('category', category);
+            formData.append('moneyPaid', moneyPaid);
+            formData.append('moneyUsed', moneyUsed);
+            formData.append('moneyRemaining', moneyRemaining);
+            formData.append('moneyOwed', moneyOwed);
+            formData.append('createForemanAccount', shouldCreateForemanAccount);
+            
+            // Add images to FormData
+            images.forEach(function(image) {
+                formData.append('images', image);
+            });
             
             if (id) {
                 // Update existing project
                 fetch(window.API_BASE + '/api/projects/' + id, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify(projectObj)
+                    headers: { 'Authorization': 'Bearer ' + authToken },
+                    body: formData
                 }).then(function(response) {
                     if (!response.ok) throw new Error('Failed to update project');
                     return response.json();
                 }).then(function(updatedProject) {
                     alert('Project updated successfully!');
                     renderAdminProjectsTable();
+                    projectModal.classList.remove('open');
                 }).catch(function(error) {
                     console.error('Update project error:', error);
                     alert('Failed to update project: ' + error.message);
@@ -1289,8 +1326,8 @@ function setupAdminInteractions(currentUser) {
                 // Create new project
                 fetch(window.API_BASE + '/api/projects', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-                    body: JSON.stringify(projectObj)
+                    headers: { 'Authorization': 'Bearer ' + authToken },
+                    body: formData
                 }).then(function(response) {
                     if (!response.ok) {
                         return response.json().then(function(errData) {
@@ -1304,6 +1341,7 @@ function setupAdminInteractions(currentUser) {
                 }).then(function(newProject) {
                     alert('Project created successfully!');
                     renderAdminProjectsTable();
+                    projectModal.classList.remove('open');
                 }).catch(function(error) {
                     console.error('Create project error:', error);
                     alert('Failed to create project: ' + error.message);
@@ -1588,6 +1626,136 @@ window.openAdminBroadcastModal = function (projectId) {
     modal.classList.add('open');
 };
 
+window.openAssignEmployeeModal = function (projectId) {
+    var modal = document.getElementById('assignEmployeeModal');
+    if (!modal) return;
+    
+    // Load project details
+    fetch(window.API_BASE + '/api/projects/' + projectId, {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to load project');
+        return response.json();
+    }).then(function (project) {
+        document.getElementById('assignEmployeeProjectId').value = projectId;
+        document.getElementById('assignEmployeeProjectName').value = project.name || '';
+        
+        // Load employees
+        return fetch(window.API_BASE + '/api/admin/users?role=employee', {
+            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+        });
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to load employees');
+        return response.json();
+    }).then(function (employees) {
+        var employeeSelect = document.getElementById('assignEmployeeSelect');
+        employeeSelect.innerHTML = '<option value="">Select an employee</option>';
+        employees.forEach(function (employee) {
+            var option = document.createElement('option');
+            option.value = employee._id;
+            option.textContent = employee.name + ' (' + employee.email + ')';
+            employeeSelect.appendChild(option);
+        });
+        
+        modal.classList.add('open');
+    }).catch(function (error) {
+        console.error('Error loading data:', error);
+        alert('Failed to load data. Please try again.');
+    });
+};
+
+window.viewProjectEmployees = function (projectId) {
+    var modal = document.getElementById('viewProjectEmployeesModal');
+    var content = document.getElementById('viewProjectEmployeesContent');
+    if (!modal || !content) return;
+    
+    fetch(window.API_BASE + '/api/projects/' + projectId, {
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to load project');
+        return response.json();
+    }).then(function (project) {
+        var employees = project.assignedEmployees || [];
+        if (employees.length === 0) {
+            content.innerHTML = '<p style="text-align:center;padding:20px;">No employees assigned to this project yet.</p>';
+        } else {
+            content.innerHTML = '<table class="data-table"><thead><tr><th>Employee Name</th><th>Duties</th><th>Assigned Date</th><th>Actions</th></tr></thead><tbody>' +
+                employees.map(function (assignment) {
+                    return '<tr>' +
+                        '<td>' + escapeHtml(assignment.employeeName || '') + '</td>' +
+                        '<td>' + escapeHtml(assignment.duties || '-') + '</td>' +
+                        '<td>' + (assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString() : '-') + '</td>' +
+                        '<td>' +
+                        '<button class="btn-icon" onclick="removeEmployeeFromProject(\'' + projectId + '\',\'' + assignment.employeeId + '\')" title="Remove"><i class="fas fa-trash"></i></button>' +
+                        '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+        modal.classList.add('open');
+    }).catch(function (error) {
+        console.error('Error loading employees:', error);
+        alert('Failed to load employees. Please try again.');
+    });
+};
+
+window.removeEmployeeFromProject = function (projectId, employeeId) {
+    if (!confirm('Are you sure you want to remove this employee from the project?')) return;
+    
+    fetch(window.API_BASE + '/api/projects/' + projectId + '/employees/' + employeeId, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to remove employee');
+        return response.json();
+    }).then(function () {
+        alert('Employee removed successfully!');
+        viewProjectEmployees(projectId);
+        renderAdminProjectsTable();
+    }).catch(function (error) {
+        console.error('Error removing employee:', error);
+        alert('Failed to remove employee. Please try again.');
+    });
+};
+
+// Assign Employee Form Submission
+var assignEmployeeForm = document.getElementById('assignEmployeeForm');
+if (assignEmployeeForm) {
+    assignEmployeeForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        
+        var projectId = document.getElementById('assignEmployeeProjectId').value;
+        var employeeId = document.getElementById('assignEmployeeSelect').value;
+        var duties = document.getElementById('assignEmployeeDuties').value;
+        
+        if (!employeeId) {
+            alert('Please select an employee');
+            return;
+        }
+        
+        fetch(window.API_BASE + '/api/projects/' + projectId + '/assign-employee', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + sessionStorage.getItem('authToken')
+            },
+            body: JSON.stringify({
+                employeeId: employeeId,
+                duties: duties
+            })
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to assign employee');
+            return response.json();
+        }).then(function (data) {
+            alert('Employee assigned successfully!');
+            document.getElementById('assignEmployeeModal').classList.remove('open');
+            assignEmployeeForm.reset();
+            renderAdminProjectsTable();
+        }).catch(function (error) {
+            console.error('Error assigning employee:', error);
+            alert('Failed to assign employee. Please try again.');
+        });
+    });
+}
+
 window.adminAssignProjectPrefill = function (projectName, clientEmail) {
     navigatePortalSection('admin-assignments', {});
     var sel = document.getElementById('assignProjectName');
@@ -1677,7 +1845,7 @@ window.renderAdminProjectsTable = function () {
         var f = window._adminProjectFilter || 'all';
         var filtered = f === 'all' ? projects : projects.filter(function (p) { return adminPortalProjectGroup(p) === f; });
         if (!projects.length) {
-            tbody.innerHTML = '<tr><td colspan="9">No projects in this filter.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10">No projects in this filter.</td></tr>';
             return;
         }
         tbody.innerHTML = filtered.map(function (project) {
@@ -1687,25 +1855,27 @@ window.renderAdminProjectsTable = function () {
             var clientEsc = escapeAttr(project.client || '');
             var locStr = project.location && project.location.name ? project.location.name : project.location || '';
             var foremanStr = project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned';
+            var employeeCount = project.assignedEmployees ? project.assignedEmployees.length : 0;
             return '<tr>' +
                 '<td>' + escapeHtml(project.name || '') + '</td>' +
                 '<td>' + escapeHtml(project.client || '') + '</td>' +
                 '<td>' + escapeHtml(locStr) + '</td>' +
                 '<td>' + escapeHtml(foremanStr) + '</td>' +
                 '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + (project.workerCount || 0) + ' workers</a></td>' +
+                '<td><a href="#" onclick="viewProjectEmployees(\'' + idStr + '\')" title="View Employees">' + employeeCount + ' employees</a></td>' +
                 '<td><div style="width:100px;"><div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div></td>' +
                 '<td>' + escapeHtml(adminPortalProjectGroup(project) === 'completed' ? '-' : project.deadline || '') + '</td>' +
                 '<td><span class="status-badge status-' + st + '">' + escapeHtml(project.status || 'Active') + '</span></td>' +
                 '<td>' +
                 '<div class="action-buttons-container">' +
-                '<button type="button" class="btn-icon assign" title="Assign" onclick="adminAssignProjectPrefill(\'' + nameEsc + '\',\'' + clientEsc + '\')"><i class="fas fa-user-plus"></i></button>' +
+                '<button type="button" class="btn-icon assign" title="Assign Employee" onclick="openAssignEmployeeModal(\'' + idStr + '\')"><i class="fas fa-user-plus"></i></button>' +
                 '<button type="button" class="btn-icon view" title="View Details" onclick="viewProjectDetails(\'' + idStr + '\')"><i class="fas fa-eye"></i></button>' +
                 '<button type="button" class="btn-icon edit" title="Edit Project" onclick="editProject(\'' + idStr + '\')"><i class="fas fa-edit"></i></button>' +
                 '<button type="button" class="btn-icon delete" title="Delete Project" onclick="deleteProject(\'' + idStr + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
     }).catch(function () {
-        tbody.innerHTML = '<tr><td colspan="9" style="color:#ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="color:#ff6b6b;">Error loading projects. Please refresh the page.</td></tr>';
     });
 };
 
@@ -2585,6 +2755,129 @@ async function renderAdminEnquiries() {
     }).join('') : '<tr><td colspan="7">No enquiries yet.</td></tr>';
 }
 
+async function renderAdminWebsiteProjects() {
+    var tbody = document.getElementById('adminWebsiteProjectsBody');
+    if (!tbody) return;
+    var list = [];
+    try {
+        if (typeof getWebsiteProjects === 'function') {
+            list = getWebsiteProjects();
+        }
+    } catch (e) { list = []; }
+    tbody.innerHTML = list.length ? list.map(function (p) {
+        return '<tr>' +
+            '<td><img src="' + escapeHtml(p.image || '') + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(p.title || '') + '</td>' +
+            '<td>' + escapeHtml(p.category || '') + '</td>' +
+            '<td>' + escapeHtml((p.description || '').substring(0, 100) + (p.description && p.description.length > 100 ? '...' : '')) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editWebsiteProject(' + p.id + ')" title="Edit project"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete project"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No website projects yet. Click "Add Website Project" to get started.</td></tr>';
+}
+
+async function renderAdminFAQsInContent() {
+    var tbody = document.getElementById('adminFAQsInContentBody');
+    if (!tbody) return;
+    var faqs = { general: [], services: [], process: [], style: [] };
+    try {
+        var response = await fetch((window.API_BASE || '') + '/api/faqs');
+        if (response.ok) {
+            faqs = await response.json();
+        }
+    } catch (e) { console.warn('Failed to fetch FAQs:', e); }
+    
+    var allFAQs = [];
+    Object.keys(faqs).forEach(function(category) {
+        if (Array.isArray(faqs[category])) {
+            faqs[category].forEach(function(faq) {
+                allFAQs.push({ category: category, ...faq });
+            });
+        }
+    });
+    
+    tbody.innerHTML = allFAQs.length ? allFAQs.map(function (faq) {
+        return '<tr>' +
+            '<td>' + escapeHtml(faq.category || '') + '</td>' +
+            '<td>' + escapeHtml(faq.question || '') + '</td>' +
+            '<td>' + escapeHtml((faq.answer || '').substring(0, 100) + (faq.answer && faq.answer.length > 100 ? '...' : '')) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editFAQInContent(\'' + escapeAttr(faq.category) + '\',\'' + escapeAttr(faq.id) + '\')" title="Edit FAQ"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteFAQInContent(\'' + escapeAttr(faq.category) + '\',\'' + escapeAttr(faq.id) + '\')" title="Delete FAQ"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:40px;">No FAQs yet. Click "Add FAQ" to get started.</td></tr>';
+}
+
+window.editFAQInContent = function(category, id) {
+    // Redirect to the FAQ management section
+    var faqSection = document.getElementById('admin-faq');
+    if (faqSection) {
+        // Hide all sections
+        document.querySelectorAll('.portal-section').forEach(function(sec) {
+            sec.style.display = 'none';
+        });
+        // Show FAQ section
+        faqSection.style.display = 'block';
+        // Update sidebar active state
+        document.querySelectorAll('.sidebar-nav a[data-section]').forEach(function(a) {
+            a.classList.toggle('active', a.getAttribute('data-section') === 'admin-faq');
+        });
+        // Trigger edit
+        if (typeof editFAQ === 'function') {
+            editFAQ(category, id);
+        }
+    }
+};
+
+window.deleteFAQInContent = function(category, id) {
+    if (!confirm('Are you sure you want to delete this FAQ?')) return;
+    
+    apiFetch('/api/faqs/' + category + '/' + id, { method: 'DELETE' })
+        .then(function (r) { return r.json().then(function (data) { if (!r.ok) throw data; return data; }); })
+        .then(function () {
+            renderAdminFAQsInContent();
+            alert('FAQ deleted successfully!');
+        })
+        .catch(function (err) { alert('Error: ' + (err.error || err.message || 'Unknown error')); });
+};
+
+window.editWebsiteProject = function(id) {
+    var list = typeof getWebsiteProjects === 'function' ? getWebsiteProjects() : [];
+    var project = list.find(function(p) { return String(p.id) === String(id); });
+    if (!project) return;
+    
+    var webProjModal = document.getElementById('adminWebsiteProjectModal');
+    var webProjForm = document.getElementById('adminWebsiteProjectForm');
+    var editIdField = document.getElementById('webProjectEditId');
+    var modalTitle = webProjModal.querySelector('h2');
+    
+    if (document.getElementById('webProjectTitle')) document.getElementById('webProjectTitle').value = project.title || '';
+    if (document.getElementById('webProjectSlug')) document.getElementById('webProjectSlug').value = project.slug || '';
+    if (document.getElementById('webProjectCategory')) document.getElementById('webProjectCategory').value = project.category || '';
+    if (document.getElementById('webProjectDescription')) document.getElementById('webProjectDescription').value = project.description || '';
+    if (editIdField) editIdField.value = String(project.id);
+    if (modalTitle) modalTitle.textContent = 'Edit Website Project';
+    
+    if (webProjModal) webProjModal.classList.add('open');
+};
+
+window.deleteWebsiteProject = function(id) {
+    if (!confirm('Are you sure you want to delete this website project?')) return;
+    
+    var list = typeof getWebsiteProjects === 'function' ? getWebsiteProjects() : [];
+    var index = list.findIndex(function(p) { return String(p.id) === String(id); });
+    if (index !== -1) {
+        list.splice(index, 1);
+        if (typeof setWebsiteProjects === 'function') {
+            setWebsiteProjects(list).then(function() {
+                renderAdminWebsiteProjects();
+                alert('Website project deleted successfully!');
+            }).catch(function() { alert('Could not delete project.'); });
+        }
+    }
+};
+
 async function loadAdminDashboard() {
     // First, refresh data from backend to clear stale localStorage
     var token = sessionStorage.getItem('authToken');
@@ -2669,7 +2962,12 @@ async function loadAdminDashboard() {
 
     var totalUsersEl = document.getElementById('totalUsers');
     var activeProjectsEl = document.getElementById('activeProjects');
-    if (totalUsersEl) totalUsersEl.textContent = String(directoryUsers.length);
+    // Filter to show only admin, employees, and foreman (exclude clients)
+    var teamMembers = directoryUsers.filter(function(u) {
+        var role = (u.role || '').toLowerCase();
+        return role === 'admin' || role === 'employee' || role === 'foreman';
+    });
+    if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
     if (activeProjectsEl) activeProjectsEl.textContent = '0';
 
     updateFinancialSummary();
@@ -2684,6 +2982,8 @@ async function loadAdminDashboard() {
 
     await renderAdminEnquiries();
     await renderPendingApprovals();
+    await renderAdminWebsiteProjects();
+    await renderAdminFAQsInContent();
 
     // Website project/service modals
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');

@@ -267,6 +267,7 @@
                             <th>Location</th>
                             <th>Foreman</th>
                             <th>Workers</th>
+                            <th>Employees</th>
                             <th>Progress</th>
                             <th>Deadline</th>
                             <th>Status</th>
@@ -696,6 +697,18 @@
                 </table>
                 </div>
 
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Frequently Asked Questions (FAQs)</h3>
+                <p class="section-sub">Manage FAQs shown on the frontend FAQ page.</p>
+                <button type="button" class="btn btn-primary" id="adminAddFAQInContentBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add FAQ</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Category</th><th>Question</th><th>Answer</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminFAQsInContentBody"></tbody>
+                </table>
+                </div>
+
                 <h3 style="margin-top: 32px;">Project Enquiries (From Homepage)</h3>
                 <p class="section-sub">Enquiries submitted on the homepage project enquiry form.</p>
                 <table class="data-table">
@@ -947,6 +960,11 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Project Images</label>
+                            <input type="file" id="adminProjectImages" accept="image/*" multiple>
+                            <small style="color: #64748b; font-size: 0.875rem;">Upload project images (will be shown on client's page)</small>
+                        </div>
+                        <div class="form-group">
                             <label>Money Paid (client view)</label>
                             <input type="text" id="adminProjectMoneyPaid" placeholder="Amount paid">
                         </div>
@@ -980,6 +998,44 @@
                             <button type="submit" class="btn btn-primary">Save</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Assign Employee Modal -->
+            <div class="modal modal-center" id="assignEmployeeModal">
+                <div class="modal-content modal-content-center">
+                    <span class="close-modal" data-close="assignEmployeeModal">&times;</span>
+                    <h2>Assign Employee to Project</h2>
+                    <form id="assignEmployeeForm" novalidate>
+                        <input type="hidden" id="assignEmployeeProjectId">
+                        <div class="form-group">
+                            <label>Project</label>
+                            <input type="text" id="assignEmployeeProjectName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Employee *</label>
+                            <select id="assignEmployeeSelect" required>
+                                <option value="">Select an employee</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duties/Responsibilities</label>
+                            <textarea id="assignEmployeeDuties" rows="3" placeholder="Describe the employee's duties for this project"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" data-close="assignEmployeeModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Assign Employee</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- View Project Employees Modal -->
+            <div class="modal" id="viewProjectEmployeesModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="viewProjectEmployeesModal">&times;</span>
+                    <h2>Project Employees</h2>
+                    <div id="viewProjectEmployeesContent"></div>
                 </div>
             </div>
 

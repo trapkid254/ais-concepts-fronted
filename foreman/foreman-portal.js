@@ -281,26 +281,37 @@
             }
 
             const data = await response.json();
-            const projects = data.projects || [];
+            const allProjects = data.projects || [];
+            
+            // Filter projects to show only those assigned to this foreman
+            const myProjects = allProjects.filter(project => {
+                const foremanId = project.foremanId || project.assignedForeman?.id || project.assignedForeman?._id;
+                return String(foremanId) === String(currentUser._id) || String(foremanId) === String(currentUser.id);
+            });
             
             // Update stats
-            document.getElementById('myProjectsCount').textContent = projects.length;
+            document.getElementById('myProjectsCount').textContent = myProjects.length;
             
             // Update table
             const tableBody = document.getElementById('foremanProjectsTableBody');
-            tableBody.innerHTML = projects.map(project => `
-                <tr>
-                    <td>${project.name}</td>
-                    <td>${project.location.address}</td>
-                    <td>${project.workers ? project.workers.length : 0}</td>
-                    <td><span class="status-badge status-${project.status}">${project.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm" onclick="viewProject('${project._id}')">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            if (myProjects.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No projects assigned to you yet. Projects will appear here when an admin assigns you.</td></tr>';
+            } else {
+                tableBody.innerHTML = myProjects.map(project => `
+                    <tr>
+                        <td>${project.name}</td>
+                        <td>${project.location?.address || project.location?.name || 'N/A'}</td>
+                        <td>${project.workers ? project.workers.length : 0}</td>
+                        <td><span class="status-badge status-${project.status}">${project.status}</span></td>
+                        <td>${project.progress || 0}%</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="viewProject('${project._id}')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         } catch (error) {
             console.error('Error loading projects:', error);
         }
