@@ -2780,8 +2780,8 @@ async function renderAdminWebsiteProjects() {
             '<td>' + escapeHtml(p.category || '') + '</td>' +
             '<td>' + escapeHtml((p.description || '').substring(0, 100) + (p.description && p.description.length > 100 ? '...' : '')) + '</td>' +
             '<td>' +
-            '<button class="btn-icon" onclick="editWebsiteProject(' + p.id + ')" title="Edit project"><i class="fas fa-edit"></i></button> ' +
-            '<button class="btn-icon" onclick="deleteWebsiteProject(' + p.id + ')" title="Delete project"><i class="fas fa-trash"></i></button>' +
+            '<button class="btn-icon" onclick="editWebsiteProject(\'' + escapeAttr(String(p.id)) + '\')" title="Edit project"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteWebsiteProject(\'' + escapeAttr(String(p.id)) + '\')" title="Delete project"><i class="fas fa-trash"></i></button>' +
             '</td></tr>';
     }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No website projects yet. Click "Add Website Project" to get started.</td></tr>';
 }
@@ -2834,8 +2834,8 @@ async function renderAdminBlogPosts() {
             '<td>' + escapeHtml(p.date || '') + '</td>' +
             '<td>' + escapeHtml((p.excerpt || '').substring(0, 100) + (p.excerpt && p.excerpt.length > 100 ? '...' : '')) + '</td>' +
             '<td>' +
-            '<button class="btn-icon" onclick="editBlogPost(' + p.id + ')" title="Edit post"><i class="fas fa-edit"></i></button> ' +
-            '<button class="btn-icon" onclick="deleteBlogPost(' + p.id + ')" title="Delete post"><i class="fas fa-trash"></i></button>' +
+            '<button class="btn-icon" onclick="editBlogPost(\'' + escapeAttr(String(p.id)) + '\')" title="Edit post"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteBlogPost(\'' + escapeAttr(String(p.id)) + '\')" title="Delete post"><i class="fas fa-trash"></i></button>' +
             '</td></tr>';
     }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No blog posts yet. Click "Add Blog Post" to get started.</td></tr>';
 }
