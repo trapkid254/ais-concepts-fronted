@@ -3,8 +3,13 @@
   var p = window.location.port || '';
   
   // Production deployment URLs
+  if (h === 'aisconcepts.com') {
+    window.API_BASE = 'https://aisconcepts-backend.onrender.com';
+    return;
+  }
+
   if (h === 'ais-concepts.netlify.app' || h.endsWith('.netlify.app')) {
-    window.API_BASE = 'https://ais-concepts-backend.onrender.com';
+    window.API_BASE = 'https://aisconcepts-backend.onrender.com';
     return;
   }
   
