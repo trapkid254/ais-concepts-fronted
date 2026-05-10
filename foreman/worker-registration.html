@@ -193,6 +193,51 @@
             cursor: not-allowed;
         }
         
+        .worker-details, .face-preview, .liveness-status {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .worker-details h4, .face-preview h4, .liveness-status h4 {
+            margin-top: 0;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .worker-details p {
+            margin: 6px 0;
+            font-size: 14px;
+            color: #475569;
+        }
+        
+        .worker-details p strong {
+            color: #1e293b;
+            min-width: 120px;
+            display: inline-block;
+        }
+        
+        .face-preview .captured-images {
+            margin: 10px 0 0;
+        }
+        
+        .liveness-status p {
+            font-size: 14px;
+            color: #15803d;
+            font-weight: 500;
+        }
+        
+        .challenge-type {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1976d2;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
         @media (max-width: 768px) {
             .registration-container {
                 padding: 10px;
@@ -204,6 +249,10 @@
             
             .captured-images {
                 flex-wrap: wrap;
+            }
+            
+            .worker-details p strong {
+                min-width: 100px;
             }
         }
     </style>
@@ -588,7 +637,7 @@
                 // Liveness controls
                 document.getElementById('startLivenessCamera').addEventListener('click', startLivenessCamera);
                 document.getElementById('startLiveness').addEventListener('click', startLivenessCheck);
-                document.getElementById('proceedToConfirm').addEventListener('click', showConfirmation);
+                document.getElementById('proceedToConfirm').addEventListener('click', () => goToStep(4));
                 
                 // Final registration
                 document.getElementById('registerWorker').addEventListener('click', registerWorker);
@@ -725,7 +774,7 @@
                     div.className = 'captured-image';
                     div.innerHTML = `
                         <img src="${imageData}" alt="Captured face ${index + 1}">
-                        <button type="button" class="remove-btn" onclick="removeCapturedImage(${index})">×</button>
+                        <button type="button" class="remove-btn" data-remove-index="${index}">×</button>
                     `;
                     container.appendChild(div);
                 });
@@ -736,6 +785,15 @@
                 updateCapturedImages();
                 retakePhoto();
             }
+            
+            // Delegate click for remove buttons inside captured images
+            document.getElementById('capturedImages').addEventListener('click', function(e) {
+                var btn = e.target.closest('.remove-btn');
+                if (btn) {
+                    var idx = parseInt(btn.getAttribute('data-remove-index'), 10);
+                    if (!isNaN(idx)) removeCapturedImage(idx);
+                }
+            });
             
             function stopCamera() {
                 if (cameraStream) {
