@@ -226,7 +226,7 @@
         
         // Worker management - Updated to use face registration
         document.getElementById('foremanAddWorkerBtn').addEventListener('click', function() {
-            window.location.href = 'worker-registration.html';
+            window.location.href = '../worker-registration.html';
         });
         document.getElementById('foremanImportWorkersBtn').addEventListener('click', function() {
             alert('Import workers - Implementation needed');
@@ -234,7 +234,7 @@
         
         // Attendance management - Updated to use face scanning
         document.getElementById('foremanMarkAttendanceBtn').addEventListener('click', function() {
-            window.location.href = 'attendance-marking.html';
+            window.location.href = '../attendance-marking.html';
         });
         document.getElementById('foremanAttendanceReportBtn').addEventListener('click', function() {
             alert('Attendance report - Implementation needed');

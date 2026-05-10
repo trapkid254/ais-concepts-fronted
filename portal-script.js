@@ -2981,7 +2981,7 @@ async function loadAdminDashboard() {
     renderAdminUsers(document.querySelector('.users-list tbody'), directoryUsers);
     
     // Update admin dashboard stats
-    var clients = directoryUsers.filter(function (u) { return u.role === 'client'; });
+    var clients = directoryUsers.filter(function (u) { return u.role && u.role.toLowerCase() === 'client'; });
     var totalClientsEl = document.getElementById('totalClients');
     if (totalClientsEl) totalClientsEl.textContent = String(clients.length);
     
