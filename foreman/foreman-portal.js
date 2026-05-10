@@ -34,6 +34,12 @@
     // Load foreman dashboard data
     async function loadForemanData() {
         try {
+            // Update user info display
+            const userNameEl = document.querySelector('.user-name');
+            const userEmailEl = document.querySelector('.user-email');
+            if (userNameEl) userNameEl.textContent = currentUser.name || currentUser.email || 'Foreman';
+            if (userEmailEl) userEmailEl.textContent = currentUser.email || '';
+            
             // Get user location for attendance radius checking
             await getUserLocation();
             // Load projects

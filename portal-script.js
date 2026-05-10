@@ -2427,6 +2427,15 @@ function updateMoneyOverview(projects) {
     if (mlEl) mlEl.textContent = fmtMoney(totalLeft);
     if (tbEl) tbEl.textContent = fmtMoney(totalBudget);
     if (moEl) moEl.textContent = fmtMoney(totalOwed);
+    
+    console.log('Client money overview updated:', {
+        totalPaid: totalPaid,
+        totalUsed: totalUsed,
+        totalBudget: totalBudget,
+        totalLeft: totalLeft,
+        totalOwed: totalOwed,
+        projectCount: projects.length
+    });
 }
 
 function loadClientDashboard() {
@@ -2809,6 +2818,64 @@ async function renderAdminFAQsInContent() {
     }).join('') : '<tr><td colspan="4" style="text-align:center;padding:40px;">No FAQs yet. Click "Add FAQ" to get started.</td></tr>';
 }
 
+async function renderAdminBlogPosts() {
+    var tbody = document.getElementById('adminBlogPostsBody');
+    if (!tbody) return;
+    var posts = [];
+    try {
+        if (typeof getWebsiteBlogPosts === 'function') {
+            posts = getWebsiteBlogPosts();
+        }
+    } catch (e) { posts = []; }
+    tbody.innerHTML = posts.length ? posts.map(function (p) {
+        return '<tr>' +
+            '<td><img src="' + escapeHtml(p.image || '') + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(p.title || '') + '</td>' +
+            '<td>' + escapeHtml(p.date || '') + '</td>' +
+            '<td>' + escapeHtml((p.excerpt || '').substring(0, 100) + (p.excerpt && p.excerpt.length > 100 ? '...' : '')) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editBlogPost(' + p.id + ')" title="Edit post"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteBlogPost(' + p.id + ')" title="Delete post"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No blog posts yet. Click "Add Blog Post" to get started.</td></tr>';
+}
+
+window.editBlogPost = function(id) {
+    var list = typeof getWebsiteBlogPosts === 'function' ? getWebsiteBlogPosts() : [];
+    var post = list.find(function(p) { return String(p.id) === String(id); });
+    if (!post) return;
+    
+    var blogModal = document.getElementById('adminBlogPostModal');
+    var blogForm = document.getElementById('adminBlogPostForm');
+    var editIdField = document.getElementById('blogPostEditId');
+    var modalTitle = blogModal.querySelector('h2');
+    
+    if (document.getElementById('blogPostTitle')) document.getElementById('blogPostTitle').value = post.title || '';
+    if (document.getElementById('blogPostDate')) document.getElementById('blogPostDate').value = post.date || '';
+    if (document.getElementById('blogPostAuthor')) document.getElementById('blogPostAuthor').value = post.author || '';
+    if (document.getElementById('blogPostExcerpt')) document.getElementById('blogPostExcerpt').value = post.excerpt || '';
+    if (editIdField) editIdField.value = String(post.id);
+    if (modalTitle) modalTitle.textContent = 'Edit Blog Post';
+    
+    if (blogModal) blogModal.classList.add('open');
+};
+
+window.deleteBlogPost = function(id) {
+    if (!confirm('Are you sure you want to delete this blog post?')) return;
+    
+    var list = typeof getWebsiteBlogPosts === 'function' ? getWebsiteBlogPosts() : [];
+    var index = list.findIndex(function(p) { return String(p.id) === String(id); });
+    if (index !== -1) {
+        list.splice(index, 1);
+        if (typeof setWebsiteBlogPosts === 'function') {
+            setWebsiteBlogPosts(list).then(function() {
+                renderAdminBlogPosts();
+                alert('Blog post deleted successfully!');
+            }).catch(function() { alert('Could not delete blog post.'); });
+        }
+    }
+};
+
 window.editFAQInContent = function(category, id) {
     // Redirect to the FAQ management section
     var faqSection = document.getElementById('admin-faq');
@@ -3000,6 +3067,7 @@ async function loadAdminDashboard() {
     await renderPendingApprovals();
     await renderAdminWebsiteProjects();
     await renderAdminFAQsInContent();
+    await renderAdminBlogPosts();
 
     // Website project/service modals
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');
