@@ -254,6 +254,21 @@
             .worker-details p strong {
                 min-width: 100px;
             }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .top-bar {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .top-bar-actions {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -297,6 +312,7 @@
                     <a href="portal/index.html" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Portal
                     </a>
+                    <button id="menuToggle" class="btn-icon"><i class="fas fa-bars"></i></button>
                 </div>
             </div>
             
@@ -486,7 +502,36 @@
                 loadProjects();
                 setupEventListeners();
                 checkLocation();
+                setupMobileSidebar();
             });
+            
+            function setupMobileSidebar() {
+                var menuToggle = document.getElementById('menuToggle');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function() {
+                        var sidebar = document.querySelector('.sidebar');
+                        var overlay = document.querySelector('.sidebar-overlay');
+                        if (!overlay) {
+                            overlay = document.createElement('div');
+                            overlay.className = 'sidebar-overlay';
+                            document.body.appendChild(overlay);
+                        }
+                        sidebar.classList.toggle('active');
+                        overlay.classList.toggle('active');
+                    });
+                }
+                document.addEventListener('click', function(e) {
+                    var sidebar = document.querySelector('.sidebar');
+                    var overlay = document.querySelector('.sidebar-overlay');
+                    var toggle = document.getElementById('menuToggle');
+                    if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('active') &&
+                        toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) &&
+                        overlay && !overlay.contains(e.target)) {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                    }
+                });
+            }
             
             function checkAuth() {
                 const token = sessionStorage.getItem('authToken');

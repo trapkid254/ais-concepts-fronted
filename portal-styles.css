@@ -2332,8 +2332,11 @@ body > .modal.open {
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .sidebar {
-        width: 0;
+        position: fixed;
+        width: 280px;
         transform: translateX(-100%);
+        z-index: 1000;
+        transition: transform 0.3s ease;
     }
     
     .main-content {
@@ -2341,8 +2344,22 @@ body > .modal.open {
     }
     
     .sidebar.active {
-        width: 280px;
         transform: translateX(0);
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
     }
     
     #menuToggle {
