@@ -53,6 +53,37 @@
     font-family: 'Inter', sans-serif;
 }
 
+/* ===== Password Toggle Styles ===== */
+.password-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-group input {
+    flex: 1;
+    padding-right: 40px;
+}
+
+.toggle-password-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.toggle-password-btn:hover {
+    color: var(--primary);
+}
+
 body {
     background: var(--bg-primary);
     color: var(--text-primary);

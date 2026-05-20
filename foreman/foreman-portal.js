@@ -291,8 +291,8 @@
             
             // Filter projects to show only those assigned to this foreman
             const myProjects = allProjects.filter(project => {
-                const foremanId = project.foremanId || project.assignedForeman?.id || project.assignedForeman?._id;
-                return String(foremanId) === String(currentUser._id) || String(foremanId) === String(currentUser.id);
+                const foremanId = project.foremanId;
+                return foremanId && (String(foremanId) === String(currentUser._id) || String(foremanId) === String(currentUser.id));
             });
             
             // Update stats

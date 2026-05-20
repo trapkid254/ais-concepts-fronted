@@ -32,11 +32,21 @@
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" required autocomplete="new-password">
+                        <div class="password-input-group">
+                            <input type="password" id="password" required autocomplete="new-password">
+                            <button type="button" class="toggle-password-btn" onclick="togglePassword('password')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" required autocomplete="new-password">
+                        <div class="password-input-group">
+                            <input type="password" id="confirmPassword" required autocomplete="new-password">
+                            <button type="button" class="toggle-password-btn" onclick="togglePassword('confirmPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="assignedProjects">Initial Projects (Optional)</label>
@@ -58,6 +68,22 @@
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
     <script>
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const btn = event.target.closest('.toggle-password-btn');
+            const icon = btn.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         (function() {
             const form = document.getElementById('foremanRegistrationForm');
             const API_BASE = window.API_BASE || '';

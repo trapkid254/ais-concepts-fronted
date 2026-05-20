@@ -2385,7 +2385,7 @@ window.applyClientProjectFilter = function () {
             (owed > 0 ? '<p><strong>Owed:</strong> ' + fmtMoney(owed) + '</p>' : '') +
             '</div>' : '';
         return '<div class="project-card">' +
-            '<div class="project-image"><img src="' + escapeHtml(project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
+            '<div class="project-image"><img src="' + escapeHtml((project.images && project.images[0]) || project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
             '<div class="project-details">' +
             '<h3>' + escapeHtml(project.name) + '</h3>' +
             '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
@@ -2492,7 +2492,8 @@ function loadClientDashboard() {
                 return {
                     id: p._id || p.id, 
                     name: p.name, 
-                    image: p.image || '/images/project1.jpg',
+                    image: (p.images && p.images[0]) || p.image || '/images/project1.jpg',
+                    images: p.images || [],
                     progress: p.progress || 0, 
                     status: p.status || 'Active',
                     nextMilestone: p.nextMilestone || '-',
