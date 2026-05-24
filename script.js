@@ -410,5 +410,75 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.replace('client/login.html');
     }
 
+    /* ===== Footer: clickable phone & email ===== */
+    (function () {
+        document.querySelectorAll('.footer address').forEach(function (addr) {
+            if (addr.dataset.contactLinked === '1') return;
+            var html = addr.innerHTML;
+            if (html.indexOf('tel:') === -1) {
+                html = html.replace(
+                    /(\+254\s*719\s*548\s*773|\+254719548773)/gi,
+                    '<a href="tel:+254719548773" class="footer-contact-link">$1</a>'
+                );
+            }
+            if (html.indexOf('mailto:') === -1) {
+                html = html.replace(
+                    /(aisconceptsltd@gmail\.com)/gi,
+                    '<a href="mailto:$1" class="footer-contact-link">$1</a>'
+                );
+            }
+            addr.innerHTML = html;
+            addr.dataset.contactLinked = '1';
+        });
+    })();
+
+    /* ===== Contact page form → API + email ===== */
+    (function () {
+        var form = document.getElementById('contactForm');
+        if (!form) return;
+        var nameInput = document.getElementById('contactName');
+        var emailInput = document.getElementById('contactEmail');
+        var phoneInput = document.getElementById('contactPhone');
+        var messageInput = document.getElementById('contactMessage');
+        var submitBtn = form.querySelector('button[type="submit"]');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var name = nameInput ? nameInput.value.trim() : '';
+            var email = emailInput ? emailInput.value.trim() : '';
+            var phone = phoneInput ? phoneInput.value.trim() : '';
+            var message = messageInput ? messageInput.value.trim() : '';
+            if (!name || !email || !message) {
+                alert('Please enter your name, email, and message.');
+                return;
+            }
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending…';
+            }
+            var apiBase = window.API_BASE || '';
+            fetch(apiBase + '/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, email: email, phone: phone, message: message })
+            }).then(function (r) {
+                return r.json().then(function (data) {
+                    if (!r.ok) throw new Error(data.error || 'Failed to send message');
+                    return data;
+                });
+            }).then(function (data) {
+                alert(data.message || 'Thank you! Your message has been sent. We will get back to you soon.');
+                form.reset();
+            }).catch(function (err) {
+                alert(err.message || 'Could not send your message. Please try again or email us directly.');
+            }).finally(function () {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Message';
+                }
+            });
+        });
+    })();
+
     console.log('AIS Concepts website initialized');
 });

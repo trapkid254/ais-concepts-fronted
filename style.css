@@ -1706,6 +1706,98 @@ color: #e5e7eb;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
+.contact-page .contact-detail a,
+.footer-contact-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.contact-page .contact-detail a:hover,
+.footer-contact-link:hover {
+    color: #0f766e;
+    text-decoration: underline;
+}
+
+.contact-form-wrap .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #fff;
+    color: #111827;
+}
+
+.contact-form-wrap .btn-primary {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.contact-form-wrap .btn-primary:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+[data-theme="dark"] .contact-page,
+[data-theme="dark"] .contact-grid,
+[data-theme="dark"] .contact-info,
+[data-theme="dark"] .contact-form-wrap {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .contact-info h3,
+[data-theme="dark"] .contact-map-wrap h3,
+[data-theme="dark"] .contact-page .section-title {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .contact-info > p,
+[data-theme="dark"] .contact-social-label,
+[data-theme="dark"] .section-subtitle {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .contact-detail {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .contact-detail i {
+    color: #2dd4bf;
+}
+
+[data-theme="dark"] .contact-detail a {
+    color: #5eead4;
+}
+
+[data-theme="dark"] .contact-form-wrap .form-control {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .contact-form-wrap .form-control::placeholder {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .contact-form-wrap .btn-primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .footer-contact-link {
+    color: #5eead4;
+}
+
+[data-theme="dark"] .footer-contact-link:hover {
+    color: #99f6e4;
+}
+
 /* ===== Typewriter effect ===== */
 .typewriter-title,
 .typewriter-sub,

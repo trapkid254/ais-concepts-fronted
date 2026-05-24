@@ -1122,32 +1122,134 @@ function setupAdminInteractions(currentUser) {
     var selectedForeman = null;
 
     // Load clients for project creation dropdown
-    function loadClientsForProject() {
+    function loadClientsForProject(done) {
         var clientSelect = document.getElementById('adminProjectClient');
-        if (!clientSelect) return;
-        
-        fetch((window.API_BASE || '') + '/api/users?role=client&status=approved', {
+        if (!clientSelect) {
+            if (typeof done === 'function') done();
+            return Promise.resolve();
+        }
+
+        return fetch((window.API_BASE || '') + '/api/users?role=client&status=approved', {
             headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('authToken') || '') }
         }).then(function(r) {
             if (!r.ok) throw new Error('Failed to load clients');
             return r.json();
         }).then(function(clients) {
+            var selected = clientSelect.value;
             clientSelect.innerHTML = '<option value="">Select a client</option>';
             clients.forEach(function(client) {
                 var option = document.createElement('option');
-                option.value = client._id;
+                option.value = client._id || client.id;
                 option.textContent = client.name + ' (' + client.email + ')';
                 clientSelect.appendChild(option);
             });
+            if (selected) clientSelect.value = selected;
+            if (typeof done === 'function') done();
         }).catch(function(err) {
             console.error('Error loading clients:', err);
+            if (typeof done === 'function') done();
         });
+    }
+
+    function formatProjectDeadlineValue(project) {
+        var raw = project.deadline || project.endDate || project.completionDate || '';
+        if (!raw) return '';
+        try {
+            return new Date(raw).toISOString().slice(0, 10);
+        } catch (e) {
+            return String(raw).slice(0, 10);
+        }
+    }
+
+    function snapshotProjectForEdit(project) {
+        return {
+            _id: project._id || project.id,
+            name: project.name || '',
+            client: getProjectClientId(project.client),
+            locationName: formatProjectLocation(project.location),
+            latitude: project.location && typeof project.location === 'object' ? project.location.latitude : '',
+            longitude: project.location && typeof project.location === 'object' ? project.location.longitude : '',
+            budget: project.budget != null ? project.budget : '',
+            progress: project.progress != null ? project.progress : 0,
+            category: project.category || 'Commercial',
+            status: project.status || 'planning',
+            deadline: formatProjectDeadlineValue(project),
+            moneyPaid: project.moneyPaid != null ? project.moneyPaid : '',
+            moneyUsed: project.moneyUsed != null ? project.moneyUsed : '',
+            moneyRemaining: project.moneyRemaining != null ? project.moneyRemaining : '',
+            moneyOwed: project.moneyOwed != null ? project.moneyOwed : '',
+            foremanId: project.foremanId,
+            foremanName: project.foremanName || (project.assignedForeman && project.assignedForeman.name) || '',
+            assignedForeman: project.assignedForeman || null
+        };
+    }
+
+    function populateAdminProjectForm(project) {
+        var snap = snapshotProjectForEdit(project);
+        window._editingProjectSnapshot = snap;
+        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
+        document.getElementById('adminProjectId').value = snap._id || '';
+        document.getElementById('adminProjectName').value = snap.name;
+        document.getElementById('adminProjectClient').value = snap.client;
+        document.getElementById('adminProjectBudget').value = snap.budget;
+        document.getElementById('adminProjectProgress').value = snap.progress;
+        if (document.getElementById('adminProjectCategory')) {
+            document.getElementById('adminProjectCategory').value = snap.category;
+        }
+        document.getElementById('adminProjectStatus').value = snap.status;
+        if (document.getElementById('adminProjectDeadline')) {
+            document.getElementById('adminProjectDeadline').value = snap.deadline;
+        }
+        document.getElementById('projectLocationName').value = snap.locationName;
+        document.getElementById('projectLatitude').value = snap.latitude || '';
+        document.getElementById('projectLongitude').value = snap.longitude || '';
+        if (document.getElementById('adminProjectMoneyPaid')) {
+            document.getElementById('adminProjectMoneyPaid').value = snap.moneyPaid;
+        }
+        if (document.getElementById('adminProjectMoneyUsed')) {
+            document.getElementById('adminProjectMoneyUsed').value = snap.moneyUsed;
+        }
+        if (document.getElementById('adminProjectMoneyRemaining')) {
+            document.getElementById('adminProjectMoneyRemaining').value = snap.moneyRemaining;
+        }
+        if (document.getElementById('adminProjectMoneyOwed')) {
+            document.getElementById('adminProjectMoneyOwed').value = snap.moneyOwed;
+        }
+        var sfd = document.getElementById('selectedForemanDisplay');
+        var sfn = document.querySelector('.selected-foreman-name');
+        var foremanLabel = snap.foremanName;
+        if (snap.assignedForeman && typeof snap.assignedForeman === 'object') {
+            selectedForeman = snap.assignedForeman;
+            if (!selectedForeman.id && !selectedForeman._id && snap.foremanId) {
+                selectedForeman.id = snap.foremanId;
+            }
+            foremanLabel = snap.assignedForeman.name || foremanLabel;
+        } else if (snap.foremanName || snap.foremanId) {
+            selectedForeman = {
+                name: snap.foremanName,
+                id: snap.foremanId,
+                _id: snap.foremanId
+            };
+            foremanLabel = snap.foremanName;
+        } else {
+            selectedForeman = null;
+        }
+        if (foremanLabel && sfd && sfn) {
+            sfn.textContent = foremanLabel;
+            sfd.style.display = 'block';
+        } else if (sfd) {
+            sfd.style.display = 'none';
+            if (sfn) sfn.textContent = '';
+        }
+        var createForemanCb = document.getElementById('createForemanAccount');
+        if (createForemanCb) createForemanCb.checked = false;
     }
 
     if (newProjectBtn && projectModal) {
         newProjectBtn.addEventListener('click', function () {
             document.getElementById('adminProjectModalTitle').textContent = 'New Project';
             document.getElementById('adminProjectId').value = '';
+            window._editingProjectSnapshot = null;
             if (projectForm) projectForm.reset();
             selectedForeman = null;
             if (selectedForemanDisplay) selectedForemanDisplay.style.display = 'none';
@@ -1337,11 +1439,26 @@ function setupAdminInteractions(currentUser) {
 
         projectForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var projectName = document.getElementById('adminProjectName').value;
+            var id = document.getElementById('adminProjectId').value;
+            var isEdit = !!id;
+            var snap = isEdit ? window._editingProjectSnapshot : null;
+
+            var projectName = document.getElementById('adminProjectName').value.trim();
             var projectClient = document.getElementById('adminProjectClient').value;
-            var projectLocationName = document.getElementById('projectLocationName').value;
-            if (!projectName || !projectClient || !projectLocationName) {
+            var projectLocationName = document.getElementById('projectLocationName').value.trim();
+
+            if (isEdit && snap) {
+                if (!projectName) projectName = snap.name;
+                if (!projectClient) projectClient = snap.client;
+                if (!projectLocationName) projectLocationName = snap.locationName;
+            }
+
+            if (!isEdit && (!projectName || !projectClient || !projectLocationName)) {
                 alert('Please fill in all required fields: Project Name, Client, and Location Name.');
+                return;
+            }
+            if (isEdit && !projectName) {
+                alert('Project name is required.');
                 return;
             }
             var shouldCreateForemanAccount = document.getElementById('createForemanAccount') && document.getElementById('createForemanAccount').checked;
@@ -1358,27 +1475,46 @@ function setupAdminInteractions(currentUser) {
                 }
             }
 
-            var id = document.getElementById('adminProjectId').value;
-            var name = document.getElementById('adminProjectName').value;
-            var client = document.getElementById('adminProjectClient').value;
-            var locationName = document.getElementById('projectLocationName').value;
+            var name = projectName;
+            var client = projectClient;
+            var locationName = projectLocationName;
             var latitude = document.getElementById('projectLatitude').value;
             var longitude = document.getElementById('projectLongitude').value;
+            if (isEdit && snap) {
+                if (!latitude && snap.latitude) latitude = snap.latitude;
+                if (!longitude && snap.longitude) longitude = snap.longitude;
+            }
             var location = { name: locationName, latitude: latitude || null, longitude: longitude || null };
-            var budget = document.getElementById('adminProjectBudget').value || 'KSH 0';
+            var budget = document.getElementById('adminProjectBudget').value;
+            if (isEdit && snap && !budget) budget = snap.budget || 'KSH 0';
+            budget = budget || 'KSH 0';
             var deadline = document.getElementById('adminProjectDeadline') ? document.getElementById('adminProjectDeadline').value : '';
+            if (isEdit && snap && !deadline) deadline = snap.deadline || '';
             var assignedForeman = selectedForeman ? {
                 name: selectedForeman.name || selectedForeman.fullName || '',
                 id: selectedForeman.id || selectedForeman._id || selectedForeman.username || '',
                 email: selectedForeman.email || ''
-            } : null;
+            } : (isEdit && snap && (snap.foremanName || snap.foremanId) ? {
+                name: snap.foremanName || '',
+                id: snap.foremanId || '',
+                email: ''
+            } : null);
             var progress = document.getElementById('adminProjectProgress') ? document.getElementById('adminProjectProgress').value : 0;
+            if (isEdit && snap && (progress === '' || progress == null)) progress = snap.progress || 0;
             var status = document.getElementById('adminProjectStatus').value;
+            if (isEdit && snap && !status) status = snap.status || 'planning';
             var category = document.getElementById('adminProjectCategory') ? document.getElementById('adminProjectCategory').value : 'Commercial';
+            if (isEdit && snap && !category) category = snap.category || 'Commercial';
             var moneyPaid = document.getElementById('adminProjectMoneyPaid') ? document.getElementById('adminProjectMoneyPaid').value : '';
             var moneyUsed = document.getElementById('adminProjectMoneyUsed') ? document.getElementById('adminProjectMoneyUsed').value : '';
             var moneyRemaining = document.getElementById('adminProjectMoneyRemaining') ? document.getElementById('adminProjectMoneyRemaining').value : '';
             var moneyOwed = document.getElementById('adminProjectMoneyOwed') ? document.getElementById('adminProjectMoneyOwed').value : '';
+            if (isEdit && snap) {
+                if (moneyPaid === '' || moneyPaid == null) moneyPaid = snap.moneyPaid;
+                if (moneyUsed === '' || moneyUsed == null) moneyUsed = snap.moneyUsed;
+                if (moneyRemaining === '' || moneyRemaining == null) moneyRemaining = snap.moneyRemaining;
+                if (moneyOwed === '' || moneyOwed == null) moneyOwed = snap.moneyOwed;
+            }
             
             var imageInput = document.getElementById('adminProjectImages');
             var images = imageInput && imageInput.files ? Array.prototype.slice.call(imageInput.files) : [];
@@ -1418,6 +1554,7 @@ function setupAdminInteractions(currentUser) {
                     return response.json();
                 }).then(function(updatedProject) {
                     alert('Project updated successfully!');
+                    window._editingProjectSnapshot = null;
                     renderAdminProjectsTable();
                     projectModal.classList.remove('open');
                 }).catch(function(error) {
@@ -1508,39 +1645,14 @@ window.editProject = function (projectId) {
         if (!r.ok) throw new Error('Failed to load projects');
         return r.json();
     }).then(function (projects) {
-        var project = projects.find(function (p) { return String(p._id || p.id) === projectId; });
+        var project = projects.find(function (p) { return String(p._id || p.id) === String(projectId); });
         if (!project) return;
-        document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
-        document.getElementById('adminProjectId').value = project._id || project.id || '';
-        document.getElementById('adminProjectName').value = project.name || '';
-        document.getElementById('adminProjectClient').value = getProjectClientId(project.client);
-        document.getElementById('adminProjectBudget').value = project.budget || '';
-        document.getElementById('adminProjectProgress').value = project.progress || 0;
-        if (document.getElementById('adminProjectCategory')) document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
-        document.getElementById('adminProjectStatus').value = project.status || 'active';
-        if (document.getElementById('adminProjectDeadline')) document.getElementById('adminProjectDeadline').value = project.deadline || project.completionDate || '';
-        if (project.location && typeof project.location === 'object') {
-            document.getElementById('projectLocationName').value = formatProjectLocation(project.location);
-            document.getElementById('projectLatitude').value = project.location.latitude || '';
-            document.getElementById('projectLongitude').value = project.location.longitude || '';
-        } else {
-            document.getElementById('projectLocationName').value = project.location || '';
-            document.getElementById('projectLatitude').value = '';
-            document.getElementById('projectLongitude').value = '';
-        }
-        if (document.getElementById('adminProjectMoneyPaid')) document.getElementById('adminProjectMoneyPaid').value = project.moneyPaid || '';
-        if (document.getElementById('adminProjectMoneyUsed')) document.getElementById('adminProjectMoneyUsed').value = project.moneyUsed || '';
-        if (document.getElementById('adminProjectMoneyRemaining')) document.getElementById('adminProjectMoneyRemaining').value = project.moneyRemaining || '';
-        if (document.getElementById('adminProjectMoneyOwed')) document.getElementById('adminProjectMoneyOwed').value = project.moneyOwed || '';
-        var sfd = document.getElementById('selectedForemanDisplay');
-        var sfn = document.querySelector('.selected-foreman-name');
-        if (project.assignedForeman && sfd && sfn) {
-            sfn.textContent = project.assignedForeman.name;
-            sfd.style.display = 'block';
-        } else if (sfd) {
-            sfd.style.display = 'none';
-        }
-        document.getElementById('adminProjectModal').classList.add('open');
+        var clientSelect = document.getElementById('adminProjectClient');
+        if (clientSelect) clientSelect.value = getProjectClientId(project.client);
+        loadClientsForProject(function () {
+            populateAdminProjectForm(project);
+            document.getElementById('adminProjectModal').classList.add('open');
+        });
     }).catch(function (error) {
         console.error(error);
         alert('Failed to load project details. Please try again.');
