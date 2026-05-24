@@ -131,6 +131,77 @@ function escapeHtml(s) {
         .replace(/"/g, '&quot;');
 }
 
+function formatProjectClient(client) {
+    if (client == null || client === '') return '';
+    if (typeof client === 'string') return client;
+    if (typeof client === 'object') return client.name || client.email || '';
+    return String(client);
+}
+
+function formatProjectLocation(location) {
+    if (location == null || location === '') return '';
+    if (typeof location === 'string') return location;
+    if (typeof location === 'object') {
+        return location.address || location.name || '';
+    }
+    return String(location);
+}
+
+function getProjectClientId(client) {
+    if (!client) return '';
+    if (typeof client === 'string') return client;
+    return String(client._id || client.id || '');
+}
+
+function formatProjectForeman(project) {
+    if (!project) return 'Not Assigned';
+    if (project.assignedForeman && typeof project.assignedForeman === 'object') {
+        return project.assignedForeman.name || project.assignedForeman.email || 'Not Assigned';
+    }
+    return project.foremanName || (typeof project.assignedForeman === 'string' ? project.assignedForeman : '') || 'Not Assigned';
+}
+
+function buildProjectDetailsHtml(project, opts) {
+    opts = opts || {};
+    var clientStr = formatProjectClient(project.client) || 'Not specified';
+    var locStr = formatProjectLocation(project.location) || 'Not specified';
+    var foremanStr = formatProjectForeman(project);
+    var imgSrc = (project.images && project.images[0]) || project.image || '';
+    var html = '<div class="project-details-view">';
+    if (imgSrc) {
+        html += '<div class="project-details-hero"><img src="' + escapeHtml(imgSrc) + '" alt="' + escapeHtml(project.name || 'Project') + '" onerror="this.parentElement.style.display=\'none\'"></div>';
+    }
+    html += '<h3>' + escapeHtml(project.name || '') + '</h3>';
+    if (project.description) {
+        html += '<p class="project-details-desc">' + escapeHtml(project.description) + '</p>';
+    }
+    html += '<div class="project-info-grid">' +
+        '<div class="info-item"><label>Client:</label><span>' + escapeHtml(clientStr) + '</span></div>' +
+        '<div class="info-item"><label>Location:</label><span>' + escapeHtml(locStr) + '</span></div>' +
+        '<div class="info-item"><label>Foreman:</label><span>' + escapeHtml(foremanStr) + '</span></div>' +
+        '<div class="info-item"><label>Budget:</label><span>' + escapeHtml(project.budget != null ? String(project.budget) : 'Not specified') + '</span></div>' +
+        '<div class="info-item"><label>Progress:</label><span>' + (project.progress || 0) + '%</span></div>' +
+        '<div class="info-item"><label>Status:</label><span class="status-badge status-' + escapeHtml((project.status || 'Active').toLowerCase().replace(/\s+/g, '-')) + '">' + escapeHtml(project.status || 'Active') + '</span></div>' +
+        '<div class="info-item"><label>Deadline:</label><span>' + escapeHtml(project.deadline || project.endDate || project.completionDate || 'Not specified') + '</span></div>' +
+        '<div class="info-item"><label>Category:</label><span>' + escapeHtml(project.category || 'Commercial') + '</span></div>';
+    if (project.location && typeof project.location === 'object' && project.location.latitude != null && project.location.longitude != null) {
+        html += '<div class="info-item"><label>Coordinates:</label><span>' + project.location.latitude + ', ' + project.location.longitude + '</span></div>';
+    }
+    if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+        html += '<div class="info-item"><label>Money Paid:</label><span>' + escapeHtml(String(project.moneyPaid || '0')) + '</span></div>' +
+            '<div class="info-item"><label>Money Used:</label><span>' + escapeHtml(String(project.moneyUsed || '0')) + '</span></div>' +
+            '<div class="info-item"><label>Money Remaining:</label><span>' + escapeHtml(String(project.moneyRemaining || '0')) + '</span></div>' +
+            '<div class="info-item"><label>Money Owed:</label><span>' + escapeHtml(String(project.moneyOwed || '0')) + '</span></div>';
+    }
+    html += '</div></div>';
+    if (opts.showRequestFunds && project._id) {
+        html += '<div style="margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">' +
+            '<button class="btn btn-primary" onclick="openRequestFundsModal(\'' + escapeAttr(String(project._id || project.id)) + '\')" style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);">' +
+            '<i class="fas fa-hand-holding-usd"></i> Request Funds</button></div>';
+    }
+    return html;
+}
+
 function navigatePortalSection(sectionId, opts) {
     var sidebarLink = document.querySelector('.sidebar-nav a[data-section="' + sectionId + '"]');
     if (sidebarLink) {
@@ -1411,14 +1482,14 @@ window.editProject = function (projectId) {
         document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
         document.getElementById('adminProjectId').value = project._id || project.id || '';
         document.getElementById('adminProjectName').value = project.name || '';
-        document.getElementById('adminProjectClient').value = project.client || '';
+        document.getElementById('adminProjectClient').value = getProjectClientId(project.client);
         document.getElementById('adminProjectBudget').value = project.budget || '';
         document.getElementById('adminProjectProgress').value = project.progress || 0;
         if (document.getElementById('adminProjectCategory')) document.getElementById('adminProjectCategory').value = project.category || 'Commercial';
         document.getElementById('adminProjectStatus').value = project.status || 'active';
         if (document.getElementById('adminProjectDeadline')) document.getElementById('adminProjectDeadline').value = project.deadline || project.completionDate || '';
         if (project.location && typeof project.location === 'object') {
-            document.getElementById('projectLocationName').value = project.location.name || '';
+            document.getElementById('projectLocationName').value = formatProjectLocation(project.location);
             document.getElementById('projectLatitude').value = project.location.latitude || '';
             document.getElementById('projectLongitude').value = project.location.longitude || '';
         } else {
@@ -1446,41 +1517,20 @@ window.editProject = function (projectId) {
 };
 
 window.viewProjectDetails = function (projectId) {
-    fetch(window.API_BASE + '/api/projects', {
+    var isClientPortal = window.location.pathname.indexOf('/client/') !== -1;
+    var listUrl = window.API_BASE + '/api/projects' + (isClientPortal ? '?client=true' : '');
+    fetch(listUrl, {
         headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
     }).then(function (r) {
         if (!r.ok) throw new Error('Failed to load projects');
         return r.json();
     }).then(function (projects) {
         var project = projects.find(function (p) { return String(p._id || p.id) === String(projectId); });
-        var modal = document.getElementById('adminViewProjectModal');
-        var content = document.getElementById('adminViewProjectContent');
+        var modal = document.getElementById(isClientPortal ? 'clientProjectViewModal' : 'adminViewProjectModal');
+        var content = document.getElementById(isClientPortal ? 'clientProjectViewContent' : 'adminViewProjectContent');
         if (!modal || !content) return;
         if (!project) { content.innerHTML = '<p>Project not found.</p>'; modal.classList.add('open'); return; }
-        var locStr = project.location && project.location.name ? project.location.name : project.location || 'Not specified';
-        var foremanStr = project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned';
-        var html = '<div class="project-details"><h3>' + escapeHtml(project.name || '') + '</h3><div class="project-info-grid">' +
-            '<div class="info-item"><label>Client:</label><span>' + escapeHtml(project.client || 'Not specified') + '</span></div>' +
-            '<div class="info-item"><label>Location:</label><span>' + escapeHtml(locStr) + '</span></div>' +
-            '<div class="info-item"><label>Foreman:</label><span>' + escapeHtml(foremanStr) + '</span></div>' +
-            '<div class="info-item"><label>Budget:</label><span>' + escapeHtml(project.budget || 'Not specified') + '</span></div>' +
-            '<div class="info-item"><label>Progress:</label><span>' + (project.progress || 0) + '%</span></div>' +
-            '<div class="info-item"><label>Status:</label><span class="status-badge status-' + escapeHtml((project.status || 'Active').toLowerCase().replace(/\s+/g, '-')) + '">' + escapeHtml(project.status || 'Active') + '</span></div>' +
-            '<div class="info-item"><label>Deadline:</label><span>' + escapeHtml(project.deadline || 'Not specified') + '</span></div>' +
-            '<div class="info-item"><label>Category:</label><span>' + escapeHtml(project.category || 'Commercial') + '</span></div>';
-        if (project.location && project.location.latitude && project.location.longitude) {
-            html += '<div class="info-item"><label>Coordinates:</label><span>' + project.location.latitude + ', ' + project.location.longitude + '</span></div>';
-        }
-        if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
-            html += '<div class="info-item"><label>Money Paid:</label><span>' + escapeHtml(project.moneyPaid || 'KSH 0') + '</span></div>' +
-                '<div class="info-item"><label>Money Used:</label><span>' + escapeHtml(project.moneyUsed || 'KSH 0') + '</span></div>' +
-                '<div class="info-item"><label>Money Remaining:</label><span>' + escapeHtml(project.moneyRemaining || 'KSH 0') + '</span></div>' +
-                '<div class="info-item"><label>Money Owed:</label><span>' + escapeHtml(project.moneyOwed || 'KSH 0') + '</span></div>';
-        }
-        html += '</div></div><div style="margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">' +
-            '<button class="btn btn-primary" onclick="openRequestFundsModal(\'' + escapeAttr(String(projectId)) + '\')" style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);">' +
-            '<i class="fas fa-hand-holding-usd"></i> Request Funds</button></div>';
-        content.innerHTML = html;
+        content.innerHTML = buildProjectDetailsHtml(project, { showRequestFunds: !isClientPortal });
         modal.classList.add('open');
     }).catch(function (error) {
         console.error(error);
@@ -1496,9 +1546,9 @@ window.viewProject = function (projectId) {
     if (content) {
         content.innerHTML =
             '<p><strong>Name:</strong> ' + escapeHtml(project.name) + '</p>' +
-            '<p><strong>Client:</strong> ' + escapeHtml(project.client) + '</p>' +
-            '<p><strong>Location:</strong> ' + escapeHtml(project.location && project.location.name ? project.location.name : project.location || '-') + '</p>' +
-            '<p><strong>Foreman:</strong> ' + escapeHtml(project.foremanName || 'Not Assigned') + '</p>' +
+            '<p><strong>Client:</strong> ' + escapeHtml(formatProjectClient(project.client)) + '</p>' +
+            '<p><strong>Location:</strong> ' + escapeHtml(formatProjectLocation(project.location) || '-') + '</p>' +
+            '<p><strong>Foreman:</strong> ' + escapeHtml(formatProjectForeman(project)) + '</p>' +
             '<p><strong>Budget:</strong> ' + escapeHtml(project.budget || '-') + '</p>' +
             '<p><strong>Progress:</strong> ' + (project.progress || 0) + '%</p>' +
             '<p><strong>Deadline:</strong> ' + escapeHtml(project.deadline || '-') + '</p>' +
@@ -1852,13 +1902,13 @@ window.renderAdminProjectsTable = function () {
             var st = (project.status || 'Active').toLowerCase().replace(/\s+/g, '-');
             var idStr = escapeAttr(String(project._id || project.id));
             var nameEsc = escapeAttr(project.name || '');
-            var clientEsc = escapeAttr(project.client || '');
-            var locStr = project.location && project.location.name ? project.location.name : project.location || '';
-            var foremanStr = project.assignedForeman ? project.assignedForeman.name : project.foremanName || 'Not Assigned';
+            var locStr = formatProjectLocation(project.location);
+            var clientStr = formatProjectClient(project.client);
+            var foremanStr = formatProjectForeman(project);
             var employeeCount = project.assignedEmployees ? project.assignedEmployees.length : 0;
             return '<tr>' +
                 '<td>' + escapeHtml(project.name || '') + '</td>' +
-                '<td>' + escapeHtml(project.client || '') + '</td>' +
+                '<td>' + escapeHtml(clientStr) + '</td>' +
                 '<td>' + escapeHtml(locStr) + '</td>' +
                 '<td>' + escapeHtml(foremanStr) + '</td>' +
                 '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + (project.workerCount || 0) + ' workers</a></td>' +
@@ -2384,11 +2434,13 @@ window.applyClientProjectFilter = function () {
             '<p><strong>Remaining:</strong> ' + fmtMoney(remaining) + '</p>' +
             (owed > 0 ? '<p><strong>Owed:</strong> ' + fmtMoney(owed) + '</p>' : '') +
             '</div>' : '';
-        return '<div class="project-card">' +
-            '<div class="project-image"><img src="' + escapeHtml((project.images && project.images[0]) || project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
+        var locLabel = formatProjectLocation(project.location);
+        return '<div class="project-card client-project-card">' +
+            '<div class="project-image client-project-image"><img src="' + escapeHtml((project.images && project.images[0]) || project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
             '<div class="project-details">' +
             '<h3>' + escapeHtml(project.name) + '</h3>' +
             '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
+            (locLabel ? '<p><strong>Location:</strong> ' + escapeHtml(locLabel) + '</p>' : '') +
             '<p><strong>Deadline:</strong> ' + escapeHtml(deadline) + '</p>' +
             financeHtml +
             '<div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div>' +
@@ -2490,16 +2542,23 @@ function loadClientDashboard() {
             // Projects are already filtered by client user ID from backend
             window._clientProjectsList = projects.map(function (p) {
                 return {
-                    id: p._id || p.id, 
-                    name: p.name, 
+                    _id: p._id || p.id,
+                    id: p._id || p.id,
+                    name: p.name,
                     image: (p.images && p.images[0]) || p.image || '/images/project1.jpg',
                     images: p.images || [],
-                    progress: p.progress || 0, 
+                    progress: p.progress || 0,
                     status: p.status || 'Active',
                     nextMilestone: p.nextMilestone || '-',
-                    completionDate: p.completionDate || '-', 
+                    completionDate: p.completionDate || '-',
                     deadline: p.endDate || p.completionDate || '',
+                    endDate: p.endDate,
                     description: p.description || '',
+                    location: p.location,
+                    category: p.category || 'Commercial',
+                    client: p.client,
+                    foremanName: p.foremanName,
+                    assignedForeman: p.assignedForeman,
                     moneyPaid: p.moneyPaid || 0,
                     moneyUsed: p.moneyUsed || 0,
                     moneyRemaining: p.moneyRemaining || 0,

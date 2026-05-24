@@ -29,6 +29,7 @@
         loadForemanData();
         setupNavigation();
         setupEventListeners();
+        showSection('foreman-dashboard');
     });
 
     // Load foreman dashboard data
@@ -39,6 +40,9 @@
             const userEmailEl = document.querySelector('.user-email');
             if (userNameEl) userNameEl.textContent = currentUser.name || currentUser.email || 'Foreman';
             if (userEmailEl) userEmailEl.textContent = currentUser.email || '';
+            document.querySelectorAll('.user-avatar img').forEach(function (img) {
+                img.src = currentUser.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentUser.name || currentUser.email || 'F') + '&background=20c4b4&color=fff&size=128';
+            });
             
             // Get user location for attendance radius checking
             await getUserLocation();
@@ -86,25 +90,78 @@
         });
     }
 
+    function getProjectCoords(project) {
+        if (!project || !project.location) return null;
+        const loc = project.location;
+        if (typeof loc === 'object' && loc.latitude != null && loc.longitude != null) {
+            return { latitude: parseFloat(loc.latitude), longitude: parseFloat(loc.longitude) };
+        }
+        if (typeof loc === 'string' && loc.includes(',')) {
+            const [lat, lng] = loc.split(',').map(coord => parseFloat(coord.trim()));
+            if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
+        }
+        return null;
+    }
+
     // Check if user is within 50 meters of project location
     function isWithinProjectRadius(project, userLocation) {
-        if (!project.location || !userLocation) return false;
-        
-        // Parse project location to get coordinates (assuming format: "latitude,longitude" or address)
-        let projectCoords = null;
-        if (project.location.includes(',')) {
-            const [lat, lng] = project.location.split(',').map(coord => parseFloat(coord.trim()));
-            projectCoords = { latitude: lat, longitude: lng };
-        } else {
-            // For now, use a placeholder if location is just an address
-            // In production, you'd use geocoding API to convert address to coordinates
-            return true; // Allow attendance if coordinates can't be determined
-        }
-        
-        if (!projectCoords) return false;
-        
+        if (!project || !userLocation) return false;
+        const projectCoords = getProjectCoords(project);
+        if (!projectCoords) return true;
         const distance = calculateDistance(userLocation, projectCoords);
-        return distance <= 50; // 50 meters
+        return distance <= 50;
+    }
+
+    function parseProjectsResponse(data) {
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.projects)) return data.projects;
+        return [];
+    }
+
+    function formatLocation(loc) {
+        if (!loc) return 'N/A';
+        if (typeof loc === 'string') return loc;
+        return loc.address || loc.name || 'N/A';
+    }
+
+    function escapeHtml(text) {
+        if (text == null) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderForemanDashboardProjects(projects) {
+        const container = document.getElementById('foremanDashboardProjectsList');
+        if (!container) return;
+        if (!projects.length) {
+            container.innerHTML = '<p class="foreman-empty-hint">No projects assigned yet. Contact your administrator.</p>';
+            return;
+        }
+        container.innerHTML = projects.slice(0, 6).map(project => {
+            const img = (project.images && project.images[0]) || '';
+            const loc = formatLocation(project.location);
+            const progress = project.progress || 0;
+            const status = (project.status || 'active').toLowerCase().replace(/\s+/g, '-');
+            return `
+                <article class="foreman-project-card">
+                    <div class="foreman-project-card-media">
+                        ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(project.name)}" onerror="this.style.display='none'">` : '<div class="foreman-project-card-placeholder"><i class="fas fa-building"></i></div>'}
+                    </div>
+                    <div class="foreman-project-card-body">
+                        <h4>${escapeHtml(project.name)}</h4>
+                        <p class="foreman-meta"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(loc)}</p>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                        <div class="foreman-project-card-footer">
+                            <span class="status-badge status-${status}">${escapeHtml(project.status || 'active')}</span>
+                            <span>${progress}%</span>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join('');
     }
 
     // Calculate distance between two GPS coordinates in meters
@@ -125,37 +182,49 @@
 
     // Setup navigation
     function setupNavigation() {
-        const navLinks = document.querySelectorAll('[data-section]');
-        navLinks.forEach(link => {
+        document.querySelectorAll('a[data-section]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const section = this.getAttribute('data-section');
-                showSection(section);
+                if (section) showSection(section);
             });
         });
     }
 
-    // Show specific section
+    // Show specific section (dashboard-only content hidden on other pages)
     function showSection(sectionId) {
-        // Hide all sections
         document.querySelectorAll('.portal-section').forEach(section => {
             section.style.display = 'none';
         });
 
-        // Show selected section
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
-            targetSection.style.display = 'block';
+            targetSection.style.display = '';
         }
 
-        // Update active nav
-        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+        document.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
             link.classList.remove('active');
         });
         const activeLink = document.querySelector(`[data-section="${sectionId}"]`);
         if (activeLink) {
             activeLink.classList.add('active');
         }
+
+        const titles = {
+            'foreman-dashboard': ['Dashboard', 'Overview of your assigned sites and team'],
+            'foreman-projects': ['My Projects', 'Projects assigned to you by admin'],
+            'foreman-workers': ['Workers', 'Manage workers on your sites'],
+            'foreman-attendance': ['Attendance', 'Track daily check-ins'],
+            'foreman-payroll': ['Payroll', 'Worker compensation'],
+            'foreman-reports': ['Reports', 'Site analytics and exports'],
+            'foreman-profile': ['Profile', 'Your account details'],
+            'foreman-settings': ['Settings', 'Portal preferences']
+        };
+        const t = titles[sectionId] || ['Foreman Portal', 'Manage your projects and workers'];
+        const titleEl = document.querySelector('.page-title h1');
+        const subEl = document.querySelector('.page-title p');
+        if (titleEl) titleEl.textContent = t[0];
+        if (subEl) subEl.textContent = t[1];
     }
 
     // Setup event listeners
@@ -219,9 +288,18 @@
         });
         
                 
-        // Project selection
-        document.getElementById('foremanSelectProjectBtn').addEventListener('click', function() {
-            alert('Project selection - Implementation needed');
+        const selectProjectBtn = document.getElementById('foremanSelectProjectBtn');
+        if (selectProjectBtn) {
+            selectProjectBtn.addEventListener('click', function() {
+                showSection('foreman-projects');
+            });
+        }
+
+        document.querySelectorAll('.stat-card-clickable[data-nav-section]').forEach(card => {
+            card.addEventListener('click', function() {
+                const section = this.getAttribute('data-nav-section');
+                if (section) showSection(section);
+            });
         });
         
         // Worker management - Updated to use face registration
@@ -287,36 +365,48 @@
             }
 
             const data = await response.json();
-            const allProjects = data.projects || [];
-            
-            // Filter projects to show only those assigned to this foreman
+            const allProjects = parseProjectsResponse(data);
+            const uid = String(currentUser._id || currentUser.id || '');
             const myProjects = allProjects.filter(project => {
                 const foremanId = project.foremanId;
-                return foremanId && (String(foremanId) === String(currentUser._id) || String(foremanId) === String(currentUser.id));
+                if (!foremanId) return false;
+                const fid = typeof foremanId === 'object' ? String(foremanId._id || foremanId.id) : String(foremanId);
+                return fid === uid;
             });
             
-            // Update stats
+            window._foremanProjectsList = myProjects;
+
             document.getElementById('myProjectsCount').textContent = myProjects.length;
-            
-            // Update table
+            renderForemanDashboardProjects(myProjects);
+
             const tableBody = document.getElementById('foremanProjectsTableBody');
             if (myProjects.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No projects assigned to you yet. Projects will appear here when an admin assigns you.</td></tr>';
             } else {
-                tableBody.innerHTML = myProjects.map(project => `
+                tableBody.innerHTML = myProjects.map(project => {
+                    const id = project._id || project.id;
+                    const status = (project.status || 'active').toLowerCase().replace(/\s+/g, '-');
+                    const workerCount = project.workers ? project.workers.length : (project.workerCount || 0);
+                    return `
                     <tr>
-                        <td>${project.name}</td>
-                        <td>${project.location?.address || project.location?.name || 'N/A'}</td>
-                        <td>${project.workers ? project.workers.length : 0}</td>
-                        <td><span class="status-badge status-${project.status}">${project.status}</span></td>
+                        <td><strong>${escapeHtml(project.name)}</strong></td>
+                        <td>${escapeHtml(formatLocation(project.location))}</td>
+                        <td>${workerCount}</td>
+                        <td><span class="status-badge status-${status}">${escapeHtml(project.status || 'active')}</span></td>
                         <td>${project.progress || 0}%</td>
                         <td>
-                            <button class="btn btn-sm" onclick="viewProject('${project._id}')">
+                            <button type="button" class="btn btn-sm btn-primary foreman-view-project" data-project-id="${id}">
                                 <i class="fas fa-eye"></i> View
                             </button>
                         </td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
+                tableBody.querySelectorAll('.foreman-view-project').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        viewProject(this.getAttribute('data-project-id'));
+                    });
+                });
             }
             
             // Populate project select dropdowns for worker and attendance sections
@@ -510,9 +600,8 @@
                     return;
                 }
                 
-                // Check if foreman is within project radius
-                const projects = getStored('portalProjects', []);
-                const project = projects.find(p => p._id === projectId);
+                const projects = window._foremanProjectsList || [];
+                const project = projects.find(p => String(p._id || p.id) === String(projectId));
                 const userLocation = currentUser.location;
                 
                 if (!isWithinProjectRadius(project, userLocation)) {
@@ -730,8 +819,26 @@
     }
 
     function viewProject(projectId) {
-        window.location.href = `../project-detail/?id=${projectId}`;
+        const projects = window._foremanProjectsList || [];
+        const project = projects.find(p => String(p._id || p.id) === String(projectId));
+        if (!project) {
+            showSection('foreman-projects');
+            return;
+        }
+        const loc = formatLocation(project.location);
+        const clientName = project.client && typeof project.client === 'object'
+            ? (project.client.name || project.client.email || '')
+            : '';
+        alert(
+            'Project: ' + (project.name || '') + '\n' +
+            'Location: ' + loc + '\n' +
+            (clientName ? 'Client: ' + clientName + '\n' : '') +
+            'Status: ' + (project.status || 'active') + '\n' +
+            'Progress: ' + (project.progress || 0) + '%'
+        );
     }
+
+    window.viewProject = viewProject;
 
     function editWorker(workerId) {
         window.location.href = `../worker-detail/?id=${workerId}`;

@@ -91,15 +91,15 @@ class NavigationStateManager {
     }
 
     showSection(sectionId) {
-        // Hide all sections
-        document.querySelectorAll('[id^="admin-"]').forEach(section => {
+        // Hide all portal sections (admin, client, employee, foreman)
+        document.querySelectorAll('.portal-section').forEach(section => {
             section.style.display = 'none';
         });
 
-        // Show target section
+        // Show target section — clear inline display so CSS (e.g. stats-grid) applies
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
-            targetSection.style.display = 'block';
+            targetSection.style.display = '';
         }
 
         // Update nav active state
@@ -117,6 +117,9 @@ class NavigationStateManager {
 
     handleNavigationClick(e) {
         const target = e.target.closest('a[data-section]');
+        if (!target) return;
+        // Foreman portal uses foreman-portal.js for section switching
+        if (window.location.pathname.includes('/foreman/')) return;
         if (target) {
             e.preventDefault();
             const sectionId = target.getAttribute('data-section');

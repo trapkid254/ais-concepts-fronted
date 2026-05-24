@@ -1712,6 +1712,48 @@ td {
     object-fit: cover;
 }
 
+.client-project-card .client-project-image {
+    height: 240px;
+    min-height: 200px;
+    background: #f1f5f9;
+}
+
+.client-project-card .client-project-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.project-details-view .project-details-hero {
+    width: 100%;
+    max-height: 320px;
+    min-height: 200px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.project-details-view .project-details-hero img {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    max-height: 320px;
+    object-fit: cover;
+    display: block;
+}
+
+.project-details-view .project-details-desc {
+    color: #64748b;
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+#clientProjectViewModal .modal-content {
+    max-width: 720px;
+}
+
 .project-details {
     padding: 20px;
 }
