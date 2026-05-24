@@ -140,6 +140,9 @@ class NavigationStateManager {
     // Prevent form submissions from causing page reloads
     handleFormSubmit(e) {
         const form = e.target;
+        if (form.classList.contains('portal-native-form') || form.id === 'assignEmployeeForm' || form.id === 'adminProjectForm') {
+            return;
+        }
         if (form.classList.contains('ajax-form')) {
             e.preventDefault();
             

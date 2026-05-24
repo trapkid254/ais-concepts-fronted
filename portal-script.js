@@ -161,6 +161,14 @@ function formatProjectForeman(project) {
     return project.foremanName || (typeof project.assignedForeman === 'string' ? project.assignedForeman : '') || 'Not Assigned';
 }
 
+function formatPortalMoney(n) {
+    var num = parseFloat(n) || 0;
+    if (num >= 1000000000) return 'KES ' + (num / 1000000000).toFixed(2) + 'B';
+    if (num >= 1000000) return 'KES ' + (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return 'KES ' + (num / 1000).toFixed(1) + 'K';
+    return 'KES ' + num.toLocaleString();
+}
+
 function buildProjectDetailsHtml(project, opts) {
     opts = opts || {};
     var clientStr = formatProjectClient(project.client) || 'Not specified';
@@ -175,19 +183,42 @@ function buildProjectDetailsHtml(project, opts) {
     if (project.description) {
         html += '<p class="project-details-desc">' + escapeHtml(project.description) + '</p>';
     }
-    html += '<div class="project-info-grid">' +
-        '<div class="info-item"><label>Client:</label><span>' + escapeHtml(clientStr) + '</span></div>' +
-        '<div class="info-item"><label>Location:</label><span>' + escapeHtml(locStr) + '</span></div>' +
-        '<div class="info-item"><label>Foreman:</label><span>' + escapeHtml(foremanStr) + '</span></div>' +
-        '<div class="info-item"><label>Budget:</label><span>' + escapeHtml(project.budget != null ? String(project.budget) : 'Not specified') + '</span></div>' +
-        '<div class="info-item"><label>Progress:</label><span>' + (project.progress || 0) + '%</span></div>' +
+    html += '<div class="project-info-grid">';
+    if (!opts.isClientView) {
+        html += '<div class="info-item"><label>Client:</label><span>' + escapeHtml(clientStr) + '</span></div>';
+    }
+    html += '<div class="info-item"><label>Location:</label><span>' + escapeHtml(locStr) + '</span></div>';
+    if (!opts.hideForeman && !opts.isClientView) {
+        html += '<div class="info-item"><label>Foreman:</label><span>' + escapeHtml(foremanStr) + '</span></div>';
+    }
+    if (!opts.isClientView) {
+        html += '<div class="info-item"><label>Budget:</label><span>' + escapeHtml(project.budget != null ? String(project.budget) : 'Not specified') + '</span></div>';
+    }
+    html += '<div class="info-item"><label>Progress:</label><span>' + (project.progress || 0) + '%</span></div>' +
         '<div class="info-item"><label>Status:</label><span class="status-badge status-' + escapeHtml((project.status || 'Active').toLowerCase().replace(/\s+/g, '-')) + '">' + escapeHtml(project.status || 'Active') + '</span></div>' +
-        '<div class="info-item"><label>Deadline:</label><span>' + escapeHtml(project.deadline || project.endDate || project.completionDate || 'Not specified') + '</span></div>' +
-        '<div class="info-item"><label>Category:</label><span>' + escapeHtml(project.category || 'Commercial') + '</span></div>';
+        '<div class="info-item"><label>Deadline:</label><span>' + escapeHtml(project.deadline || project.endDate || project.completionDate || 'Not specified') + '</span></div>';
+    if (!opts.isClientView) {
+        html += '<div class="info-item"><label>Category:</label><span>' + escapeHtml(project.category || 'Commercial') + '</span></div>';
+    }
     if (project.location && typeof project.location === 'object' && project.location.latitude != null && project.location.longitude != null) {
         html += '<div class="info-item"><label>Coordinates:</label><span>' + project.location.latitude + ', ' + project.location.longitude + '</span></div>';
     }
-    if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
+    if (opts.isClientView) {
+        var budget = parseFloat(project.budget) || 0;
+        var paid = parseFloat(project.moneyPaid) || 0;
+        var used = parseFloat(project.moneyUsed) || 0;
+        var remaining = parseFloat(project.moneyRemaining);
+        if (isNaN(remaining)) remaining = Math.max(0, budget - used);
+        var owed = parseFloat(project.moneyOwed) || 0;
+        html += '<div class="project-finance-details">' +
+            '<h4>Financial summary</h4>' +
+            '<div class="info-item"><label>Budget:</label><span>' + formatPortalMoney(budget) + '</span></div>' +
+            '<div class="info-item"><label>Money Paid:</label><span>' + formatPortalMoney(paid) + '</span></div>' +
+            '<div class="info-item"><label>Money Used:</label><span>' + formatPortalMoney(used) + '</span></div>' +
+            '<div class="info-item"><label>Money Left:</label><span>' + formatPortalMoney(remaining) + '</span></div>' +
+            '<div class="info-item"><label>Money Owed:</label><span>' + formatPortalMoney(owed) + '</span></div>' +
+            '</div>';
+    } else if (project.moneyPaid || project.moneyUsed || project.moneyRemaining || project.moneyOwed) {
         html += '<div class="info-item"><label>Money Paid:</label><span>' + escapeHtml(String(project.moneyPaid || '0')) + '</span></div>' +
             '<div class="info-item"><label>Money Used:</label><span>' + escapeHtml(String(project.moneyUsed || '0')) + '</span></div>' +
             '<div class="info-item"><label>Money Remaining:</label><span>' + escapeHtml(String(project.moneyRemaining || '0')) + '</span></div>' +
@@ -1530,7 +1561,11 @@ window.viewProjectDetails = function (projectId) {
         var content = document.getElementById(isClientPortal ? 'clientProjectViewContent' : 'adminViewProjectContent');
         if (!modal || !content) return;
         if (!project) { content.innerHTML = '<p>Project not found.</p>'; modal.classList.add('open'); return; }
-        content.innerHTML = buildProjectDetailsHtml(project, { showRequestFunds: !isClientPortal });
+        content.innerHTML = buildProjectDetailsHtml(project, {
+            showRequestFunds: !isClientPortal,
+            hideForeman: isClientPortal,
+            isClientView: isClientPortal
+        });
         modal.classList.add('open');
     }).catch(function (error) {
         console.error(error);
@@ -1702,8 +1737,9 @@ window.openAssignEmployeeModal = function (projectId) {
         employeeSelect.innerHTML = '<option value="">Select an employee</option>';
         employees.forEach(function (employee) {
             var option = document.createElement('option');
-            option.value = employee._id;
+            option.value = employee._id || employee.id;
             option.textContent = employee.name + ' (' + employee.email + ')';
+            option.setAttribute('data-email', employee.email || '');
             employeeSelect.appendChild(option);
         });
         
@@ -1769,18 +1805,21 @@ window.removeEmployeeFromProject = function (projectId, employeeId) {
 // Assign Employee Form Submission
 var assignEmployeeForm = document.getElementById('assignEmployeeForm');
 if (assignEmployeeForm) {
+    assignEmployeeForm.classList.remove('ajax-form');
     assignEmployeeForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         var projectId = document.getElementById('assignEmployeeProjectId').value;
-        var employeeId = document.getElementById('assignEmployeeSelect').value;
+        var employeeSelect = document.getElementById('assignEmployeeSelect');
+        var employeeId = employeeSelect ? employeeSelect.value : '';
         var duties = document.getElementById('assignEmployeeDuties').value;
-        
+        var projectName = document.getElementById('assignEmployeeProjectName').value;
+
         if (!employeeId) {
             alert('Please select an employee');
             return;
         }
-        
+
         fetch(window.API_BASE + '/api/projects/' + projectId + '/assign-employee', {
             method: 'POST',
             headers: {
@@ -1792,16 +1831,39 @@ if (assignEmployeeForm) {
                 duties: duties
             })
         }).then(function (response) {
-            if (!response.ok) throw new Error('Failed to assign employee');
-            return response.json();
+            return response.json().then(function (data) {
+                if (!response.ok) throw new Error(data.error || data.details || 'Failed to assign employee');
+                return data;
+            });
         }).then(function (data) {
+            var selectedOpt = employeeSelect && employeeSelect.selectedOptions[0];
+            var employeeEmail = selectedOpt ? (selectedOpt.getAttribute('data-email') || '') : '';
+            if (!employeeEmail && selectedOpt && selectedOpt.textContent) {
+                var m = selectedOpt.textContent.match(/\(([^)]+)\)/);
+                if (m) employeeEmail = m[1].trim();
+            }
+            var row = data.assignment || {
+                project: projectName,
+                employeeEmail: employeeEmail,
+                notes: duties,
+                due: '',
+                deadline: ''
+            };
+            var assignments = getStored('assignments', []);
+            var idx = assignments.findIndex(function (a) {
+                return String(a.project) === String(row.project) &&
+                    String(a.employeeEmail || '').toLowerCase() === String(row.employeeEmail || '').toLowerCase();
+            });
+            if (idx >= 0) assignments[idx] = Object.assign({}, assignments[idx], row);
+            else assignments.push(row);
+            setStored('assignments', assignments);
             alert('Employee assigned successfully!');
             document.getElementById('assignEmployeeModal').classList.remove('open');
             assignEmployeeForm.reset();
             renderAdminProjectsTable();
         }).catch(function (error) {
             console.error('Error assigning employee:', error);
-            alert('Failed to assign employee. Please try again.');
+            alert('Failed to assign employee: ' + (error.message || 'Please try again.'));
         });
     });
 }
@@ -2171,13 +2233,72 @@ function renderMessagesAsCards(container, messages) {
 
 // ===== EMPLOYEE PORTAL =====
 
+function syncEmployeeAssignmentsFromApi(currentUser, callback) {
+    if (!currentUser || !currentUser.email) {
+        if (callback) callback([]);
+        return Promise.resolve([]);
+    }
+    var token = sessionStorage.getItem('authToken');
+    if (!token) {
+        var stored = getStored('assignments', []).filter(function (a) {
+            return a.employeeEmail && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase();
+        });
+        if (callback) callback(stored);
+        return Promise.resolve(stored);
+    }
+    return fetch((window.API_BASE || '') + '/api/projects', {
+        headers: { Authorization: 'Bearer ' + token }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load projects');
+        return r.json();
+    }).then(function (projects) {
+        var uid = String(currentUser._id || currentUser.id || '');
+        var fromApi = [];
+        (projects || []).forEach(function (p) {
+            (p.assignedEmployees || []).forEach(function (a) {
+                if (String(a.employeeId) === uid) {
+                    var deadline = p.endDate ? new Date(p.endDate).toISOString().slice(0, 10) : '';
+                    fromApi.push({
+                        project: p.name,
+                        employeeEmail: currentUser.email,
+                        due: deadline,
+                        deadline: deadline,
+                        notes: a.duties || '',
+                        projectId: String(p._id || p.id)
+                    });
+                }
+            });
+        });
+        var stored = getStored('assignments', []);
+        var merged = stored.slice();
+        fromApi.forEach(function (a) {
+            if (!merged.some(function (m) {
+                return String(m.project) === String(a.project) &&
+                    String(m.employeeEmail || '').toLowerCase() === String(a.employeeEmail).toLowerCase();
+            })) {
+                merged.push(a);
+            }
+        });
+        setStored('assignments', merged);
+        var mine = merged.filter(function (a) {
+            return a.employeeEmail && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase();
+        });
+        if (callback) callback(mine);
+        return mine;
+    }).catch(function () {
+        var fallback = getStored('assignments', []).filter(function (a) {
+            return a.employeeEmail && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase();
+        });
+        if (callback) callback(fallback);
+        return fallback;
+    });
+}
+
 window.setupEmployeeInteractions = function (currentUser) {
     var assignmentsBody = document.getElementById('employeeAssignmentsBody');
-    var allAssignments = getStored('assignments', []);
-    var myAssignments = currentUser
-        ? allAssignments.filter(function (a) { return a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase(); })
-        : allAssignments;
-    if (assignmentsBody) renderAssignments(assignmentsBody, myAssignments, true);
+    syncEmployeeAssignmentsFromApi(currentUser, function (myAssignments) {
+        if (assignmentsBody) renderAssignments(assignmentsBody, myAssignments, true);
+    });
 
     var projectFilterTabs = document.querySelectorAll('#employeeProjectFilterTabs .filter-btn');
     projectFilterTabs.forEach(function (btn) {
@@ -2185,7 +2306,9 @@ window.setupEmployeeInteractions = function (currentUser) {
             projectFilterTabs.forEach(function (b) { b.classList.remove('active'); });
             btn.classList.add('active');
             window._employeeProjectFilter = btn.getAttribute('data-filter') || 'all';
-            renderEmployeeAssignmentsTable(assignmentsBody, myAssignments);
+            syncEmployeeAssignmentsFromApi(currentUser, function (mine) {
+                renderEmployeeAssignmentsTable(assignmentsBody, mine);
+            });
         });
     });
 
@@ -2352,6 +2475,13 @@ function loadEmployeeDashboard() {
     var myAssignments = getStored('assignments', []).filter(function (a) {
         return a.employeeEmail && cu && a.employeeEmail.toLowerCase() === (cu.email || '').toLowerCase();
     });
+    syncEmployeeAssignmentsFromApi(cu, function (synced) {
+        refreshEmployeeDashboardStats(synced, cu);
+    });
+}
+
+function refreshEmployeeDashboardStats(myAssignments, cu) {
+    myAssignments = myAssignments || [];
     var statusMap = getEmployeeAssignmentStatus();
     var activeCount = myAssignments.filter(function (a) { return (statusMap[(a.project || '') + '|' + (a.employeeEmail || '')] || 'not-started') === 'active'; }).length;
     var completedCount = myAssignments.filter(function (a) { return (statusMap[(a.project || '') + '|' + (a.employeeEmail || '')] || 'not-started') === 'completed'; }).length;
@@ -2383,6 +2513,10 @@ function loadEmployeeDashboard() {
         timesheetBody.innerHTML = weekEntries.length ? weekEntries.map(function (e) {
             return '<tr><td>' + escapeHtml(e.date || '') + '</td><td>' + escapeHtml(e.project || '') + '</td><td>' + escapeHtml(e.description || '') + '</td><td>' + (e.hours || '') + '</td></tr>';
         }).join('') : '<tr><td colspan="4">No entries this week. Add time from Time Tracking.</td></tr>';
+    }
+    var assignmentsBody = document.getElementById('employeeAssignmentsBody');
+    if (assignmentsBody && cu) {
+        renderEmployeeAssignmentsTable(assignmentsBody, myAssignments);
     }
     renderEmployeeOngoingForUpdate();
 }
@@ -2435,9 +2569,9 @@ window.applyClientProjectFilter = function () {
             (owed > 0 ? '<p><strong>Owed:</strong> ' + fmtMoney(owed) + '</p>' : '') +
             '</div>' : '';
         var locLabel = formatProjectLocation(project.location);
-        return '<div class="project-card client-project-card">' +
+        return '<article class="project-card client-project-card">' +
             '<div class="project-image client-project-image"><img src="' + escapeHtml((project.images && project.images[0]) || project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
-            '<div class="project-details">' +
+            '<div class="project-details client-project-details">' +
             '<h3>' + escapeHtml(project.name) + '</h3>' +
             '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
             (locLabel ? '<p><strong>Location:</strong> ' + escapeHtml(locLabel) + '</p>' : '') +
@@ -2450,7 +2584,7 @@ window.applyClientProjectFilter = function () {
             '<div class="project-actions">' +
             '<button type="button" class="btn btn-primary" onclick="viewProjectDetails(\'' + pid + '\')">View Details</button> ' +
             '<button type="button" class="btn btn-secondary" onclick="openProjectInquiryModal(\'' + pid + '\',\'' + pname + '\')">Inquire</button>' +
-            '</div></div></div>';
+            '</div></div></article>';
     }).join('');
 };
 

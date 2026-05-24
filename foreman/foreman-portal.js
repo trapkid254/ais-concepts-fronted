@@ -366,24 +366,18 @@
 
             const data = await response.json();
             const allProjects = parseProjectsResponse(data);
-            const uid = String(currentUser._id || currentUser.id || '');
-            const myProjects = allProjects.filter(project => {
-                const foremanId = project.foremanId;
-                if (!foremanId) return false;
-                const fid = typeof foremanId === 'object' ? String(foremanId._id || foremanId.id) : String(foremanId);
-                return fid === uid;
-            });
-            
-            window._foremanProjectsList = myProjects;
+            // Backend returns only this foreman's projects when role is foreman
+            const projectsToShow = allProjects;
+            window._foremanProjectsList = projectsToShow;
 
-            document.getElementById('myProjectsCount').textContent = myProjects.length;
-            renderForemanDashboardProjects(myProjects);
+            document.getElementById('myProjectsCount').textContent = projectsToShow.length;
+            renderForemanDashboardProjects(projectsToShow);
 
             const tableBody = document.getElementById('foremanProjectsTableBody');
-            if (myProjects.length === 0) {
+            if (projectsToShow.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No projects assigned to you yet. Projects will appear here when an admin assigns you.</td></tr>';
             } else {
-                tableBody.innerHTML = myProjects.map(project => {
+                tableBody.innerHTML = projectsToShow.map(project => {
                     const id = project._id || project.id;
                     const status = (project.status || 'active').toLowerCase().replace(/\s+/g, '-');
                     const workerCount = project.workers ? project.workers.length : (project.workerCount || 0);
@@ -414,21 +408,27 @@
             const attendanceProjectSelect = document.getElementById('attendanceProjectSelect');
             
             if (workerProjectSelect) {
-                if (myProjects.length === 0) {
+                if (projectsToShow.length === 0) {
                     workerProjectSelect.innerHTML = '<option value="">No projects assigned</option>';
                 } else {
-                    workerProjectSelect.innerHTML = '<option value="">Select a project</option>' + 
-                        myProjects.map(project => `<option value="${project._id}">${project.name}</option>`).join('');
+                    workerProjectSelect.innerHTML = '<option value="">Select a project</option>' +
+                        projectsToShow.map(project => `<option value="${project._id || project.id}">${escapeHtml(project.name)}</option>`).join('');
                 }
             }
-            
+
             if (attendanceProjectSelect) {
-                if (myProjects.length === 0) {
+                if (projectsToShow.length === 0) {
                     attendanceProjectSelect.innerHTML = '<option value="">No projects assigned</option>';
                 } else {
-                    attendanceProjectSelect.innerHTML = '<option value="">Select a project</option>' + 
-                        myProjects.map(project => `<option value="${project._id}">${project.name}</option>`).join('');
+                    attendanceProjectSelect.innerHTML = '<option value="">Select a project</option>' +
+                        projectsToShow.map(project => `<option value="${project._id || project.id}">${escapeHtml(project.name)}</option>`).join('');
                 }
+            }
+
+            const payrollProject = document.getElementById('payrollProject');
+            if (payrollProject) {
+                payrollProject.innerHTML = '<option value="">All Projects</option>' +
+                    projectsToShow.map(project => `<option value="${project._id || project.id}">${escapeHtml(project.name)}</option>`).join('');
             }
         } catch (error) {
             console.error('Error loading projects:', error);
