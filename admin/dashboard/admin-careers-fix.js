@@ -64,16 +64,23 @@
         if (type === 'certificate') {
             url += '&index=' + encodeURIComponent(index);
         }
+        console.log('Downloading attachment from:', url);
         fetch(url, {
             headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
         }).then(function(r){
+            console.log('Response status:', r.status, r.statusText);
             if (!r.ok) {
-                alert('Could not download attachment');
+                console.error('Download failed with status:', r.status);
+                alert('Could not download attachment. Status: ' + r.status);
                 return;
             }
             return r.blob();
         }).then(function(blob){
-            if (!blob) return;
+            if (!blob) {
+                console.error('No blob received');
+                return;
+            }
+            console.log('Blob received, size:', blob.size, 'type:', blob.type);
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = (type === 'resume' ? 'resume' : 'certificate-' + index) + '.pdf';
@@ -81,8 +88,10 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(a.href);
-        }).catch(function(){
-            alert('Could not download attachment');
+            console.log('Download triggered');
+        }).catch(function(err){
+            console.error('Download error:', err);
+            alert('Could not download attachment: ' + (err.message || 'Unknown error'));
         });
     }
 
