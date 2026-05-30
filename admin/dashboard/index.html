@@ -499,10 +499,19 @@
                             <th>Campus</th>
                             <th>Year of Study</th>
                             <th>Date</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="adminCareersBody"></tbody>
                 </table>
+                <!-- Modal to view full application details -->
+                <div class="modal" id="adminCareerViewModal">
+                    <div class="modal-content">
+                        <span class="close-modal" data-close="adminCareerViewModal">&times;</span>
+                        <h2>Application Details</h2>
+                        <div id="adminCareerViewContent"></div>
+                    </div>
+                </div>
             </section>
 
             <!-- Notifications & messages (merged) -->

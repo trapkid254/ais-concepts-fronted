@@ -52,13 +52,38 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var type = document.getElementById('careerType').value;
             var certInput = document.getElementById('careerCertificate');
+            var cvInput = document.getElementById('careerCV');
             var needsCert = (type === 'full-time' || type === 'part-time');
             if (needsCert && (!certInput || !certInput.files || !certInput.files.length)) {
                 alert('Please upload your certificate(s) for Full-Time and Part-Time positions.');
                 return;
             }
-            var certificates = [];
-            function addApp() {
+
+            function readFileAsDataURL(file) {
+                return new Promise(function(resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function() { resolve(reader.result); };
+                    reader.onerror = function() { reject(new Error('Failed to read file')); };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            var certFiles = (certInput && certInput.files) ? Array.prototype.slice.call(certInput.files) : [];
+            var cvFile = (cvInput && cvInput.files && cvInput.files.length) ? cvInput.files[0] : null;
+
+            var certsPromise = Promise.resolve([]);
+            if (certFiles.length) {
+                certsPromise = Promise.all(certFiles.map(function(f) { return readFileAsDataURL(f).then(function(data) { return { name: f.name, data: data }; }); }));
+            }
+
+            var cvPromise = Promise.resolve(null);
+            if (cvFile) {
+                cvPromise = readFileAsDataURL(cvFile).then(function(data) { return { name: cvFile.name, data: data }; });
+            }
+
+            Promise.all([certsPromise, cvPromise]).then(function(results) {
+                var certificates = results[0] || [];
+                var resume = results[1] || null;
                 var payload = {
                     name: document.getElementById('careerName').value,
                     email: document.getElementById('careerEmail').value,
@@ -67,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     campus: type === 'attachment' ? (document.getElementById('careerCampus').value || '') : '',
                     yearOfStudy: type === 'attachment' ? (document.getElementById('careerYear').value || '') : '',
                     certificates: certificates,
+                    resume: resume,
                     message: document.getElementById('careerMessage').value || ''
                 };
                 fetch((window.API_BASE || '') + '/api/careers/apply', {
@@ -90,22 +116,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).catch(function() {
                     alert('Could not submit application. Please try again later.');
                 });
-            }
-            if (needsCert && certInput.files.length) {
-                var read = 0;
-                var total = certInput.files.length;
-                Array.prototype.forEach.call(certInput.files, function(file) {
-                    var reader = new FileReader();
-                    reader.onload = function() {
-                        certificates.push({ name: file.name, data: reader.result });
-                        read++;
-                        if (read === total) addApp();
-                    };
-                    reader.readAsDataURL(file);
-                });
-            } else {
-                addApp();
-            }
+            }).catch(function() {
+                alert('Could not read uploaded files. Please try again.');
+            });
         });
     }
 
