@@ -87,8 +87,13 @@
                 }
 
                 // Check if attachment has data property (base64) or url property
+                console.log('Attachment data structure:', attachmentData);
+                console.log('Attachment data keys:', Object.keys(attachmentData));
+
                 if (attachmentData.data) {
                     // Handle base64 data
+                    console.log('Data length:', attachmentData.data.length);
+                    console.log('Data type:', typeof attachmentData.data);
                     try {
                         var byteCharacters = atob(attachmentData.data);
                         var byteNumbers = new Array(byteCharacters.length);
@@ -106,7 +111,8 @@
                         URL.revokeObjectURL(a.href);
                     } catch (e) {
                         console.error('Error processing base64 data:', e);
-                        alert('Could not process attachment data');
+                        console.error('Data preview:', attachmentData.data.substring(0, 100));
+                        alert('Could not process attachment data: ' + e.message);
                     }
                 } else if (attachmentData.url) {
                     // Handle URL
@@ -118,6 +124,7 @@
                     a.click();
                     document.body.removeChild(a);
                 } else {
+                    console.log('No data or url property found in attachment');
                     alert('Attachment data format not supported. Backend download endpoint needs to be implemented.');
                 }
             }).catch(function(err){
