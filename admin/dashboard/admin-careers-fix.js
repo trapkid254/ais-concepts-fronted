@@ -91,11 +91,21 @@
                 console.log('Attachment data keys:', Object.keys(attachmentData));
 
                 if (attachmentData.data) {
-                    // Handle base64 data
+                    // Handle base64 data (Data URL format)
                     console.log('Data length:', attachmentData.data.length);
                     console.log('Data type:', typeof attachmentData.data);
+                    console.log('Data preview:', attachmentData.data.substring(0, 100));
                     try {
-                        var byteCharacters = atob(attachmentData.data);
+                        // Data URLs have format: data:[<mediatype>][;base64],<data>
+                        var base64Data = attachmentData.data;
+                        if (base64Data.indexOf('data:') === 0) {
+                            // Extract the base64 part after the comma
+                            var parts = base64Data.split(',');
+                            if (parts.length > 1) {
+                                base64Data = parts[1];
+                            }
+                        }
+                        var byteCharacters = atob(base64Data);
                         var byteNumbers = new Array(byteCharacters.length);
                         for (var i = 0; i < byteCharacters.length; i++) {
                             byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -109,9 +119,9 @@
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(a.href);
+                        console.log('Download successful');
                     } catch (e) {
                         console.error('Error processing base64 data:', e);
-                        console.error('Data preview:', attachmentData.data.substring(0, 100));
                         alert('Could not process attachment data: ' + e.message);
                     }
                 } else if (attachmentData.url) {
