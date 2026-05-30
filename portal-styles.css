@@ -2214,6 +2214,12 @@ body > .modal.open {
     min-width: 140px;
 }
 
+/* Ensure buttons in the actions column are visible */
+.data-table td:last-child .btn-icon {
+    position: relative;
+    z-index: 10;
+}
+
 .data-table td .btn-icon {
     display: inline-flex;
     align-items: center;
@@ -2225,6 +2231,9 @@ body > .modal.open {
     border: 1px solid rgba(0,0,0,0.04);
     color: var(--primary);
     font-weight: 600;
+    cursor: pointer;
+    opacity: 1;
+    visibility: visible;
 }
 .data-table td .btn-icon i { font-size: 14px; }
 .data-table td .btn-icon:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.06); }
@@ -4073,6 +4082,9 @@ body > .modal.open {
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-primary);
+    cursor: pointer;
+    opacity: 1;
+    visibility: visible;
 }
 .data-table td .btn-icon i { font-size: 14px; }
 .data-table td .btn-icon:hover {
