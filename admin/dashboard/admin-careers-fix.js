@@ -15,20 +15,23 @@
         tbody.innerHTML = apps.map(function(a){
             var id = a.id || '';
             var date = a.date ? new Date(a.date).toLocaleDateString() : '';
-            return '<tr>' +
+            var row = '<tr>' +
                 '<td>'+escapeHtml(a.name||'')+'</td>' +
                 '<td>'+escapeHtml(a.email||'')+'</td>' +
                 '<td>'+escapeHtml(a.type||'')+'</td>' +
                 '<td>'+escapeHtml(a.campus||'-')+'</td>' +
                 '<td>'+escapeHtml(a.yearOfStudy||'-')+'</td>' +
                 '<td>'+escapeHtml(date)+'</td>' +
-                '<td style="white-space:nowrap">' +
+                '<td style="white-space:nowrap; padding: 14px; text-align: center;">' +
                 '<button class="btn-icon" data-action="view" data-id="'+escapeHtml(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);color:#0ea5a0;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-eye" aria-hidden="true"></i> View</button> ' +
                 '<button class="btn-icon btn-danger" data-action="delete" data-id="'+escapeHtml(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.3);color:#dc3545;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>' +
                 '</td>' +
                 '</tr>';
+            console.log('Row HTML for application', id, ':', row);
+            return row;
         }).join('');
         console.log('Buttons rendered. Total buttons:', tbody.querySelectorAll('button').length);
+        console.log('Total tds in tbody:', tbody.querySelectorAll('td').length);
 
         tbody.querySelectorAll('button[data-action="view"]').forEach(function(btn){
             btn.addEventListener('click', function(){
