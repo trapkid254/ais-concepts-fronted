@@ -228,8 +228,13 @@
                     <input type="text" id="careerCampus" placeholder="e.g. University of Nairobi">
                 </div>
                 <div class="form-group career-extra-fields" id="careerYearWrap" style="display: none;">
-                    <label for="careerYear">Year of Study</label>
-                    <input type="text" id="careerYear" placeholder="e.g. 3rd Year">
+                    <label>Year of Study</label>
+                    <div class="year-range" style="display:flex;gap:8px;align-items:center;">
+                        <select id="careerYearStart" aria-label="Study start year"></select>
+                        <span style="color:var(--text-tertiary);">to</span>
+                        <select id="careerYearEnd" aria-label="Expected graduation year"></select>
+                    </div>
+                    <small>Select your study start year and expected graduation year.</small>
                 </div>
                 <div class="form-group career-cert-wrap" id="careerCertWrap" style="display: none;">
                     <label for="careerCertificate">Certificates <span class="required">*</span></label>

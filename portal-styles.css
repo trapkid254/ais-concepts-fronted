@@ -4020,6 +4020,39 @@ body > .modal.open {
         margin: 0;
         border-radius: 12px;
     }
+
+/* Careers modal: make content scrollable on tall screens so submit button is reachable */
+#careerApplicationModal .modal-content {
+    max-width: 800px;
+    width: 90%;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* Ensure the actions column is visible and buttons are usable in admin tables */
+.data-table th:last-child,
+.data-table td:last-child {
+    width: 160px;
+    text-align: center;
+}
+
+.data-table td .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+}
+.data-table td .btn-icon i { font-size: 14px; }
+.data-table td .btn-icon:hover {
+    background: rgba(0,0,0,0.04);
+    color: var(--primary);
+}
     
     /* Tab improvements */
     .portal-tabs {

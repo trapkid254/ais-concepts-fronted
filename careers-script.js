@@ -6,13 +6,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var campusWrap = document.getElementById('careerCampusWrap');
     var yearWrap = document.getElementById('careerYearWrap');
+    var yearStartSelect = document.getElementById('careerYearStart');
+    var yearEndSelect = document.getElementById('careerYearEnd');
     var certWrap = document.getElementById('careerCertWrap');
     var careerTypeSelect = document.getElementById('careerType');
+    function populateYearSelects() {
+        if (!yearStartSelect || !yearEndSelect) return;
+        if (yearStartSelect._populated && yearEndSelect._populated) return;
+        var current = new Date().getFullYear();
+        var start = current - 10;
+        var end = current + 8;
+        var opts = [];
+        for (var y = start; y <= end; y++) {
+            opts.push('<option value="' + y + '">' + y + '</option>');
+        }
+        yearStartSelect.innerHTML = '<option value="">Start year</option>' + opts.join('');
+        yearEndSelect.innerHTML = '<option value="">Graduation year</option>' + opts.join('');
+        yearStartSelect._populated = true;
+        yearEndSelect._populated = true;
+    }
     function toggleCampusYear() {
         var isAttachment = careerTypeSelect && careerTypeSelect.value === 'attachment';
         var isFullOrPart = careerTypeSelect && (careerTypeSelect.value === 'full-time' || careerTypeSelect.value === 'part-time');
         if (campusWrap) campusWrap.style.display = isAttachment ? 'block' : 'none';
-        if (yearWrap) yearWrap.style.display = isAttachment ? 'block' : 'none';
+        if (yearWrap) {
+            yearWrap.style.display = isAttachment ? 'block' : 'none';
+            if (isAttachment) populateYearSelects();
+        }
         if (certWrap) certWrap.style.display = isFullOrPart ? 'block' : 'none';
     }
     if (careerTypeSelect) careerTypeSelect.addEventListener('change', toggleCampusYear);
@@ -84,13 +104,21 @@ document.addEventListener('DOMContentLoaded', function() {
             Promise.all([certsPromise, cvPromise]).then(function(results) {
                 var certificates = results[0] || [];
                 var resume = results[1] || null;
+                var yearOfStudyVal = '';
+                if (type === 'attachment') {
+                    var ys = document.getElementById('careerYearStart') ? document.getElementById('careerYearStart').value : '';
+                    var ye = document.getElementById('careerYearEnd') ? document.getElementById('careerYearEnd').value : '';
+                    if (ys && ye) yearOfStudyVal = ys + ' - ' + ye;
+                    else if (ys) yearOfStudyVal = ys;
+                }
+
                 var payload = {
                     name: document.getElementById('careerName').value,
                     email: document.getElementById('careerEmail').value,
                     phone: document.getElementById('careerPhone').value || '',
                     type: type,
                     campus: type === 'attachment' ? (document.getElementById('careerCampus').value || '') : '',
-                    yearOfStudy: type === 'attachment' ? (document.getElementById('careerYear').value || '') : '',
+                    yearOfStudy: type === 'attachment' ? (yearOfStudyVal || '') : '',
                     certificates: certificates,
                     resume: resume,
                     message: document.getElementById('careerMessage').value || ''
