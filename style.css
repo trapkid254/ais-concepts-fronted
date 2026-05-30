@@ -1325,6 +1325,24 @@ section {
 .auth-form .form-group {
     margin-bottom: 18px;
 }
+
+/* Ensure the public Careers modal is scrollable on desktop so submit is reachable */
+#careerApplicationModal .modal-content {
+    max-width: 900px;
+    width: 90%;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding: 28px;
+}
+
+/* Improve select visibility for year range */
+#careerApplicationModal .year-range select {
+    min-width: 140px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+}
 .auth-form label {
     display: block;
     margin-bottom: 6px;
