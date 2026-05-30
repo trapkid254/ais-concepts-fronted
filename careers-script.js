@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
         yearStartSelect._populated = true;
         yearEndSelect._populated = true;
     }
+
+    // pre-populate selects on load so they appear immediately when modal opens
+    try { populateYearSelects(); } catch (e) { /* ignore */ }
     function toggleCampusYear() {
         var isAttachment = careerTypeSelect && careerTypeSelect.value === 'attachment';
         var isFullOrPart = careerTypeSelect && (careerTypeSelect.value === 'full-time' || careerTypeSelect.value === 'part-time');

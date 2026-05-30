@@ -1342,6 +1342,11 @@ section {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     background: var(--bg-secondary);
+    color: var(--text-primary) !important;
+    display: inline-block !important;
+    position: relative !important;
+    z-index: 9999 !important;
+    appearance: none;
 }
 .auth-form label {
     display: block;

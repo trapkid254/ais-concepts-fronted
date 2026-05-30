@@ -2203,6 +2203,32 @@ body > .modal.open {
 .data-table th, .data-table td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
 .data-table th { background: var(--bg-tertiary); font-weight: 600; color: var(--text-primary); }
 
+/* Keep actions column visible when table is horizontally scrollable */
+.data-table th:last-child,
+.data-table td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--card-bg);
+    z-index: 5;
+    text-align: center;
+    min-width: 140px;
+}
+
+.data-table td .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.04);
+    color: var(--primary);
+    font-weight: 600;
+}
+.data-table td .btn-icon i { font-size: 14px; }
+.data-table td .btn-icon:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.06); }
+
 /* Analytics */
 .admin-analytics-wrap { padding: 0; }
 .analytics-grid {
