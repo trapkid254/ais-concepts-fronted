@@ -99,12 +99,24 @@
             }).catch(function(){ alert('Could not load application.'); });
     }
 
-    document.addEventListener('DOMContentLoaded', function(){
+    function loadCareerApplications(){
         var tbody = document.getElementById('adminCareersBody');
         if (!tbody) return;
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
             .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
             .then(function(res){ renderApplications(res.data || []); })
             .catch(function(){ console.error('Failed to load career applications'); renderApplications([]); });
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        loadCareerApplications();
+    });
+
+    // Re-load applications when careers section is shown
+    document.addEventListener('click', function(e){
+        var link = e.target.closest('.sidebar-nav a[data-section="admin-careers"]');
+        if (link) {
+            setTimeout(loadCareerApplications, 100);
+        }
     });
 })();

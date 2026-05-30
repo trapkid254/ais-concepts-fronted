@@ -554,9 +554,19 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if (sidebarLinks.length && portalSections.length) {
         var firstSectionId = sidebarLinks[0] && sidebarLinks[0].getAttribute('data-section');
+        // Check URL hash for current section
+        var hashSectionId = window.location.hash ? window.location.hash.substring(1) : null;
+        var initialSectionId = hashSectionId || firstSectionId;
+
         portalSections.forEach(function (sec) {
-            sec.style.display = sec.id === firstSectionId ? '' : 'none';
+            sec.style.display = sec.id === initialSectionId ? '' : 'none';
         });
+
+        // Update active state based on initial section
+        document.querySelectorAll('.sidebar-nav a').forEach(function (a) { a.classList.remove('active'); });
+        var initialLink = document.querySelector('.sidebar-nav a[data-section="' + initialSectionId + '"]');
+        if (initialLink) initialLink.classList.add('active');
+
         sidebarLinks.forEach(function (link) {
             link.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -566,6 +576,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 portalSections.forEach(function (sec) {
                     sec.style.display = sec.id === sectionId ? '' : 'none';
                 });
+                // Update URL hash
+                window.location.hash = sectionId;
                 if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
             });
         });
