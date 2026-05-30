@@ -59,40 +59,71 @@
 
     function downloadCareerAttachment(appId, type, index){
         if (!appId) return;
-        var url = (window.API_BASE||'') + '/api/admin/career-applications/' + encodeURIComponent(appId) + '/download';
-        url += '?type=' + encodeURIComponent(type);
-        if (type === 'certificate') {
-            url += '&index=' + encodeURIComponent(index);
-        }
-        console.log('Downloading attachment from:', url);
-        fetch(url, {
-            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
-        }).then(function(r){
-            console.log('Response status:', r.status, r.statusText);
-            if (!r.ok) {
-                console.error('Download failed with status:', r.status);
-                alert('Could not download attachment. Status: ' + r.status);
-                return;
-            }
-            return r.blob();
-        }).then(function(blob){
-            if (!blob) {
-                console.error('No blob received');
-                return;
-            }
-            console.log('Blob received, size:', blob.size, 'type:', blob.type);
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = (type === 'resume' ? 'resume' : 'certificate-' + index) + '.pdf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            console.log('Download triggered');
-        }).catch(function(err){
-            console.error('Download error:', err);
-            alert('Could not download attachment: ' + (err.message || 'Unknown error'));
-        });
+        // First, try to get the application data to see if attachments are included
+        fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
+            .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+            .then(function(res){
+                var apps = res.data || [];
+                var app = apps.find(function(x){ return String(x.id) === String(appId); });
+                if (!app) {
+                    alert('Application not found');
+                    return;
+                }
+
+                var attachmentData = null;
+                var filename = '';
+
+                if (type === 'resume' && app.resume) {
+                    attachmentData = app.resume;
+                    filename = app.resume.name || 'resume.pdf';
+                } else if (type === 'certificate' && app.certificates && app.certificates[index]) {
+                    attachmentData = app.certificates[index];
+                    filename = attachmentData.name || ('certificate-' + index + '.pdf');
+                }
+
+                if (!attachmentData) {
+                    alert('Attachment not found');
+                    return;
+                }
+
+                // Check if attachment has data property (base64) or url property
+                if (attachmentData.data) {
+                    // Handle base64 data
+                    try {
+                        var byteCharacters = atob(attachmentData.data);
+                        var byteNumbers = new Array(byteCharacters.length);
+                        for (var i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        var byteArray = new Uint8Array(byteNumbers);
+                        var blob = new Blob([byteArray], { type: 'application/pdf' });
+                        var a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(a.href);
+                    } catch (e) {
+                        console.error('Error processing base64 data:', e);
+                        alert('Could not process attachment data');
+                    }
+                } else if (attachmentData.url) {
+                    // Handle URL
+                    var a = document.createElement('a');
+                    a.href = attachmentData.url;
+                    a.download = filename;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    alert('Attachment data format not supported. Backend download endpoint needs to be implemented.');
+                }
+            }).catch(function(err){
+                console.error('Error fetching application:', err);
+                alert('Could not fetch application data');
+            });
     }
 
     function openCareerView(appId){
