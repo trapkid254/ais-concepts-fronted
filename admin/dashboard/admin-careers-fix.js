@@ -57,6 +57,35 @@
         });
     }
 
+    function downloadCareerAttachment(appId, type, index){
+        if (!appId) return;
+        var url = (window.API_BASE||'') + '/api/admin/career-applications/' + encodeURIComponent(appId) + '/download';
+        url += '?type=' + encodeURIComponent(type);
+        if (type === 'certificate') {
+            url += '&index=' + encodeURIComponent(index);
+        }
+        fetch(url, {
+            headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+        }).then(function(r){
+            if (!r.ok) {
+                alert('Could not download attachment');
+                return;
+            }
+            return r.blob();
+        }).then(function(blob){
+            if (!blob) return;
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = (type === 'resume' ? 'resume' : 'certificate-' + index) + '.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }).catch(function(){
+            alert('Could not download attachment');
+        });
+    }
+
     function openCareerView(appId){
         if (!appId) return;
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
