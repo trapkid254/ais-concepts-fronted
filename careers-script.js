@@ -29,12 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // pre-populate selects on load so they appear immediately when modal opens
     try { populateYearSelects(); } catch (e) { /* ignore */ }
     function toggleCampusYear() {
-        var isAttachment = careerTypeSelect && careerTypeSelect.value === 'attachment';
-        var isFullOrPart = careerTypeSelect && (careerTypeSelect.value === 'full-time' || careerTypeSelect.value === 'part-time');
-        if (campusWrap) campusWrap.style.display = isAttachment ? 'block' : 'none';
+        var val = careerTypeSelect ? careerTypeSelect.value : '';
+        var isAttachment = val === 'attachment';
+        var isFullOrPart = val === 'full-time' || val === 'part-time';
+        var showCampusYear = isAttachment || isFullOrPart;
+        if (campusWrap) campusWrap.style.display = showCampusYear ? 'block' : 'none';
         if (yearWrap) {
-            yearWrap.style.display = isAttachment ? 'block' : 'none';
-            if (isAttachment) populateYearSelects();
+            yearWrap.style.display = showCampusYear ? 'block' : 'none';
+            if (showCampusYear) populateYearSelects();
         }
         if (certWrap) certWrap.style.display = isFullOrPart ? 'block' : 'none';
     }
@@ -108,7 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 var certificates = results[0] || [];
                 var resume = results[1] || null;
                 var yearOfStudyVal = '';
-                if (type === 'attachment') {
+                var needsCampusYear = (type === 'attachment' || type === 'full-time' || type === 'part-time');
+                if (needsCampusYear) {
                     var ys = document.getElementById('careerYearStart') ? document.getElementById('careerYearStart').value : '';
                     var ye = document.getElementById('careerYearEnd') ? document.getElementById('careerYearEnd').value : '';
                     if (ys && ye) yearOfStudyVal = ys + ' - ' + ye;
@@ -120,8 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     email: document.getElementById('careerEmail').value,
                     phone: document.getElementById('careerPhone').value || '',
                     type: type,
-                    campus: type === 'attachment' ? (document.getElementById('careerCampus').value || '') : '',
-                    yearOfStudy: type === 'attachment' ? (yearOfStudyVal || '') : '',
+                    campus: needsCampusYear ? (document.getElementById('careerCampus').value || '') : '',
+                    yearOfStudy: needsCampusYear ? (yearOfStudyVal || '') : '',
                     certificates: certificates,
                     resume: resume,
                     message: document.getElementById('careerMessage').value || ''
