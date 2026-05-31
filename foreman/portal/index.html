@@ -369,19 +369,187 @@
             font-size: 1.1rem;
         }
 
+        /* Hamburger menu button */
+        .foreman-portal #menuToggle {
+            display: none;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 12px;
+            font-size: 1.1rem;
+        }
+
+        .foreman-portal #menuToggle:hover {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        /* Sidebar overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .foreman-portal .table-container {
                 margin: 0 12px 16px;
+                border-radius: 12px;
             }
             .foreman-dashboard-wrap {
                 padding: 0 12px 16px;
             }
             .foreman-portal #foreman-dashboard .stats-grid {
                 padding: 16px 12px 8px;
+                grid-template-columns: 1fr;
             }
             .foreman-portal .attendance-stats-grid {
                 grid-template-columns: 1fr;
                 padding: 16px 12px;
+            }
+            .foreman-portal #menuToggle {
+                display: flex;
+            }
+
+            .foreman-portal .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                width: 280px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .foreman-portal .sidebar.active {
+                left: 0;
+            }
+
+            .foreman-portal .main-content {
+                margin-left: 0;
+            }
+
+            .foreman-portal .top-bar {
+                padding: 16px 20px;
+            }
+
+            .foreman-portal .page-title h1 {
+                font-size: 1.5rem;
+            }
+
+            .foreman-portal .page-title p {
+                font-size: 0.875rem;
+            }
+
+            .foreman-portal .stat-card {
+                padding: 20px;
+            }
+
+            .foreman-portal .stat-number {
+                font-size: 1.75rem;
+            }
+
+            .foreman-portal .table-header {
+                padding: 20px;
+            }
+
+            .foreman-portal .table-header h2 {
+                font-size: 1.1rem;
+            }
+
+            .foreman-portal .data-table {
+                font-size: 0.875rem;
+            }
+
+            .foreman-portal .data-table th,
+            .foreman-portal .data-table td {
+                padding: 12px 16px;
+            }
+
+            .foreman-projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .foreman-project-card {
+                border-radius: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .foreman-portal .top-bar {
+                padding: 12px 16px;
+            }
+
+            .foreman-portal .page-title h1 {
+                font-size: 1.25rem;
+            }
+
+            .foreman-portal .page-title p {
+                font-size: 0.8rem;
+            }
+
+            .foreman-portal .stat-card {
+                padding: 16px;
+            }
+
+            .foreman-portal .stat-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+
+            .foreman-portal .stat-number {
+                font-size: 1.5rem;
+            }
+
+            .foreman-portal .table-container {
+                margin: 0 8px 12px;
+            }
+
+            .foreman-dashboard-wrap {
+                padding: 0 8px 12px;
+            }
+
+            .foreman-portal #foreman-dashboard .stats-grid {
+                padding: 12px 8px 8px;
+            }
+
+            .foreman-portal .attendance-stats-grid {
+                padding: 12px 8px;
+            }
+
+            .foreman-portal .table-header {
+                padding: 16px;
+            }
+
+            .foreman-portal .data-table th,
+            .foreman-portal .data-table td {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+
+            .theme-toggle-btn,
+            .foreman-portal #menuToggle {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
             }
         }
     </style>
