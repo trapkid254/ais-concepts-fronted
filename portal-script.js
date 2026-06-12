@@ -3099,8 +3099,9 @@ async function renderAdminWebsiteProjects() {
         }
     } catch (e) { list = []; }
     tbody.innerHTML = list.length ? list.map(function (p) {
+        var previewImg = p.projectImages && p.projectImages.length ? p.projectImages[0] : (p.image || '');
         return '<tr>' +
-            '<td><img src="' + escapeHtml(p.image || '') + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td><img src="' + escapeHtml(previewImg) + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
             '<td>' + escapeHtml(p.category || '') + '</td>' +
             '<td>' + escapeHtml((p.description || '').substring(0, 100) + (p.description && p.description.length > 100 ? '...' : '')) + '</td>' +
@@ -3247,7 +3248,16 @@ window.editWebsiteProject = function(id) {
     if (document.getElementById('webProjectTitle')) document.getElementById('webProjectTitle').value = project.title || '';
     if (document.getElementById('webProjectSlug')) document.getElementById('webProjectSlug').value = project.slug || '';
     if (document.getElementById('webProjectCategory')) document.getElementById('webProjectCategory').value = project.category || '';
+    if (document.getElementById('webProjectCategorySecondary')) document.getElementById('webProjectCategorySecondary').value = project.categorySecondary || '';
     if (document.getElementById('webProjectDescription')) document.getElementById('webProjectDescription').value = project.description || '';
+    
+    // Load metrics if they exist
+    if (project.metrics) {
+        if (document.getElementById('webProjectMetricCost')) document.getElementById('webProjectMetricCost').value = project.metrics.costEfficiency || '';
+        if (document.getElementById('webProjectMetricSustainability')) document.getElementById('webProjectMetricSustainability').value = project.metrics.sustainability || '';
+        if (document.getElementById('webProjectMetricInnovation')) document.getElementById('webProjectMetricInnovation').value = project.metrics.innovation || '';
+    }
+    
     if (editIdField) editIdField.value = String(project.id);
     if (modalTitle) modalTitle.textContent = 'Edit Website Project';
     
@@ -3414,55 +3424,102 @@ async function loadAdminDashboard() {
             var title = document.getElementById('webProjectTitle').value;
             var slug = document.getElementById('webProjectSlug').value;
             var category = document.getElementById('webProjectCategory').value;
+            var categorySecondary = document.getElementById('webProjectCategorySecondary') ? document.getElementById('webProjectCategorySecondary').value : '';
             var description = document.getElementById('webProjectDescription').value;
+            
+            // Metrics
+            var metricCost = document.getElementById('webProjectMetricCost') ? parseInt(document.getElementById('webProjectMetricCost').value) || null : null;
+            var metricSustainability = document.getElementById('webProjectMetricSustainability') ? parseInt(document.getElementById('webProjectMetricSustainability').value) || null : null;
+            var metricInnovation = document.getElementById('webProjectMetricInnovation') ? parseInt(document.getElementById('webProjectMetricInnovation').value) || null : null;
+            
+            // Main project images (required)
             var fileInput = document.getElementById('webProjectImage');
-            var file = fileInput && fileInput.files[0];
+            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            
             var editIdField = document.getElementById('webProjectEditId');
             var editId = editIdField ? editIdField.value : null;
             var modalTitle = webProjModal.querySelector('h2');
             
-            function saveWebProj(image) {
+            if (!files.length && !editId) {
+                alert('Please select at least one image for the project');
+                return;
+            }
+            
+            function readFilesAsDataURLs(fileList) {
+                var promises = Array.prototype.slice.call(fileList).map(function(file) {
+                    return new Promise(function(resolve) {
+                        var reader = new FileReader();
+                        reader.onload = function() { resolve(reader.result); };
+                        reader.readAsDataURL(file);
+                    });
+                });
+                return Promise.all(promises);
+            }
+            
+            function saveWebProj(projectImages) {
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                
+                var newProject = {
+                    id: editId ? parseInt(editId) : Date.now(), 
+                    slug: projectSlug, 
+                    title: title, 
+                    category: category,
+                    categorySecondary: categorySecondary || '',
+                    projectImages: projectImages && projectImages.length ? projectImages : undefined,
+                    description: description,
+                    metrics: {
+                        costEfficiency: metricCost,
+                        sustainability: metricSustainability,
+                        innovation: metricInnovation
+                    }
+                };
                 
                 if (editId) {
                     // Edit existing project
                     var index = list.findIndex(function (p) { return String(p.id) === String(editId); });
                     if (index !== -1) {
-                        list[index] = { 
-                            id: list[index].id, 
-                            slug: projectSlug, 
-                            title: title, 
-                            category: category, 
-                            categorySecondary: list[index].categorySecondary || '', 
-                            image: image || list[index].image, 
-                            description: description 
-                        };
+                        list[index] = Object.assign({}, list[index], newProject);
                     }
                 } else {
                     // Create new project
-                    list.push({ id: Date.now(), slug: projectSlug, title: title, category: category, categorySecondary: '', image: image, description: description });
+                    list.push(newProject);
                 }
                 
-                setWebsiteProjects(list).then(function () { 
-                    webProjForm.reset(); 
-                    if (editIdField) editIdField.value = '';
-                    if (modalTitle) modalTitle.textContent = 'Add Website Project';
-                    webProjModal.classList.remove('open'); 
-                }).catch(function () { alert('Could not save project.'); });
+                // Send to backend via API
+                var token = sessionStorage.getItem('authToken');
+                fetch((window.API_BASE || '') + '/api/admin/projects', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ projects: list })
+                }).then(function(response) {
+                    if (response.ok) {
+                        setWebsiteProjects(list).then(function () { 
+                            webProjForm.reset(); 
+                            if (editIdField) editIdField.value = '';
+                            if (modalTitle) modalTitle.textContent = 'Add Website Project';
+                            webProjModal.classList.remove('open'); 
+                            alert('Website project saved successfully!');
+                        }).catch(function () { alert('Could not save project locally.'); });
+                    } else {
+                        alert('Failed to save project to server');
+                    }
+                }).catch(function(err) {
+                    console.error('Error saving project:', err);
+                    alert('Error saving project: ' + err.message);
+                });
             }
             
-            if (file) { 
-                var reader = new FileReader(); 
-                reader.onload = function () { saveWebProj(reader.result); }; 
-                reader.readAsDataURL(file); 
+            if (files.length) { 
+                readFilesAsDataURLs(files).then(saveWebProj);
             } else if (editId) {
-                // Keep existing image if editing and no new file
+                // Keep existing images if editing and no new files
                 var list = getWebsiteProjects();
                 var existing = list.find(function (p) { return String(p.id) === String(editId); });
-                saveWebProj(existing ? existing.image : 'https://via.placeholder.com/600x400?text=' + encodeURIComponent(title));
-            } else {
-                saveWebProj('https://via.placeholder.com/600x400?text=' + encodeURIComponent(title));
+                saveWebProj(existing ? existing.projectImages : []);
             }
         });
     }

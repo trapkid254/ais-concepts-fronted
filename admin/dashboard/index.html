@@ -1219,12 +1219,65 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Secondary Category (optional)</label>
+                            <input type="text" id="webProjectCategorySecondary"  placeholder="e.g., Sustainable">
+                        </div>
+                        <div class="form-group">
                             <label>Description</label>
                             <textarea id="webProjectDescription" rows="3"  placeholder="Short description"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Image</label>
-                            <input type="file" id="webProjectImage" accept="image/*">
+                            <label>Project Images <span style="color:#dc3545;">*</span></label>
+                            <input type="file" id="webProjectImage" accept="image/*" multiple required>
+                            <small>Upload multiple images. First image will be shown on the projects list, all visible on detail page.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Key Metrics (Optional)</label>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                                <div>
+                                    <label style="font-size:0.85rem;display:block;margin-bottom:4px;">Cost Efficiency (%)</label>
+                                    <input type="number" id="webProjectMetricCost" min="0" max="100" placeholder="0-100">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.85rem;display:block;margin-bottom:4px;">Sustainability (%)</label>
+                                    <input type="number" id="webProjectMetricSustainability" min="0" max="100" placeholder="0-100">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.85rem;display:block;margin-bottom:4px;">Innovation (%)</label>
+                                    <input type="number" id="webProjectMetricInnovation" min="0" max="100" placeholder="0-100">
+                                </div>
+                            </div>
+                            <small>Leave blank if not applicable. Metrics only show on detail page if filled.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Concept Sketches (optional)</label>
+                            <input type="file" id="webProjectConceptSketches" accept="image/*" multiple>
+                            <small>Upload multiple concept sketch images</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Site Analysis (optional)</label>
+                            <input type="file" id="webProjectSiteAnalysis" accept="image/*" multiple>
+                            <small>Upload multiple site analysis images</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Floor Plans & Sections (optional)</label>
+                            <input type="file" id="webProjectFloorPlans" accept="image/*" multiple>
+                            <small>Upload multiple floor plans</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Renderings (optional)</label>
+                            <input type="file" id="webProjectRenderings" accept="image/*" multiple>
+                            <small>Upload multiple rendering images</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Construction Photos (optional)</label>
+                            <input type="file" id="webProjectConstructionPhotos" accept="image/*" multiple>
+                            <small>Upload multiple construction phase images</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Completed Photos (optional)</label>
+                            <input type="file" id="webProjectCompletedPhotos" accept="image/*" multiple>
+                            <small>Upload multiple final project images</small>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Project</button>
                     </form>
