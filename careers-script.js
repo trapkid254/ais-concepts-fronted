@@ -10,6 +10,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var yearEndSelect = document.getElementById('careerYearEnd');
     var certWrap = document.getElementById('careerCertWrap');
     var careerTypeSelect = document.getElementById('careerType');
+    
+    // Portfolio handling
+    var portfolioPhotos = document.getElementById('portfolioPhotos');
+    var portfolioUrl = document.getElementById('portfolioUrl');
+    var portfolioPdf = document.getElementById('portfolioPdf');
+    var portfolioPhotosDiv = document.getElementById('portfolioPhotosDiv');
+    var portfolioUrlDiv = document.getElementById('portfolioUrlDiv');
+    var portfolioPdfDiv = document.getElementById('portfolioPdfDiv');
+    
     function populateYearSelects() {
         if (!yearStartSelect || !yearEndSelect) return;
         if (yearStartSelect._populated && yearEndSelect._populated) return;
@@ -28,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // pre-populate selects on load so they appear immediately when modal opens
     try { populateYearSelects(); } catch (e) { /* ignore */ }
+    
     function toggleCampusYear() {
         var val = careerTypeSelect ? careerTypeSelect.value : '';
         var isAttachment = val === 'attachment';
@@ -40,7 +50,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (certWrap) certWrap.style.display = isFullOrPart ? 'block' : 'none';
     }
+    
     if (careerTypeSelect) careerTypeSelect.addEventListener('change', toggleCampusYear);
+    
+    // Portfolio type selection
+    function handlePortfolioChange() {
+        if (portfolioPhotosDiv) portfolioPhotosDiv.style.display = 'none';
+        if (portfolioUrlDiv) portfolioUrlDiv.style.display = 'none';
+        if (portfolioPdfDiv) portfolioPdfDiv.style.display = 'none';
+        
+        if (portfolioPhotos && portfolioPhotos.checked) {
+            if (portfolioPhotosDiv) portfolioPhotosDiv.style.display = 'block';
+        } else if (portfolioUrl && portfolioUrl.checked) {
+            if (portfolioUrlDiv) portfolioUrlDiv.style.display = 'block';
+        } else if (portfolioPdf && portfolioPdf.checked) {
+            if (portfolioPdfDiv) portfolioPdfDiv.style.display = 'block';
+        }
+    }
+    
+    if (portfolioPhotos) portfolioPhotos.addEventListener('change', handlePortfolioChange);
+    if (portfolioUrl) portfolioUrl.addEventListener('change', handlePortfolioChange);
+    if (portfolioPdf) portfolioPdf.addEventListener('change', handlePortfolioChange);
 
     document.querySelectorAll('.career-apply-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -79,6 +109,13 @@ document.addEventListener('DOMContentLoaded', function() {
             var certInput = document.getElementById('careerCertificate');
             var cvInput = document.getElementById('careerCV');
             var needsCert = (type === 'full-time' || type === 'part-time');
+            
+            // Check CV is mandatory
+            if (!cvInput || !cvInput.files || !cvInput.files.length) {
+                alert('Please upload your CV/Resume. It is required for all applications.');
+                return;
+            }
+            
             if (needsCert && (!certInput || !certInput.files || !certInput.files.length)) {
                 alert('Please upload your certificate(s) for Full-Time and Part-Time positions.');
                 return;
@@ -105,6 +142,35 @@ document.addEventListener('DOMContentLoaded', function() {
             if (cvFile) {
                 cvPromise = readFileAsDataURL(cvFile).then(function(data) { return { name: cvFile.name, data: data }; });
             }
+            
+            // Handle portfolio based on selected type
+            var portfolioType = '';
+            var portfolioPhotos = [];
+            var portfolioUrl = '';
+            var portfolioPdf = null;
+            
+            var photosRadio = document.getElementById('portfolioPhotos');
+            var urlRadio = document.getElementById('portfolioUrl');
+            var pdfRadio = document.getElementById('portfolioPdf');
+            
+            if (photosRadio && photosRadio.checked) {
+                var photosInput = document.getElementById('portfolioPhotosInput');
+                portfolioType = 'photos';
+                if (photosInput && photosInput.files) {
+                    var photoFiles = Array.prototype.slice.call(photosInput.files).slice(0, 10);
+                    portfolioPhotos = photoFiles;
+                }
+            } else if (urlRadio && urlRadio.checked) {
+                var urlInput = document.getElementById('portfolioUrlInput');
+                portfolioType = 'url';
+                portfolioUrl = (urlInput && urlInput.value) ? urlInput.value : '';
+            } else if (pdfRadio && pdfRadio.checked) {
+                var pdfInput = document.getElementById('portfolioPdfInput');
+                portfolioType = 'pdf';
+                if (pdfInput && pdfInput.files && pdfInput.files.length) {
+                    portfolioPdf = pdfInput.files[0];
+                }
+            }
 
             Promise.all([certsPromise, cvPromise]).then(function(results) {
                 var certificates = results[0] || [];
@@ -118,37 +184,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     else if (ys) yearOfStudyVal = ys;
                 }
 
-                var payload = {
-                    name: document.getElementById('careerName').value,
-                    email: document.getElementById('careerEmail').value,
-                    phone: document.getElementById('careerPhone').value || '',
-                    type: type,
-                    campus: needsCampusYear ? (document.getElementById('careerCampus').value || '') : '',
-                    yearOfStudy: needsCampusYear ? (yearOfStudyVal || '') : '',
-                    certificates: certificates,
-                    resume: resume,
-                    message: document.getElementById('careerMessage').value || ''
-                };
-                fetch((window.API_BASE || '') + '/api/careers/apply', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(function(r) {
-                    if (r.ok) {
-                        alert('Thank you for your application. Our team will review your submission and get back to you.');
-                        careerForm.reset();
-                        if (campusWrap) campusWrap.style.display = 'none';
-                        if (yearWrap) yearWrap.style.display = 'none';
-                        if (certWrap) certWrap.style.display = 'none';
-                        if (careerModal) {
-                            careerModal.style.display = 'none';
-                            document.body.style.overflow = 'auto';
+                // Handle portfolio files
+                var portfolioPromises = [];
+                var portfolioPhotosData = [];
+                
+                if (portfolioType === 'photos' && portfolioPhotos.length > 0) {
+                    portfolioPromises = portfolioPhotos.map(function(f) {
+                        return readFileAsDataURL(f).then(function(data) { return data; });
+                    });
+                } else if (portfolioType === 'pdf' && portfolioPdf) {
+                    portfolioPromises = [readFileAsDataURL(portfolioPdf)];
+                }
+                
+                Promise.all(portfolioPromises).then(function(portfolioDataArray) {
+                    var payload = {
+                        name: document.getElementById('careerName').value,
+                        email: document.getElementById('careerEmail').value,
+                        phone: document.getElementById('careerPhone').value || '',
+                        type: type,
+                        campus: needsCampusYear ? (document.getElementById('careerCampus').value || '') : '',
+                        yearOfStudy: needsCampusYear ? (yearOfStudyVal || '') : '',
+                        certificates: certificates,
+                        resume: resume,
+                        message: document.getElementById('careerMessage').value || '',
+                        portfolioType: portfolioType,
+                        portfolioPhotos: portfolioType === 'photos' ? portfolioDataArray : [],
+                        portfolioUrl: portfolioType === 'url' ? portfolioUrl : '',
+                        portfolioPdf: portfolioType === 'pdf' ? portfolioDataArray[0] : ''
+                    };
+                    
+                    fetch((window.API_BASE || '') + '/api/careers/apply', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).then(function(r) {
+                        if (r.ok) {
+                            alert('Thank you for your application. Our team will review your submission and get back to you.');
+                            careerForm.reset();
+                            if (campusWrap) campusWrap.style.display = 'none';
+                            if (yearWrap) yearWrap.style.display = 'none';
+                            if (certWrap) certWrap.style.display = 'none';
+                            if (portfolioPhotosDiv) portfolioPhotosDiv.style.display = 'none';
+                            if (portfolioUrlDiv) portfolioUrlDiv.style.display = 'none';
+                            if (portfolioPdfDiv) portfolioPdfDiv.style.display = 'none';
+                            if (careerModal) {
+                                careerModal.style.display = 'none';
+                                document.body.style.overflow = 'auto';
+                            }
+                        } else {
+                            throw new Error();
                         }
-                    } else {
-                        throw new Error();
-                    }
+                    }).catch(function() {
+                        alert('Could not submit application. Please try again later.');
+                    });
                 }).catch(function() {
-                    alert('Could not submit application. Please try again later.');
+                    alert('Could not process portfolio files. Please try again.');
                 });
             }).catch(function() {
                 alert('Could not read uploaded files. Please try again.');

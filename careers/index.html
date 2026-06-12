@@ -218,8 +218,39 @@
                     <small>Required for Full-Time and Part-Time. Upload your certificates.</small>
                 </div>
                 <div class="form-group">
-                    <label for="careerCV">CV / Resume (optional)</label>
-                    <input type="file" id="careerCV" accept=".pdf,.doc,.docx">
+                    <label for="careerCV">CV / Resume <span class="required">*</span></label>
+                    <input type="file" id="careerCV" accept=".pdf,.doc,.docx" required>
+                    <small>Your CV/Resume is required for all applications.</small>
+                </div>
+                <div class="form-group">
+                    <label>Portfolio</label>
+                    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:12px;">Add samples of your work (photos of projects, portfolio URL, or PDF)</p>
+                    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                        <label style="display:flex;align-items:center;gap:6px;">
+                            <input type="radio" name="portfolioType" id="portfolioPhotos" value="photos">
+                            <span>Photos (Max 10)</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;">
+                            <input type="radio" name="portfolioType" id="portfolioUrl" value="url">
+                            <span>Portfolio URL</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;">
+                            <input type="radio" name="portfolioType" id="portfolioPdf" value="pdf">
+                            <span>PDF File</span>
+                        </label>
+                    </div>
+                    <div id="portfolioPhotosDiv" style="display:none;">
+                        <input type="file" id="portfolioPhotosInput" accept="image/*" multiple>
+                        <small>Upload up to 10 photos of your project work.</small>
+                    </div>
+                    <div id="portfolioUrlDiv" style="display:none;">
+                        <input type="url" id="portfolioUrlInput" placeholder="https://yourportfolio.com">
+                        <small>Link to your online portfolio.</small>
+                    </div>
+                    <div id="portfolioPdfDiv" style="display:none;">
+                        <input type="file" id="portfolioPdfInput" accept=".pdf">
+                        <small>Upload your portfolio as a PDF.</small>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="careerMessage">Short Motivation</label>

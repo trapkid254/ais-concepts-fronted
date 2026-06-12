@@ -274,6 +274,7 @@ function navigatePortalSection(sectionId, opts) {
         }
     }
     if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
+                if (sectionId === 'admin-content' && typeof renderAdminWebsiteProjects === 'function') renderAdminWebsiteProjects();
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -3087,8 +3088,14 @@ async function renderAdminWebsiteProjects() {
     if (!tbody) return;
     var list = [];
     try {
-        if (typeof getWebsiteProjects === 'function') {
-            list = getWebsiteProjects();
+        // Always fetch fresh data from the API
+        if (typeof loadWebsiteProjects === 'function') {
+            list = await loadWebsiteProjects();
+        } else {
+            // Fallback to cache if loadWebsiteProjects is not available
+            if (typeof getWebsiteProjects === 'function') {
+                list = getWebsiteProjects();
+            }
         }
     } catch (e) { list = []; }
     tbody.innerHTML = list.length ? list.map(function (p) {

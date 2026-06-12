@@ -168,18 +168,36 @@
                 document.title = (p.title || 'Project') + ' | AIS Concepts';
                 var hero = p.heroImage || p.image || '';
                 var m = p.metrics || {};
-                var metricsHtml = '<div class="project-metrics">' +
-                    '<div class="metric-card"><span>' + (m.costEfficiency != null ? m.costEfficiency + '%' : '—') + '</span><label>Cost efficiency</label></div>' +
-                    '<div class="metric-card"><span>' + (m.sustainability != null ? m.sustainability + '%' : '—') + '</span><label>Sustainability</label></div>' +
-                    '<div class="metric-card"><span>' + (m.innovation != null ? m.innovation + '%' : '—') + '</span><label>Innovation</label></div>' +
-                    '</div>';
+                var hasMetrics = p.hasMetrics || Object.keys(m).length > 0;
+                
+                // Build metrics section only if metrics exist
+                var metricsHtml = '';
+                if (hasMetrics) {
+                    metricsHtml = '<div class="project-metrics">' +
+                        (m.costEfficiency != null ? '<div class="metric-card"><span>' + m.costEfficiency + '%</span><label>Cost efficiency</label></div>' : '') +
+                        (m.sustainability != null ? '<div class="metric-card"><span>' + m.sustainability + '%</span><label>Sustainability</label></div>' : '') +
+                        (m.innovation != null ? '<div class="metric-card"><span>' + m.innovation + '%</span><label>Innovation</label></div>' : '') +
+                        '</div>';
+                }
+                
+                var metricsSection = hasMetrics ? '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' : '';
+                
                 var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
+                
+                // Get all project images (gallery on detail page)
+                var projectGallery = '';
+                var allImages = p.projectImages || [];
+                if (allImages.length > 1) {
+                    projectGallery = section('Project Gallery', allImages);
+                }
+                
                 root.innerHTML =
                     '<h1 class="section-title" style="margin-bottom:8px;">' + (p.title || '') + '</h1>' +
                     '<p class="section-subtitle" style="margin-bottom:24px;">' + cat + '</p>' +
                     (hero ? '<img class="project-hero-img" src="' + hero + '" alt="">' : '') +
                     '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:var(--text-secondary);">' + (p.description || '') + '</p>' +
-                    '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' +
+                    metricsSection +
+                    projectGallery +
                     section('Concept sketches', p.conceptSketches) +
                     section('Site analysis', p.siteAnalysis) +
                     section('Floor plans & sections', p.floorPlans) +
