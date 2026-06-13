@@ -188,10 +188,10 @@
                 
                 var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
                 
-                // Show all project images in gallery (if available)
+                // Show remaining project images in gallery (excluding hero image)
                 var projectGallery = '';
-                if (allProjectImages.length > 0) {
-                    projectGallery = section('Project Gallery', allProjectImages);
+                if (allProjectImages.length > 1) {
+                    projectGallery = section('Project Gallery', allProjectImages.slice(1));
                 }
                 
                 root.innerHTML =
