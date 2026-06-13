@@ -11,6 +11,7 @@
       categorySecondary: p.categorySecondary || '',
       image: p.image,
       heroImage: p.heroImage || p.image,
+      projectImages: p.projectImages || [],
       description: p.description || '',
       conceptSketches: p.conceptSketches || [],
       siteAnalysis: p.siteAnalysis || [],
@@ -18,7 +19,8 @@
       renderings: p.renderings || [],
       constructionPhotos: p.constructionPhotos || [],
       completedPhotos: p.completedPhotos || [],
-      metrics: p.metrics || {}
+      metrics: p.metrics || {},
+      hasMetrics: p.hasMetrics || false
     };
   }
 
