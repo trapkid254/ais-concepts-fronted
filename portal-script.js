@@ -1301,6 +1301,28 @@ function setupAdminInteractions(currentUser) {
             var msg = document.getElementById('broadcastMessage').value;
             var fileInput = document.getElementById('broadcastImages');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            
+            // Validate image sizes before processing
+            if (files.length > 0) {
+                var totalSize = 0;
+                var maxSize = 5 * 1024 * 1024; // 5MB per file
+                var maxTotalSize = 15 * 1024 * 1024; // 15MB total
+                
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].size > maxSize) {
+                        alert('Image "' + files[i].name + '" is too large (max 5MB per image). Please compress the image and try again.');
+                        return;
+                    }
+                    totalSize += files[i].size;
+                }
+                
+                if (totalSize > maxTotalSize) {
+                    alert('Total size of all images (' + (totalSize / 1024 / 1024).toFixed(2) + 'MB) exceeds the maximum allowed (15MB). Please use fewer or smaller images.');
+                    return;
+                }
+                
+                console.log('Image validation passed. Total size:', (totalSize / 1024 / 1024).toFixed(2), 'MB for', files.length, 'images');
+            }
             var token = sessionStorage.getItem('authToken');
             function send(imgs) {
                 fetch((window.API_BASE || '') + '/api/admin/client-progress-broadcast', {
@@ -2450,6 +2472,28 @@ window.setupEmployeeInteractions = function (currentUser) {
             var description = document.getElementById('taskUpdateDescription').value;
             var fileInput = document.getElementById('taskUpdateImages');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            
+            // Validate image sizes before processing
+            if (files.length > 0) {
+                var totalSize = 0;
+                var maxSize = 5 * 1024 * 1024; // 5MB per file
+                var maxTotalSize = 15 * 1024 * 1024; // 15MB total
+                
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].size > maxSize) {
+                        alert('Image "' + files[i].name + '" is too large (max 5MB per image). Please compress the image and try again.');
+                        return;
+                    }
+                    totalSize += files[i].size;
+                }
+                
+                if (totalSize > maxTotalSize) {
+                    alert('Total size of all images (' + (totalSize / 1024 / 1024).toFixed(2) + 'MB) exceeds the maximum allowed (15MB). Please use fewer or smaller images.');
+                    return;
+                }
+                
+                console.log('Image validation passed. Total size:', (totalSize / 1024 / 1024).toFixed(2), 'MB for', files.length, 'images');
+            }
             var token = sessionStorage.getItem('authToken');
             
             // Validate that at least one image is provided
@@ -3448,6 +3492,28 @@ async function loadAdminDashboard() {
             var fileInput = document.getElementById('webProjectImage');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
             
+            // Validate image sizes before processing
+            if (files.length > 0) {
+                var totalSize = 0;
+                var maxSize = 5 * 1024 * 1024; // 5MB per file
+                var maxTotalSize = 15 * 1024 * 1024; // 15MB total
+                
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].size > maxSize) {
+                        alert('Image "' + files[i].name + '" is too large (max 5MB per image). Please compress the image and try again.');
+                        return;
+                    }
+                    totalSize += files[i].size;
+                }
+                
+                if (totalSize > maxTotalSize) {
+                    alert('Total size of all images (' + (totalSize / 1024 / 1024).toFixed(2) + 'MB) exceeds the maximum allowed (15MB). Please use fewer or smaller images.');
+                    return;
+                }
+                
+                console.log('Image validation passed. Total size:', (totalSize / 1024 / 1024).toFixed(2), 'MB for', files.length, 'images');
+            }
+            
             var editIdField = document.getElementById('webProjectEditId');
             var editId = editIdField ? editIdField.value : null;
             var modalTitle = webProjModal.querySelector('h2');
@@ -3461,7 +3527,11 @@ async function loadAdminDashboard() {
                 var promises = Array.prototype.slice.call(fileList).map(function(file) {
                     return new Promise(function(resolve) {
                         var reader = new FileReader();
-                        reader.onload = function() { resolve(reader.result); };
+                        reader.onload = function() { 
+                            var base64 = reader.result;
+                            console.log('Image converted to base64:', file.name, 'Size:', base64.length, 'characters');
+                            resolve(base64); 
+                        };
                         reader.readAsDataURL(file);
                     });
                 });
