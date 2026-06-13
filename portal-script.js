@@ -3667,19 +3667,16 @@ async function loadAdminDashboard() {
                     console.log(`  Project ${idx + 1}: ${proj.title}, Images: ${proj.projectImages ? proj.projectImages.length : 0}`);
                 });
                 // Validate per-project image sizes before sending to server
-                // MongoDB 16MB limit - metadata (~50KB) - safety margin (500KB) = ~15.4MB per project
-                var MONGODB_LIMIT = 16 * 1024 * 1024;
-                var METADATA_ESTIMATE = 50 * 1024;
-                var SAFETY_MARGIN = 0.5 * 1024 * 1024;
-                var MAX_PROJECT_IMAGE_CHARS = MONGODB_LIMIT - METADATA_ESTIMATE - SAFETY_MARGIN;
-                var maxMB = (MAX_PROJECT_IMAGE_CHARS / 1024 / 1024).toFixed(1);
+                // Conservative 12MB limit per project to ensure safe BSON serialization
+                var MAX_PROJECT_IMAGE_CHARS = 12 * 1024 * 1024;
+                var maxMB = '12';
                 for (var j = 0; j < list.length; j++) {
                     var projCheck = list[j];
                     var imgs = Array.isArray(projCheck.projectImages) && projCheck.projectImages.length ? projCheck.projectImages : (projCheck.image ? [projCheck.image] : []);
                     var size = 0;
                     imgs.forEach(function(im) { if (typeof im === 'string') size += im.length; });
                     if (size > MAX_PROJECT_IMAGE_CHARS) {
-                        alert('Project "' + (projCheck.title || 'Untitled') + '" exceeds the ' + maxMB + ' MB image limit (' + (size / 1024 / 1024).toFixed(2) + ' MB). Please use fewer or smaller images.');
+                        alert('Project "' + (projCheck.title || 'Untitled') + '" exceeds the 12 MB image limit (' + (size / 1024 / 1024).toFixed(2) + ' MB). Please compress or remove images.');
                         return;
                     }
                 }
