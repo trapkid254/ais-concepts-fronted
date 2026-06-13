@@ -3508,17 +3508,19 @@ async function loadAdminDashboard() {
                     },
                     body: JSON.stringify(list)
                 }).then(function(response) {
-                    if (response.ok) {
-                        setWebsiteProjects(list).then(function () { 
-                            webProjForm.reset(); 
-                            if (editIdField) editIdField.value = '';
-                            if (modalTitle) modalTitle.textContent = 'Add Website Project';
-                            webProjModal.classList.remove('open'); 
-                            alert('Website project saved successfully!');
-                        }).catch(function () { alert('Could not save project locally.'); });
-                    } else {
-                        alert('Failed to save project to server');
-                    }
+                    return response.json().then(function(data) {
+                        if (response.ok) {
+                            setWebsiteProjects(list).then(function () { 
+                                webProjForm.reset(); 
+                                if (editIdField) editIdField.value = '';
+                                if (modalTitle) modalTitle.textContent = 'Add Website Project';
+                                webProjModal.classList.remove('open'); 
+                                alert('Website project saved successfully!');
+                            }).catch(function () { alert('Could not save project locally.'); });
+                        } else {
+                            alert('Failed to save project to server: ' + (data.details || data.error || 'Unknown error'));
+                        }
+                    });
                 }).catch(function(err) {
                     console.error('Error saving project:', err);
                     alert('Error saving project: ' + err.message);
