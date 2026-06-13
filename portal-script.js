@@ -3483,6 +3483,16 @@ async function loadAdminDashboard() {
             var categorySecondary = document.getElementById('webProjectCategorySecondary') ? document.getElementById('webProjectCategorySecondary').value : '';
             var description = document.getElementById('webProjectDescription').value;
             
+            // Validate required fields
+            if (!title || !title.trim()) {
+                alert('Project title is required');
+                return;
+            }
+            if (!category || !category.trim()) {
+                alert('Project category is required');
+                return;
+            }
+            
             // Metrics
             var metricCost = document.getElementById('webProjectMetricCost') ? parseInt(document.getElementById('webProjectMetricCost').value) || null : null;
             var metricSustainability = document.getElementById('webProjectMetricSustainability') ? parseInt(document.getElementById('webProjectMetricSustainability').value) || null : null;
@@ -3570,6 +3580,7 @@ async function loadAdminDashboard() {
                 
                 // Send to backend via API
                 var token = sessionStorage.getItem('authToken');
+                console.log('Sending project list to backend:', JSON.stringify(list, null, 2));
                 fetch((window.API_BASE || '') + '/api/admin/projects', {
                     method: 'PUT',
                     headers: {
@@ -3588,12 +3599,16 @@ async function loadAdminDashboard() {
                                 alert('Website project saved successfully!');
                             }).catch(function () { alert('Could not save project locally.'); });
                         } else {
+                            console.error('Server error response:', data);
                             alert('Failed to save project to server: ' + (data.details || data.error || 'Unknown error'));
                         }
+                    }).catch(function(parseErr) {
+                        console.error('Error parsing response:', parseErr);
+                        alert('Error parsing server response: ' + parseErr.message);
                     });
                 }).catch(function(err) {
-                    console.error('Error saving project:', err);
-                    alert('Error saving project: ' + err.message);
+                    console.error('Network error saving project:', err);
+                    alert('Network error saving project: ' + err.message);
                 });
             }
             
