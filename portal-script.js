@@ -3513,6 +3513,10 @@ async function loadAdminDashboard() {
             // Main project images (required)
             var fileInput = document.getElementById('webProjectImage');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+            console.log('Files selected:', files.length, 'files');
+            files.forEach(function(f, i) {
+                console.log(`  File ${i + 1}: ${f.name}, Size: ${(f.size / 1024).toFixed(2)} KB`);
+            });
             
             // Validate image sizes before processing
             if (files.length > 0) {
@@ -3546,21 +3550,30 @@ async function loadAdminDashboard() {
             }
             
             function readFilesAsDataURLs(fileList) {
+                console.log('readFilesAsDataURLs called with:', fileList.length, 'files');
                 var promises = Array.prototype.slice.call(fileList).map(function(file) {
                     return new Promise(function(resolve) {
                         var reader = new FileReader();
                         reader.onload = function() { 
                             var base64 = reader.result;
-                            console.log('Image converted to base64:', file.name, 'Size:', base64.length, 'characters');
+                            console.log('✓ Image converted to base64:', file.name, 'Size:', base64.length, 'characters (~' + (base64.length / 1024 / 1024).toFixed(2) + ' MB)');
                             resolve(base64); 
                         };
                         reader.readAsDataURL(file);
                     });
                 });
-                return Promise.all(promises);
+                return Promise.all(promises).then(function(results) {
+                    console.log('✓ All images converted:', results.length, 'images');
+                    return results;
+                });
             }
             
             function saveWebProj(projectImages) {
+                console.log('saveWebProj called with:', projectImages.length, 'images');
+                projectImages.forEach(function(img, i) {
+                    console.log(`  Image ${i + 1}: ${img.substring(0, 50)}... (${img.length} characters)`);
+                });
+                
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                 
@@ -3579,6 +3592,8 @@ async function loadAdminDashboard() {
                     }
                 };
                 
+                console.log('newProject.projectImages:', newProject.projectImages ? newProject.projectImages.length + ' images' : 'undefined');
+                
                 if (editId) {
                     // Edit existing project
                     var index = list.findIndex(function (p) { return String(p.id) === String(editId); });
@@ -3592,7 +3607,10 @@ async function loadAdminDashboard() {
                 
                 // Send to backend via API
                 var token = sessionStorage.getItem('authToken');
-                console.log('Sending project list to backend:', JSON.stringify(list, null, 2));
+                console.log('📤 Sending project list to backend - Total projects:', list.length);
+                list.forEach(function(proj, idx) {
+                    console.log(`  Project ${idx + 1}: ${proj.title}, Images: ${proj.projectImages ? proj.projectImages.length : 0}`);
+                });
                 fetch((window.API_BASE || '') + '/api/admin/projects', {
                     method: 'PUT',
                     headers: {
