@@ -4631,3 +4631,203 @@ body > .modal.open {
         padding: 6px 8px;
     }
 }
+
+/* ===== Professional Modal Styling ===== */
+.modal-professional {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    animation: slideInModal 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+@keyframes slideInModal {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, rgba(32, 196, 180, 0.03) 0%, rgba(32, 196, 180, 0.01) 100%);
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.modal-header .close-modal {
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0 8px;
+    line-height: 1;
+}
+
+.modal-header .close-modal:hover {
+    color: var(--danger);
+    transform: rotate(90deg);
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 20px 28px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: #f8fafc;
+    gap: 12px;
+}
+
+.modal-footer .btn {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.modal-footer .btn-secondary {
+    background: #e5e7eb;
+    color: var(--text-primary);
+    border: none;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: #d1d5db;
+    transform: translateY(-2px);
+}
+
+.modal-footer .btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+}
+
+.modal-footer .btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(32, 196, 180, 0.3);
+}
+
+.modal-professional form {
+    padding: 28px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    letter-spacing: -0.3px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: var(--text-primary);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(32, 196, 180, 0.1);
+    background: #ffffff;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.file-input-wrapper {
+    position: relative;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fafbfc;
+}
+
+.file-input-wrapper:hover {
+    border-color: var(--primary);
+    background: rgba(32, 196, 180, 0.03);
+}
+
+.file-input-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-input-hint {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.required-star {
+    color: var(--danger);
+    font-weight: 700;
+}
