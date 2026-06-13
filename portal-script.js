@@ -299,16 +299,16 @@ function logout() {
     var currentPath = window.location.pathname;
     
     if (currentPath.includes('/admin/')) {
-        window.location.href = '../staff/login/';
+        window.location.href = '/admin/login/';
     } else if (currentPath.includes('/client/')) {
-        window.location.href = '../login/';
+        window.location.href = '/client/login/';
     } else if (currentPath.includes('/employee/')) {
-        window.location.href = '../staff/login/';
+        window.location.href = '/employee/login/';
     } else if (currentPath.includes('/foreman/')) {
-        window.location.href = '../login/';
+        window.location.href = '/foreman/login/';
     } else {
         // Fallback to main index
-        window.location.href = '../index.html';
+        window.location.href = '/';
     }
 }
 
