@@ -3547,20 +3547,15 @@ async function loadAdminDashboard() {
             // Validate image sizes before processing
             if (files.length > 0) {
                 var totalSize = 0;
-                var maxSize = 5 * 1024 * 1024; // 5MB per file
-                var maxTotalSize = 15 * 1024 * 1024; // 15MB total
+                // File size validation - Cloudinary handles sizes up to 100MB+
+                var maxSize = 50 * 1024 * 1024; // 50MB per file (Cloudinary limit is much higher)
                 
                 for (var i = 0; i < files.length; i++) {
                     if (files[i].size > maxSize) {
-                        alert('Image "' + files[i].name + '" is too large (max 5MB per image). Please compress the image and try again.');
+                        alert('Image "' + files[i].name + '" is too large (max 50MB per image).');
                         return;
                     }
                     totalSize += files[i].size;
-                }
-                
-                if (totalSize > maxTotalSize) {
-                    alert('Total size of all images (' + (totalSize / 1024 / 1024).toFixed(2) + 'MB) exceeds the maximum allowed (15MB). Please use fewer or smaller images.');
-                    return;
                 }
                 
                 console.log('Image validation passed. Total size:', (totalSize / 1024 / 1024).toFixed(2), 'MB for', files.length, 'images');
@@ -3575,59 +3570,45 @@ async function loadAdminDashboard() {
                 return;
             }
 
-            // Check total file size before conversion (estimate ~33% increase when converted to base64)
-            if (files.length > 0) {
-                var totalFileSize = 0;
-                for (var i = 0; i < files.length; i++) {
-                    totalFileSize += files[i].size;
-                }
-                // Base64 encoding increases size by ~33%, so check against 12.75MB raw to stay under 17MB encoded
-                var maxRawSize = 12.75 * 1024 * 1024; // 12.75MB
-                if (totalFileSize > maxRawSize) {
-                    alert('Total file size is too large (' + (totalFileSize / 1024 / 1024).toFixed(2) + ' MB). After base64 encoding, this will exceed the 17 MB limit. Please compress your images or select smaller files.');
-                    return;
-                }
-                console.log('Total file size:', totalFileSize, 'bytes (~' + (totalFileSize / 1024 / 1024).toFixed(2) + ' MB raw, estimated ~' + (totalFileSize * 1.33 / 1024 / 1024).toFixed(2) + ' MB encoded)');
-            }
-
-            function readFilesAsDataURLs(fileList) {
-                console.log('readFilesAsDataURLs called with:', fileList.length, 'files');
+            function uploadFilesToCloudinary(fileList) {
+                console.log('uploadFilesToCloudinary called with:', fileList.length, 'files');
+                var token = sessionStorage.getItem('authToken');
                 var promises = Array.prototype.slice.call(fileList).map(function(file) {
-                    return new Promise(function(resolve) {
-                        var reader = new FileReader();
-                        reader.onload = function() { 
-                            var base64 = reader.result;
-                            console.log('✓ Image converted to base64:', file.name, 'Size:', base64.length, 'characters (~' + (base64.length / 1024 / 1024).toFixed(2) + ' MB)');
-                            resolve(base64); 
-                        };
-                        reader.readAsDataURL(file);
+                    return new Promise(function(resolve, reject) {
+                        var formData = new FormData();
+                        formData.append('image', file);
+                        
+                        console.log('Uploading:', file.name, '(' + (file.size / 1024 / 1024).toFixed(2) + ' MB)');
+                        
+                        fetch((window.API_BASE || '') + '/api/upload-image', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: formData
+                        }).then(function(r) {
+                            if (!r.ok) throw new Error('Upload failed: ' + r.status);
+                            return r.json();
+                        }).then(function(data) {
+                            console.log('✓ Image uploaded:', file.name, '→', data.url);
+                            resolve(data.url);
+                        }).catch(function(err) {
+                            console.error('Upload error:', err);
+                            reject(err);
+                        });
                     });
                 });
                 return Promise.all(promises).then(function(results) {
-                    console.log('✓ All images converted:', results.length, 'images');
+                    console.log('✓ All images uploaded:', results.length, 'images');
                     return results;
                 });
             }
             
-            function saveWebProj(projectImages) {
-                console.log('saveWebProj called with:', projectImages.length, 'images');
-                projectImages.forEach(function(img, i) {
-                    console.log(`  Image ${i + 1}: ${img.substring(0, 50)}... (${img.length} characters)`);
+            function saveWebProj(projectImageUrls) {
+                console.log('saveWebProj called with:', projectImageUrls.length, 'image URLs');
+                projectImageUrls.forEach(function(url, i) {
+                    console.log(`  Image ${i + 1}: ${url.substring(0, 80)}...`);
                 });
-                
-                // Calculate total size of all images
-                var totalImageSize = 0;
-                projectImages.forEach(function(img) {
-                    totalImageSize += img.length;
-                });
-                console.log('Total image size:', totalImageSize, 'characters (~' + (totalImageSize / 1024 / 1024).toFixed(2) + ' MB)');
-                
-                // Check if total size exceeds the limit (17MB limit as per error)
-                var maxSize = 17 * 1024 * 1024; // 17MB
-                if (totalImageSize > maxSize) {
-                    alert('Total image size is too large (' + (totalImageSize / 1024 / 1024).toFixed(2) + ' MB). Maximum allowed is 17 MB. Please compress your images or use fewer/smaller images.');
-                    return;
-                }
                 
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -3638,7 +3619,7 @@ async function loadAdminDashboard() {
                     title: title, 
                     category: category,
                     categorySecondary: categorySecondary || '',
-                    projectImages: projectImages && projectImages.length ? projectImages : undefined,
+                    projectImages: projectImageUrls && projectImageUrls.length ? projectImageUrls : undefined,
                     description: description,
                     metrics: {
                         costEfficiency: metricCost,
@@ -3647,7 +3628,7 @@ async function loadAdminDashboard() {
                     }
                 };
                 
-                console.log('newProject.projectImages:', newProject.projectImages ? newProject.projectImages.length + ' images' : 'undefined');
+                console.log('newProject.projectImages:', newProject.projectImages ? newProject.projectImages.length + ' URLs' : 'undefined');
                 
                 if (editId) {
                     // Edit existing project
@@ -3666,20 +3647,8 @@ async function loadAdminDashboard() {
                 list.forEach(function(proj, idx) {
                     console.log(`  Project ${idx + 1}: ${proj.title}, Images: ${proj.projectImages ? proj.projectImages.length : 0}`);
                 });
-                // Validate per-project image sizes before sending to server
-                // MongoDB hard limit: 16 MB. Each project limited to 8 MB images for safety
-                var MAX_PROJECT_IMAGE_CHARS = 8 * 1024 * 1024;
-                var maxMB = '8';
-                for (var j = 0; j < list.length; j++) {
-                    var projCheck = list[j];
-                    var imgs = Array.isArray(projCheck.projectImages) && projCheck.projectImages.length ? projCheck.projectImages : (projCheck.image ? [projCheck.image] : []);
-                    var size = 0;
-                    imgs.forEach(function(im) { if (typeof im === 'string') size += im.length; });
-                    if (size > MAX_PROJECT_IMAGE_CHARS) {
-                        alert('Project "' + (projCheck.title || 'Untitled') + '" image data is ' + (size / 1024 / 1024).toFixed(2) + ' MB, exceeds 8 MB limit. Try fewer or smaller images.');
-                        return;
-                    }
-                }
+                // With Cloudinary URLs, no need to validate size - URLs are small strings
+                // Size limitations are now on Cloudinary side (much higher)
                 fetch((window.API_BASE || '') + '/api/admin/projects', {
                     method: 'PUT',
                     headers: {
@@ -3712,7 +3681,9 @@ async function loadAdminDashboard() {
             }
             
             if (files.length) { 
-                readFilesAsDataURLs(files).then(saveWebProj);
+                uploadFilesToCloudinary(files).then(saveWebProj).catch(function(err) {
+                    alert('Image upload failed: ' + err.message);
+                });
             } else if (editId) {
                 // Keep existing images if editing and no new files
                 var list = getWebsiteProjects();
