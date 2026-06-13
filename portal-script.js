@@ -2451,6 +2451,18 @@ window.setupEmployeeInteractions = function (currentUser) {
             var fileInput = document.getElementById('taskUpdateImages');
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
             var token = sessionStorage.getItem('authToken');
+            
+            // Validate that at least one image is provided
+            if (!files || files.length === 0) {
+                alert('Please upload at least one image for your project progress update.');
+                return;
+            }
+            
+            // Limit to maximum 8 images
+            if (files.length > 8) {
+                alert('You can upload a maximum of 8 images. Please select fewer images.');
+                return;
+            }
             function sendWithImages(imageArr) {
                 fetch((window.API_BASE || '') + '/api/portal/employee-progress', {
                     method: 'POST',
@@ -3494,7 +3506,7 @@ async function loadAdminDashboard() {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ projects: list })
+                    body: JSON.stringify(list)
                 }).then(function(response) {
                     if (response.ok) {
                         setWebsiteProjects(list).then(function () { 

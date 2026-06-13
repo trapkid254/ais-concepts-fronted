@@ -235,9 +235,9 @@
                         <textarea id="taskUpdateDescription" rows="4" placeholder="What did you complete?" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Images (optional - select multiple)</label>
-                        <input type="file" id="taskUpdateImages" accept="image/*" multiple>
-                        <small>You can select multiple images by holding Ctrl (Cmd on Mac) and clicking each image</small>
+                        <label>Project Images <span style="color:#dc3545;">*</span></label>
+                        <input type="file" id="taskUpdateImages" accept="image/*" multiple required>
+                        <small>Upload at least one image. You can select multiple images by holding Ctrl (Cmd on Mac) and clicking each image, or Shift+click to select a range (max 8 images)</small>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit Update</button>
                 </form>
