@@ -166,7 +166,11 @@
                 if (loading) loading.style.display = 'none';
                 root.style.display = 'block';
                 document.title = (p.title || 'Project') + ' | AIS Concepts';
-                var hero = p.heroImage || p.image || '';
+                
+                // Use first image from projectImages as hero, fallback to legacy image
+                var allProjectImages = p.projectImages || [];
+                var hero = allProjectImages.length > 0 ? allProjectImages[0] : (p.heroImage || p.image || '');
+                
                 var m = p.metrics || {};
                 var hasMetrics = p.hasMetrics || Object.keys(m).length > 0;
                 
@@ -184,11 +188,10 @@
                 
                 var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
                 
-                // Get all project images (gallery on detail page)
+                // Show all project images in gallery (if available)
                 var projectGallery = '';
-                var allImages = p.projectImages || [];
-                if (allImages.length > 1) {
-                    projectGallery = section('Project Gallery', allImages);
+                if (allProjectImages.length > 0) {
+                    projectGallery = section('Project Gallery', allProjectImages);
                 }
                 
                 root.innerHTML =
