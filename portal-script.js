@@ -3486,6 +3486,24 @@ async function loadAdminDashboard() {
     if (webProjModal) webProjModal.addEventListener('click', function (e) { if (e.target === webProjModal) webProjModal.classList.remove('open'); });
     if (webServModal) webServModal.addEventListener('click', function (e) { if (e.target === webServModal) webServModal.classList.remove('open'); });
 
+    // Monitor file input for debugging
+    var fileInputMonitor = document.getElementById('webProjectImage');
+    if (fileInputMonitor) {
+        // Verify the multiple attribute is set
+        console.log('🔍 File input verification:');
+        console.log('   multiple attribute:', fileInputMonitor.multiple);
+        console.log('   accept attribute:', fileInputMonitor.accept);
+        console.log('   HTML:', fileInputMonitor.outerHTML.substring(0, 150));
+        
+        fileInputMonitor.addEventListener('change', function(e) {
+            console.log('📁 File input change event triggered');
+            console.log('  Files selected:', e.target.files.length);
+            for (var i = 0; i < e.target.files.length; i++) {
+                console.log(`    File ${i + 1}: ${e.target.files[i].name}`);
+            }
+        });
+    }
+
     if (webProjForm && typeof getWebsiteProjects === 'function') {
         webProjForm.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -3512,6 +3530,14 @@ async function loadAdminDashboard() {
             
             // Main project images (required)
             var fileInput = document.getElementById('webProjectImage');
+            console.log('File input element:', fileInput);
+            console.log('File input attributes:');
+            console.log('  - id:', fileInput.id);
+            console.log('  - type:', fileInput.type);
+            console.log('  - accept:', fileInput.accept);
+            console.log('  - multiple:', fileInput.multiple);
+            console.log('  - files.length:', fileInput.files.length);
+            
             var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
             console.log('Files selected:', files.length, 'files');
             files.forEach(function(f, i) {
@@ -3548,7 +3574,22 @@ async function loadAdminDashboard() {
                 alert('Please select at least one image for the project');
                 return;
             }
-            
+
+            // Check total file size before conversion (estimate ~33% increase when converted to base64)
+            if (files.length > 0) {
+                var totalFileSize = 0;
+                for (var i = 0; i < files.length; i++) {
+                    totalFileSize += files[i].size;
+                }
+                // Base64 encoding increases size by ~33%, so check against 12.75MB raw to stay under 17MB encoded
+                var maxRawSize = 12.75 * 1024 * 1024; // 12.75MB
+                if (totalFileSize > maxRawSize) {
+                    alert('Total file size is too large (' + (totalFileSize / 1024 / 1024).toFixed(2) + ' MB). After base64 encoding, this will exceed the 17 MB limit. Please compress your images or select smaller files.');
+                    return;
+                }
+                console.log('Total file size:', totalFileSize, 'bytes (~' + (totalFileSize / 1024 / 1024).toFixed(2) + ' MB raw, estimated ~' + (totalFileSize * 1.33 / 1024 / 1024).toFixed(2) + ' MB encoded)');
+            }
+
             function readFilesAsDataURLs(fileList) {
                 console.log('readFilesAsDataURLs called with:', fileList.length, 'files');
                 var promises = Array.prototype.slice.call(fileList).map(function(file) {
@@ -3573,6 +3614,20 @@ async function loadAdminDashboard() {
                 projectImages.forEach(function(img, i) {
                     console.log(`  Image ${i + 1}: ${img.substring(0, 50)}... (${img.length} characters)`);
                 });
+                
+                // Calculate total size of all images
+                var totalImageSize = 0;
+                projectImages.forEach(function(img) {
+                    totalImageSize += img.length;
+                });
+                console.log('Total image size:', totalImageSize, 'characters (~' + (totalImageSize / 1024 / 1024).toFixed(2) + ' MB)');
+                
+                // Check if total size exceeds the limit (17MB limit as per error)
+                var maxSize = 17 * 1024 * 1024; // 17MB
+                if (totalImageSize > maxSize) {
+                    alert('Total image size is too large (' + (totalImageSize / 1024 / 1024).toFixed(2) + ' MB). Maximum allowed is 17 MB. Please compress your images or use fewer/smaller images.');
+                    return;
+                }
                 
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
