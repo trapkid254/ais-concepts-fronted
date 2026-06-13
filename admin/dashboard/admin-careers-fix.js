@@ -47,12 +47,23 @@
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
                 }).then(function(r){
-                    if (r.ok) {
-                        btn.closest('tr').remove();
-                    } else {
-                        alert('Could not delete application');
-                    }
-                }).catch(function(){ alert('Could not delete application'); });
+                    return r.json().then(function(d) {
+                        if (r.ok) {
+                            btn.closest('tr').remove();
+                        } else {
+                            alert('Could not delete application: ' + (d && d.error ? d.error : r.statusText));
+                        }
+                    }).catch(function() {
+                        if (r.ok) {
+                            btn.closest('tr').remove();
+                        } else {
+                            alert('Could not delete application: ' + r.statusText);
+                        }
+                    });
+                }).catch(function(err){ 
+                    console.error('Delete error:', err);
+                    alert('Could not delete application: ' + err.message); 
+                });
             });
         });
     }
@@ -61,9 +72,11 @@
         if (!appId) return;
         // First, try to get the application data to see if attachments are included
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
-            .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
-            .then(function(res){
-                var apps = res.data || [];
+            .then(function(r){ 
+                if (!r.ok) throw new Error('Server error: ' + r.status);
+                return r.json(); 
+            })
+            .then(function(apps){
                 var app = apps.find(function(x){ return String(x.id) === String(appId); });
                 if (!app) {
                     alert('Application not found');
@@ -146,9 +159,11 @@
     function openCareerView(appId){
         if (!appId) return;
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
-            .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
-            .then(function(res){
-                var apps = res.data || [];
+            .then(function(r){ 
+                if (!r.ok) throw new Error('Server error: ' + r.status);
+                return r.json(); 
+            })
+            .then(function(apps){
                 var app = apps.find(function(x){ return String(x.id) === String(appId); });
                 var modal = document.getElementById('adminCareerViewModal');
                 var content = document.getElementById('adminCareerViewContent');
@@ -189,9 +204,25 @@
         var tbody = document.getElementById('adminCareersBody');
         if (!tbody) return;
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
-            .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
-            .then(function(res){ renderApplications(res.data || []); })
-            .catch(function(){ console.error('Failed to load career applications'); renderApplications([]); });
+            .then(function(r){ 
+                console.log('Career applications response status:', r.status);
+                return r.json().then(function(d){ 
+                    if (!r.ok) {
+                        console.error('Server error:', r.status, d);
+                        throw new Error((d && d.details) || (d && d.error) || 'Server error: ' + r.status);
+                    }
+                    return d; 
+                }); 
+            })
+            .then(function(data){ 
+                console.log('Loaded career applications:', data.length, 'applications');
+                renderApplications(data || []); 
+            })
+            .catch(function(err){ 
+                console.error('Failed to load career applications:', err.message || err); 
+                alert('Failed to load career applications: ' + (err.message || 'Unknown error'));
+                renderApplications([]); 
+            });
     }
 
     document.addEventListener('DOMContentLoaded', function(){

@@ -3421,8 +3421,20 @@ async function loadAdminDashboard() {
     var apps = [];
     try {
         var cr = await fetch((window.API_BASE || '') + '/api/admin/career-applications', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
-        if (cr.ok) apps = await cr.json();
-    } catch (e) { apps = getStored('careerApplications', []); }
+        console.log('Career applications response:', cr.status);
+        if (cr.ok) {
+            apps = await cr.json();
+            console.log('Loaded', apps.length, 'career applications');
+        } else {
+            console.error('Career applications server error:', cr.status);
+            var errorData = await cr.json().catch(() => ({}));
+            console.error('Error details:', errorData);
+            apps = getStored('careerApplications', []);
+        }
+    } catch (e) { 
+        console.error('Career applications fetch error:', e.message || e);
+        apps = getStored('careerApplications', []); 
+    }
     careersBody.innerHTML = apps.length ? apps.map(function (a) {
         return '<tr>' +
             '<td>' + escapeHtml(a.name || '') + '</td>' +

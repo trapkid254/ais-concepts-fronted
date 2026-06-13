@@ -164,42 +164,30 @@
             })
             .then(function(p) {
                 console.log('Project data received:', p);
-                console.log('Project images array:', p.projectImages);
+                console.log('Project images array:', p.projectImages, 'Length:', p.projectImages ? p.projectImages.length : 0);
                 
                 if (loading) loading.style.display = 'none';
                 root.style.display = 'block';
                 document.title = (p.title || 'Project') + ' | AIS Concepts';
                 
-                // Collect all available images
-                var allImages = [];
-                
-                // First try projectImages (the main images uploaded by admin)
+                // Use projectImages as the main gallery - these are the admin-uploaded images
+                var mainGalleryImages = [];
                 if (p.projectImages && Array.isArray(p.projectImages) && p.projectImages.length > 0) {
-                    allImages = p.projectImages;
-                    console.log('Using projectImages:', allImages.length, 'images');
-                } 
-                // If no projectImages, try to collect from other arrays
-                else {
-                    console.log('No projectImages found, checking other arrays...');
-                    if (p.renderings && p.renderings.length) allImages = allImages.concat(p.renderings);
-                    if (p.completedPhotos && p.completedPhotos.length) allImages = allImages.concat(p.completedPhotos);
-                    if (p.constructionPhotos && p.constructionPhotos.length) allImages = allImages.concat(p.constructionPhotos);
-                    if (p.conceptSketches && p.conceptSketches.length) allImages = allImages.concat(p.conceptSketches);
-                    if (p.floorPlans && p.floorPlans.length) allImages = allImages.concat(p.floorPlans);
-                    if (p.siteAnalysis && p.siteAnalysis.length) allImages = allImages.concat(p.siteAnalysis);
-                    console.log('Collected images from other arrays:', allImages.length, 'images');
+                    mainGalleryImages = p.projectImages;
+                    console.log('✓ Using projectImages for main gallery:', mainGalleryImages.length, 'images');
+                } else {
+                    console.warn('⚠ projectImages is empty or not an array');
                 }
                 
-                // Fallback to single legacy image if still no images
-                if (allImages.length === 0) {
-                    if (p.image) allImages.push(p.image);
-                    if (p.heroImage && allImages.length === 0) allImages.push(p.heroImage);
-                    console.log('Using legacy image(s):', allImages.length, 'images');
+                // Get hero image (first from main gallery, or from heroImage field, or from image field)
+                var hero = '';
+                if (mainGalleryImages.length > 0) {
+                    hero = mainGalleryImages[0];
+                } else if (p.heroImage) {
+                    hero = p.heroImage;
+                } else if (p.image) {
+                    hero = p.image;
                 }
-                
-                console.log('Final image count for gallery:', allImages.length);
-                
-                var hero = allImages.length > 0 ? allImages[0] : '';
                 
                 var m = p.metrics || {};
                 var hasMetrics = p.hasMetrics || Object.keys(m).length > 0;
@@ -218,14 +206,23 @@
                 
                 var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
                 
-                // Create gallery with all images
+                // Create main gallery section with all admin-uploaded images
                 var projectGallery = '';
-                if (allImages.length > 0) {
-                    projectGallery = section('Project Gallery', allImages);
-                    console.log('Gallery section created with', allImages.length, 'images');
+                if (mainGalleryImages.length > 0) {
+                    projectGallery = section('Project Gallery', mainGalleryImages);
+                    console.log('✓ Gallery section created with', mainGalleryImages.length, 'images');
                 } else {
-                    console.log('No images available for gallery');
+                    console.warn('⚠ No images in main gallery');
                 }
+                
+                // Only show additional category sections if they have images AND aren't already in the main gallery
+                var additionalSections = '';
+                additionalSections += section('Concept sketches', p.conceptSketches);
+                additionalSections += section('Site analysis', p.siteAnalysis);
+                additionalSections += section('Floor plans & sections', p.floorPlans);
+                additionalSections += section('Renderings', p.renderings);
+                additionalSections += section('Construction photos', p.constructionPhotos);
+                additionalSections += section('Completed photos', p.completedPhotos);
                 
                 root.innerHTML =
                     '<h1 class="section-title" style="margin-bottom:8px;">' + (p.title || '') + '</h1>' +
@@ -234,13 +231,10 @@
                     '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:var(--text-secondary);">' + (p.description || '') + '</p>' +
                     metricsSection +
                     projectGallery +
-                    section('Concept sketches', p.conceptSketches) +
-                    section('Site analysis', p.siteAnalysis) +
-                    section('Floor plans & sections', p.floorPlans) +
-                    section('Renderings', p.renderings) +
-                    section('Construction photos', p.constructionPhotos) +
-                    section('Completed photos', p.completedPhotos) +
+                    additionalSections +
                     '<p style="text-align:center;margin-top:40px;"><a href="projects/" class="btn-primary">Back to portfolio</a></p>';
+                    
+                console.log('✓ Project detail page rendered successfully');
             })
             .catch(function() {
                 if (loading) loading.style.display = 'none';
