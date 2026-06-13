@@ -3666,6 +3666,18 @@ async function loadAdminDashboard() {
                 list.forEach(function(proj, idx) {
                     console.log(`  Project ${idx + 1}: ${proj.title}, Images: ${proj.projectImages ? proj.projectImages.length : 0}`);
                 });
+                // Validate per-project image sizes before sending to server
+                var MAX_PROJECT_IMAGE_CHARS = 10 * 1024 * 1024; // 10MB
+                for (var j = 0; j < list.length; j++) {
+                    var projCheck = list[j];
+                    var imgs = Array.isArray(projCheck.projectImages) && projCheck.projectImages.length ? projCheck.projectImages : (projCheck.image ? [projCheck.image] : []);
+                    var size = 0;
+                    imgs.forEach(function(im) { if (typeof im === 'string') size += im.length; });
+                    if (size > MAX_PROJECT_IMAGE_CHARS) {
+                        alert('Project "' + (projCheck.title || 'Untitled') + '" has images that are too large (' + (size / 1024 / 1024).toFixed(2) + ' MB). Please compress or remove images before saving.');
+                        return;
+                    }
+                }
                 fetch((window.API_BASE || '') + '/api/admin/projects', {
                     method: 'PUT',
                     headers: {
