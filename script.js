@@ -324,33 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // runStatsCounter() will be called after API data is loaded
 
-    /* ===== CONTACT FORM ===== */
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const inputs = contactForm.querySelectorAll('.form-control');
-            const name = inputs[0] ? inputs[0].value.trim() : '';
-            const email = inputs[1] ? inputs[1].value.trim() : '';
-            const message = inputs[2] ? inputs[2].value.trim() : '';
-            fetch(API_BASE + '/api/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name, email: email, message: message })
-            })
-                .then(function (r) {
-                    if (r.ok) {
-                        alert('Thank you for your message. Our team will contact you shortly.');
-                        contactForm.reset();
-                    } else {
-                        throw new Error();
-                    }
-                })
-                .catch(function () {
-                    alert('Could not send your message. Please try again later.');
-                });
-        });
-    }
+    /* ===== CONTACT FORM (handled below in dedicated block) ===== */
 
     /* ===== TYPWRITER EFFECT ===== */
     function runTypewriter() {

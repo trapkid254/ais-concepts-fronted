@@ -3127,16 +3127,22 @@ async function renderAdminEnquiries() {
         if (r.ok) list = await r.json();
     } catch (e) { list = []; }
     tbody.innerHTML = list.length ? list.slice().reverse().map(function (e) {
+        var sourceLabel = e.source === 'contact' ? 'Contact page' : 'Homepage';
+        var messagePreview = e.message
+            ? escapeHtml(e.message.length > 120 ? e.message.substring(0, 120) + '…' : e.message)
+            : '—';
         return '<tr>' +
+            '<td>' + escapeHtml(sourceLabel) + '</td>' +
             '<td>' + escapeHtml(e.name || '') + '</td>' +
             '<td>' + escapeHtml(e.contact || '') + '</td>' +
             '<td>' + escapeHtml(e.type || '') + '</td>' +
+            '<td style="max-width:220px;white-space:normal;">' + messagePreview + '</td>' +
             '<td>' + escapeHtml(e.location || '') + '</td>' +
             '<td>' + escapeHtml(e.timeline || '-') + '</td>' +
             '<td>' + escapeHtml(e.budget || '-') + '</td>' +
             '<td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</td>' +
             '</tr>';
-    }).join('') : '<tr><td colspan="7">No enquiries yet.</td></tr>';
+    }).join('') : '<tr><td colspan="9">No enquiries yet.</td></tr>';
 }
 
 async function renderAdminWebsiteProjects() {
