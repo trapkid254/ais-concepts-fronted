@@ -3141,9 +3141,30 @@ async function renderAdminEnquiries() {
             '<td>' + escapeHtml(e.timeline || '-') + '</td>' +
             '<td>' + escapeHtml(e.budget || '-') + '</td>' +
             '<td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</td>' +
+            '<td><button type="button" class="btn-icon" onclick="deleteProjectEnquiry(\'' + escapeAttr(String(e.id)) + '\')" title="Delete enquiry"><i class="fas fa-trash"></i></button></td>' +
             '</tr>';
-    }).join('') : '<tr><td colspan="9">No enquiries yet.</td></tr>';
+    }).join('') : '<tr><td colspan="10">No enquiries yet.</td></tr>';
 }
+
+window.deleteProjectEnquiry = async function (id) {
+    if (!id) return;
+    if (!confirm('Delete this project enquiry? This cannot be undone.')) return;
+    var token = sessionStorage.getItem('authToken');
+    try {
+        var r = await fetch((window.API_BASE || '') + '/api/admin/enquiries/' + encodeURIComponent(id), {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) {
+            var data = {};
+            try { data = await r.json(); } catch (e) {}
+            throw new Error(data.error || 'Failed to delete enquiry');
+        }
+        await renderAdminEnquiries();
+    } catch (e) {
+        alert(e.message || 'Could not delete enquiry.');
+    }
+};
 
 async function renderAdminWebsiteProjects() {
     var tbody = document.getElementById('adminWebsiteProjectsBody');
