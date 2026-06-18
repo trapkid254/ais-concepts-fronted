@@ -3127,10 +3127,15 @@ async function renderAdminEnquiries() {
         if (r.ok) list = await r.json();
     } catch (e) { list = []; }
     tbody.innerHTML = list.length ? list.slice().reverse().map(function (e) {
+        var enquiryId = e.id || e._id;
+        var enquiryIdStr = enquiryId ? String(enquiryId) : '';
         var sourceLabel = e.source === 'contact' ? 'Contact page' : 'Homepage';
         var messagePreview = e.message
             ? escapeHtml(e.message.length > 120 ? e.message.substring(0, 120) + '…' : e.message)
             : '—';
+        var deleteBtn = enquiryIdStr
+            ? '<button type="button" class="btn-icon btn-delete-enquiry" data-enquiry-id="' + escapeAttr(enquiryIdStr) + '" title="Delete enquiry"><i class="fas fa-trash"></i></button>'
+            : '<span class="text-muted" title="Redeploy backend to enable delete">—</span>';
         return '<tr>' +
             '<td>' + escapeHtml(sourceLabel) + '</td>' +
             '<td>' + escapeHtml(e.name || '') + '</td>' +
@@ -3141,13 +3146,26 @@ async function renderAdminEnquiries() {
             '<td>' + escapeHtml(e.timeline || '-') + '</td>' +
             '<td>' + escapeHtml(e.budget || '-') + '</td>' +
             '<td>' + (e.date ? new Date(e.date).toLocaleDateString() : '') + '</td>' +
-            '<td><button type="button" class="btn-icon" onclick="deleteProjectEnquiry(\'' + escapeAttr(String(e.id)) + '\')" title="Delete enquiry"><i class="fas fa-trash"></i></button></td>' +
+            '<td>' + deleteBtn + '</td>' +
             '</tr>';
     }).join('') : '<tr><td colspan="10">No enquiries yet.</td></tr>';
+
+    if (!tbody.dataset.enquiryDeleteBound) {
+        tbody.dataset.enquiryDeleteBound = '1';
+        tbody.addEventListener('click', function (ev) {
+            var btn = ev.target.closest('.btn-delete-enquiry');
+            if (!btn) return;
+            var id = btn.getAttribute('data-enquiry-id');
+            if (id) deleteProjectEnquiry(id);
+        });
+    }
 }
 
 window.deleteProjectEnquiry = async function (id) {
-    if (!id) return;
+    if (!id || id === 'undefined' || id === 'null') {
+        alert('Cannot delete: enquiry id is missing. Please redeploy the backend and refresh this page.');
+        return;
+    }
     if (!confirm('Delete this project enquiry? This cannot be undone.')) return;
     var token = sessionStorage.getItem('authToken');
     try {
