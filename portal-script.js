@@ -3547,12 +3547,12 @@ async function loadAdminDashboard() {
             // Validate image sizes before processing
             if (files.length > 0) {
                 var totalSize = 0;
-                // File size validation - Cloudinary handles sizes up to 100MB+
-                var maxSize = 50 * 1024 * 1024; // 50MB per file (Cloudinary limit is much higher)
+                // Must match backend multer limit (backend/index.js MAX_IMAGE_BYTES)
+                var maxSize = 12 * 1024 * 1024; // 12MB per file
                 
                 for (var i = 0; i < files.length; i++) {
                     if (files[i].size > maxSize) {
-                        alert('Image "' + files[i].name + '" is too large (max 50MB per image).');
+                        alert('Image "' + files[i].name + '" is too large (max 12MB per image).');
                         return;
                     }
                     totalSize += files[i].size;
@@ -3587,8 +3587,12 @@ async function loadAdminDashboard() {
                             },
                             body: formData
                         }).then(function(r) {
-                            if (!r.ok) throw new Error('Upload failed: ' + r.status);
-                            return r.json();
+                            return r.json().then(function(data) {
+                                if (!r.ok) {
+                                    throw new Error(data.details || data.error || ('Upload failed: ' + r.status));
+                                }
+                                return data;
+                            });
                         }).then(function(data) {
                             console.log('✓ Image uploaded:', file.name, '→', data.url);
                             resolve(data.url);
