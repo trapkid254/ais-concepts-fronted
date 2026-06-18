@@ -2619,7 +2619,20 @@ color: #e5e7eb;
 .project-detail-main {
     padding-top: 100px;
     padding-bottom: 80px;
-    background: #f9fafb;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.project-detail-category {
+    margin-bottom: 24px;
+    color: var(--text-tertiary);
+}
+
+.project-detail-description {
+    max-width: 800px;
+    margin: 24px auto 0;
+    line-height: 1.7;
+    color: var(--text-secondary);
 }
 
 .project-hero-img {
@@ -2638,7 +2651,7 @@ color: #e5e7eb;
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 20px;
-    color: #0b1120;
+    color: var(--text-primary);
 }
 
 .project-gallery-grid {
@@ -2647,12 +2660,38 @@ color: #e5e7eb;
     gap: 16px;
 }
 
+.gallery-thumb {
+    display: block;
+    width: 100%;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    cursor: zoom-in;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-thumb:hover,
+.gallery-thumb:focus-visible {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px var(--shadow);
+}
+
+.gallery-thumb:focus-visible {
+    outline: 2px solid #0f766e;
+    outline-offset: 2px;
+}
+
 .project-gallery-grid img {
     width: 100%;
     height: 200px;
     object-fit: cover;
     border-radius: 8px;
-    background: #e5e7eb;
+    background: var(--bg-tertiary);
+    display: block;
+    pointer-events: none;
 }
 
 .project-metrics {
@@ -2663,8 +2702,8 @@ color: #e5e7eb;
 }
 
 .metric-card {
-    background: #fff;
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 20px;
     text-align: center;
@@ -2674,14 +2713,147 @@ color: #e5e7eb;
     display: block;
     font-size: 2rem;
     font-weight: 300;
-    color: #0f766e;
+    color: #14b8a6;
+}
+
+[data-theme="dark"] .metric-card span {
+    color: #2dd4bf;
 }
 
 .metric-card label {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+#projectDetailLoading,
+#projectDetailError {
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+#projectDetailError a {
+    color: #14b8a6;
+}
+
+[data-theme="dark"] #projectDetailError a {
+    color: #2dd4bf;
+}
+
+/* Project gallery lightbox */
+.project-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.94);
+    padding: 16px;
+}
+
+.project-lightbox.open {
+    display: flex;
+}
+
+.project-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    cursor: zoom-out;
+}
+
+.project-lightbox-stage {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 0;
+}
+
+.project-lightbox-img {
+    max-width: min(92vw, 1200px);
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 4px;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.project-lightbox-close,
+.project-lightbox-nav {
+    position: absolute;
+    z-index: 2;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: background 0.2s ease;
+}
+
+.project-lightbox-close:hover,
+.project-lightbox-nav:hover,
+.project-lightbox-close:focus-visible,
+.project-lightbox-nav:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+    outline: none;
+}
+
+.project-lightbox-close {
+    top: 20px;
+    right: 20px;
+    font-size: 1.5rem;
+}
+
+.project-lightbox-prev {
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.project-lightbox-next {
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.project-lightbox-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 6px 14px;
+    border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+    .project-lightbox-prev {
+        left: 8px;
+    }
+
+    .project-lightbox-next {
+        right: 8px;
+    }
+
+    .project-lightbox-close {
+        top: 12px;
+        right: 12px;
+    }
 }
 
 /* ===== About studio extras ===== */

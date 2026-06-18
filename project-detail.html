@@ -133,6 +133,17 @@
         </div>
     </footer>
 
+    <div id="projectLightbox" class="project-lightbox" role="dialog" aria-modal="true" aria-label="Image gallery" hidden>
+        <div class="project-lightbox-backdrop" data-lightbox-close></div>
+        <button type="button" class="project-lightbox-close" aria-label="Close gallery">&times;</button>
+        <button type="button" class="project-lightbox-nav project-lightbox-prev" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+        <div class="project-lightbox-stage">
+            <img id="projectLightboxImg" class="project-lightbox-img" src="" alt="">
+        </div>
+        <button type="button" class="project-lightbox-nav project-lightbox-next" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+        <div id="projectLightboxCounter" class="project-lightbox-counter"></div>
+    </div>
+
     <script src="api-config.js"></script>
     <script src="api-client.js"></script>
     <script src="script.js"></script>
@@ -143,56 +154,154 @@
         var root = document.getElementById('projectDetailContent');
         var loading = document.getElementById('projectDetailLoading');
         var err = document.getElementById('projectDetailError');
+        var galleryImages = [];
+        var lightboxIndex = 0;
+
+        var lightbox = document.getElementById('projectLightbox');
+        var lightboxImg = document.getElementById('projectLightboxImg');
+        var lightboxCounter = document.getElementById('projectLightboxCounter');
+        var lightboxPrev = lightbox ? lightbox.querySelector('.project-lightbox-prev') : null;
+        var lightboxNext = lightbox ? lightbox.querySelector('.project-lightbox-next') : null;
+        var lightboxClose = lightbox ? lightbox.querySelector('.project-lightbox-close') : null;
+
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function section(title, imgs) {
+            if (!imgs || !imgs.length) return '';
+            var startIdx = galleryImages.length;
+            imgs.forEach(function(src) { if (src) galleryImages.push(src); });
+            var h = '<section class="project-detail-section"><h2>' + escHtml(title) + '</h2><div class="project-gallery-grid">';
+            imgs.forEach(function(src, i) {
+                if (!src) return;
+                var idx = startIdx + i;
+                h += '<button type="button" class="gallery-thumb" data-gallery-index="' + idx + '" aria-label="View image ' + (i + 1) + ' of ' + imgs.length + '">';
+                h += '<img src="' + escHtml(src) + '" alt="" loading="lazy" onerror="this.style.opacity=0.3">';
+                h += '</button>';
+            });
+            h += '</div></section>';
+            return h;
+        }
+
+        function updateLightbox() {
+            if (!lightbox || !lightboxImg || !galleryImages.length) return;
+            lightboxImg.src = galleryImages[lightboxIndex];
+            if (lightboxCounter) {
+                lightboxCounter.textContent = (lightboxIndex + 1) + ' / ' + galleryImages.length;
+            }
+            if (lightboxPrev) lightboxPrev.style.display = galleryImages.length > 1 ? 'flex' : 'none';
+            if (lightboxNext) lightboxNext.style.display = galleryImages.length > 1 ? 'flex' : 'none';
+        }
+
+        function openLightbox(index) {
+            if (!lightbox || !galleryImages.length) return;
+            lightboxIndex = index;
+            updateLightbox();
+            lightbox.hidden = false;
+            lightbox.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            if (!lightbox) return;
+            lightbox.classList.remove('open');
+            lightbox.hidden = true;
+            document.body.style.overflow = '';
+            if (lightboxImg) lightboxImg.src = '';
+        }
+
+        function showPrev() {
+            if (!galleryImages.length) return;
+            lightboxIndex = (lightboxIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateLightbox();
+        }
+
+        function showNext() {
+            if (!galleryImages.length) return;
+            lightboxIndex = (lightboxIndex + 1) % galleryImages.length;
+            updateLightbox();
+        }
+
+        function bindGallery() {
+            if (!root) return;
+            root.querySelectorAll('.gallery-thumb').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(btn.getAttribute('data-gallery-index'), 10);
+                    if (!isNaN(idx)) openLightbox(idx);
+                });
+            });
+            var heroEl = root.querySelector('.project-hero-img');
+            if (heroEl && galleryImages.length) {
+                heroEl.style.cursor = 'zoom-in';
+                heroEl.setAttribute('title', 'Click to enlarge');
+                heroEl.addEventListener('click', function() {
+                    var heroSrc = heroEl.getAttribute('src');
+                    var idx = galleryImages.indexOf(heroSrc);
+                    openLightbox(idx >= 0 ? idx : 0);
+                });
+            }
+        }
+
+        if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+        if (lightboxPrev) lightboxPrev.addEventListener('click', function(e) { e.stopPropagation(); showPrev(); });
+        if (lightboxNext) lightboxNext.addEventListener('click', function(e) { e.stopPropagation(); showNext(); });
+        if (lightbox) {
+            lightbox.querySelectorAll('[data-lightbox-close]').forEach(function(el) {
+                el.addEventListener('click', closeLightbox);
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (!lightbox || lightbox.hidden) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') showPrev();
+            if (e.key === 'ArrowRight') showNext();
+        });
+
+        var touchStartX = 0;
+        if (lightbox) {
+            lightbox.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            lightbox.addEventListener('touchend', function(e) {
+                var diff = e.changedTouches[0].screenX - touchStartX;
+                if (Math.abs(diff) < 50) return;
+                if (diff > 0) showPrev();
+                else showNext();
+            }, { passive: true });
+        }
+
         if (!slug) {
             if (loading) loading.style.display = 'none';
             if (err) err.style.display = 'block';
             return;
         }
-        function section(title, imgs) {
-            if (!imgs || !imgs.length) return '';
-            var h = '<section class="project-detail-section"><h2>' + title + '</h2><div class="project-gallery-grid">';
-            imgs.forEach(function(src) {
-                h += '<img src="' + src + '" alt="" loading="lazy" onerror="this.style.opacity=0.3">';
-            });
-            h += '</div></section>';
-            return h;
-        }
+
         fetch((window.API_BASE || '') + '/api/projects/detail/' + encodeURIComponent(slug))
             .then(function(r) {
                 if (!r.ok) throw new Error();
                 return r.json();
             })
             .then(function(p) {
-                console.log('Project data received:', p);
-                console.log('Project images array:', p.projectImages, 'Length:', p.projectImages ? p.projectImages.length : 0);
-                
                 if (loading) loading.style.display = 'none';
                 root.style.display = 'block';
                 document.title = (p.title || 'Project') + ' | AIS Concepts';
-                
-                // Use projectImages as the main gallery - these are the admin-uploaded images
+
+                galleryImages = [];
                 var mainGalleryImages = [];
                 if (p.projectImages && Array.isArray(p.projectImages) && p.projectImages.length > 0) {
                     mainGalleryImages = p.projectImages;
-                    console.log('✓ Using projectImages for main gallery:', mainGalleryImages.length, 'images');
-                } else {
-                    console.warn('⚠ projectImages is empty or not an array');
                 }
-                
-                // Get hero image (first from main gallery, or from heroImage field, or from image field)
+
                 var hero = '';
-                if (mainGalleryImages.length > 0) {
-                    hero = mainGalleryImages[0];
-                } else if (p.heroImage) {
-                    hero = p.heroImage;
-                } else if (p.image) {
-                    hero = p.image;
-                }
-                
+                if (mainGalleryImages.length > 0) hero = mainGalleryImages[0];
+                else if (p.heroImage) hero = p.heroImage;
+                else if (p.image) hero = p.image;
+
                 var m = p.metrics || {};
                 var hasMetrics = p.hasMetrics || Object.keys(m).length > 0;
-                
-                // Build metrics section only if metrics exist
+
                 var metricsHtml = '';
                 if (hasMetrics) {
                     metricsHtml = '<div class="project-metrics">' +
@@ -201,21 +310,11 @@
                         (m.innovation != null ? '<div class="metric-card"><span>' + m.innovation + '%</span><label>Innovation</label></div>' : '') +
                         '</div>';
                 }
-                
+
                 var metricsSection = hasMetrics ? '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' : '';
-                
                 var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
-                
-                // Create main gallery section with all admin-uploaded images
-                var projectGallery = '';
-                if (mainGalleryImages.length > 0) {
-                    projectGallery = section('Project Gallery', mainGalleryImages);
-                    console.log('✓ Gallery section created with', mainGalleryImages.length, 'images');
-                } else {
-                    console.warn('⚠ No images in main gallery');
-                }
-                
-                // Only show additional category sections if they have images AND aren't already in the main gallery
+
+                var projectGallery = mainGalleryImages.length > 0 ? section('Project Gallery', mainGalleryImages) : '';
                 var additionalSections = '';
                 additionalSections += section('Concept sketches', p.conceptSketches);
                 additionalSections += section('Site analysis', p.siteAnalysis);
@@ -223,18 +322,18 @@
                 additionalSections += section('Renderings', p.renderings);
                 additionalSections += section('Construction photos', p.constructionPhotos);
                 additionalSections += section('Completed photos', p.completedPhotos);
-                
+
                 root.innerHTML =
-                    '<h1 class="section-title" style="margin-bottom:8px;">' + (p.title || '') + '</h1>' +
-                    '<p class="section-subtitle" style="margin-bottom:24px;">' + cat + '</p>' +
-                    (hero ? '<img class="project-hero-img" src="' + hero + '" alt="">' : '') +
-                    '<p style="max-width:800px;margin:24px auto 0;line-height:1.7;color:var(--text-secondary);">' + (p.description || '') + '</p>' +
+                    '<h1 class="section-title" style="margin-bottom:8px;">' + escHtml(p.title || '') + '</h1>' +
+                    '<p class="section-subtitle project-detail-category">' + escHtml(cat) + '</p>' +
+                    (hero ? '<img class="project-hero-img" src="' + escHtml(hero) + '" alt="">' : '') +
+                    '<p class="project-detail-description">' + escHtml(p.description || '') + '</p>' +
                     metricsSection +
                     projectGallery +
                     additionalSections +
                     '<p style="text-align:center;margin-top:40px;"><a href="projects/" class="btn-primary">Back to portfolio</a></p>';
-                    
-                console.log('✓ Project detail page rendered successfully');
+
+                bindGallery();
             })
             .catch(function() {
                 if (loading) loading.style.display = 'none';
