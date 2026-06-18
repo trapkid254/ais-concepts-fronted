@@ -3548,11 +3548,11 @@ async function loadAdminDashboard() {
             if (files.length > 0) {
                 var totalSize = 0;
                 // Must match backend multer limit (backend/index.js MAX_IMAGE_BYTES)
-                var maxSize = 12 * 1024 * 1024; // 12MB per file
+                var maxSize = 50 * 1024 * 1024; // 50MB per file
                 
                 for (var i = 0; i < files.length; i++) {
                     if (files[i].size > maxSize) {
-                        alert('Image "' + files[i].name + '" is too large (max 12MB per image).');
+                        alert('Image "' + files[i].name + '" is too large (max 50MB per image).');
                         return;
                     }
                     totalSize += files[i].size;
