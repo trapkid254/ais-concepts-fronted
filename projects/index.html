@@ -222,7 +222,7 @@
             }
             toShow.forEach(function(p) {
                 var catText = p.categorySecondary ? p.category + ' / ' + p.categorySecondary : p.category;
-                var imgSrc = (p.projectImages && p.projectImages[0]) || p.image || '';
+                var imgSrc = (p.asDesignedImages && p.asDesignedImages[0]) || (p.projectImages && p.projectImages[0]) || (p.asBuiltImages && p.asBuiltImages[0]) || p.image || '';
                 var fallback = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjdmN2Y3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvamVjdDwvdGV4dD48L3N2Zz4=';
                 if (!imgSrc) imgSrc = fallback;
                 var slug = p.slug || '';

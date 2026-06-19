@@ -3200,7 +3200,7 @@ async function renderAdminWebsiteProjects() {
         }
     } catch (e) { list = []; }
     tbody.innerHTML = list.length ? list.map(function (p) {
-        var previewImg = p.projectImages && p.projectImages.length ? p.projectImages[0] : (p.image || '');
+        var previewImg = (p.asDesignedImages && p.asDesignedImages[0]) || (p.projectImages && p.projectImages[0]) || (p.asBuiltImages && p.asBuiltImages[0]) || (p.image || '');
         return '<tr>' +
             '<td><img src="' + escapeHtml(previewImg) + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
@@ -3361,7 +3361,21 @@ window.editWebsiteProject = function(id) {
     
     if (editIdField) editIdField.value = String(project.id);
     if (modalTitle) modalTitle.textContent = 'Edit Website Project';
-    
+
+    var designedInput = document.getElementById('webProjectAsDesignedImages');
+    var builtInput = document.getElementById('webProjectAsBuiltImages');
+    if (designedInput) designedInput.value = '';
+    if (builtInput) builtInput.value = '';
+
+    var hint = document.getElementById('webProjectExistingImagesHint');
+    if (hint) {
+        var designedCount = (project.asDesignedImages || project.projectImages || []).length;
+        var builtCount = (project.asBuiltImages || []).length;
+        hint.textContent = designedCount || builtCount
+            ? 'Currently saved: ' + designedCount + ' As Designed, ' + builtCount + ' As Built. Upload more images to add to each category.'
+            : '';
+    }
+
     if (webProjModal) webProjModal.classList.add('open');
 };
 
@@ -3524,30 +3538,25 @@ async function loadAdminDashboard() {
     var webServModal = document.getElementById('adminWebsiteServiceModal');
     var webProjForm = document.getElementById('adminWebsiteProjectForm');
     var webServForm = document.getElementById('adminWebsiteServiceForm');
-    if (addWebProjBtn && webProjModal) addWebProjBtn.addEventListener('click', function () { if (webProjForm) webProjForm.reset(); webProjModal.classList.add('open'); });
+    if (addWebProjBtn && webProjModal) addWebProjBtn.addEventListener('click', function () {
+        if (webProjForm) webProjForm.reset();
+        var editIdField = document.getElementById('webProjectEditId');
+        if (editIdField) editIdField.value = '';
+        var hint = document.getElementById('webProjectExistingImagesHint');
+        if (hint) hint.textContent = '';
+        var designedInput = document.getElementById('webProjectAsDesignedImages');
+        var builtInput = document.getElementById('webProjectAsBuiltImages');
+        if (designedInput) designedInput.value = '';
+        if (builtInput) builtInput.value = '';
+        var modalTitle = webProjModal.querySelector('h2');
+        if (modalTitle) modalTitle.textContent = 'Add Website Project';
+        webProjModal.classList.add('open');
+    });
     if (addWebServBtn && webServModal) addWebServBtn.addEventListener('click', function () { if (webServForm) webServForm.reset(); webServModal.classList.add('open'); });
     document.querySelectorAll('[data-close="adminWebsiteProjectModal"]').forEach(function (el) { el.addEventListener('click', function () { webProjModal.classList.remove('open'); }); });
     document.querySelectorAll('[data-close="adminWebsiteServiceModal"]').forEach(function (el) { el.addEventListener('click', function () { webServModal.classList.remove('open'); }); });
     if (webProjModal) webProjModal.addEventListener('click', function (e) { if (e.target === webProjModal) webProjModal.classList.remove('open'); });
     if (webServModal) webServModal.addEventListener('click', function (e) { if (e.target === webServModal) webServModal.classList.remove('open'); });
-
-    // Monitor file input for debugging
-    var fileInputMonitor = document.getElementById('webProjectImage');
-    if (fileInputMonitor) {
-        // Verify the multiple attribute is set
-        console.log('🔍 File input verification:');
-        console.log('   multiple attribute:', fileInputMonitor.multiple);
-        console.log('   accept attribute:', fileInputMonitor.accept);
-        console.log('   HTML:', fileInputMonitor.outerHTML.substring(0, 150));
-        
-        fileInputMonitor.addEventListener('change', function(e) {
-            console.log('📁 File input change event triggered');
-            console.log('  Files selected:', e.target.files.length);
-            for (var i = 0; i < e.target.files.length; i++) {
-                console.log(`    File ${i + 1}: ${e.target.files[i].name}`);
-            }
-        });
-    }
 
     if (webProjForm && typeof getWebsiteProjects === 'function') {
         webProjForm.addEventListener('submit', function (e) {
@@ -3557,8 +3566,7 @@ async function loadAdminDashboard() {
             var category = document.getElementById('webProjectCategory').value;
             var categorySecondary = document.getElementById('webProjectCategorySecondary') ? document.getElementById('webProjectCategorySecondary').value : '';
             var description = document.getElementById('webProjectDescription').value;
-            
-            // Validate required fields
+
             if (!title || !title.trim()) {
                 alert('Project title is required');
                 return;
@@ -3567,108 +3575,91 @@ async function loadAdminDashboard() {
                 alert('Project category is required');
                 return;
             }
-            
-            // Metrics
+
             var metricCost = document.getElementById('webProjectMetricCost') ? parseInt(document.getElementById('webProjectMetricCost').value) || null : null;
             var metricSustainability = document.getElementById('webProjectMetricSustainability') ? parseInt(document.getElementById('webProjectMetricSustainability').value) || null : null;
             var metricInnovation = document.getElementById('webProjectMetricInnovation') ? parseInt(document.getElementById('webProjectMetricInnovation').value) || null : null;
-            
-            // Main project images (required)
-            var fileInput = document.getElementById('webProjectImage');
-            console.log('File input element:', fileInput);
-            console.log('File input attributes:');
-            console.log('  - id:', fileInput.id);
-            console.log('  - type:', fileInput.type);
-            console.log('  - accept:', fileInput.accept);
-            console.log('  - multiple:', fileInput.multiple);
-            console.log('  - files.length:', fileInput.files.length);
-            
-            var files = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
-            console.log('Files selected:', files.length, 'files');
-            files.forEach(function(f, i) {
-                console.log(`  File ${i + 1}: ${f.name}, Size: ${(f.size / 1024).toFixed(2)} KB`);
-            });
-            
-            // Validate image sizes before processing
-            if (files.length > 0) {
-                var totalSize = 0;
-                // Must match backend multer limit (backend/index.js MAX_IMAGE_BYTES)
-                var maxSize = 50 * 1024 * 1024; // 50MB per file
-                
-                for (var i = 0; i < files.length; i++) {
-                    if (files[i].size > maxSize) {
-                        alert('Image "' + files[i].name + '" is too large (max 50MB per image).');
-                        return;
-                    }
-                    totalSize += files[i].size;
+
+            var asDesignedInput = document.getElementById('webProjectAsDesignedImages');
+            var asBuiltInput = document.getElementById('webProjectAsBuiltImages');
+            var asDesignedFiles = asDesignedInput && asDesignedInput.files ? Array.prototype.slice.call(asDesignedInput.files) : [];
+            var asBuiltFiles = asBuiltInput && asBuiltInput.files ? Array.prototype.slice.call(asBuiltInput.files) : [];
+            var maxSize = 50 * 1024 * 1024;
+            var allNewFiles = asDesignedFiles.concat(asBuiltFiles);
+
+            for (var i = 0; i < allNewFiles.length; i++) {
+                if (allNewFiles[i].size > maxSize) {
+                    alert('Image "' + allNewFiles[i].name + '" is too large (max 50MB per image).');
+                    return;
                 }
-                
-                console.log('Image validation passed. Total size:', (totalSize / 1024 / 1024).toFixed(2), 'MB for', files.length, 'images');
             }
-            
+
             var editIdField = document.getElementById('webProjectEditId');
             var editId = editIdField ? editIdField.value : null;
             var modalTitle = webProjModal.querySelector('h2');
-            
-            if (!files.length && !editId) {
-                alert('Please select at least one image for the project');
+            var existingProject = null;
+
+            if (editId) {
+                var currentList = getWebsiteProjects();
+                existingProject = currentList.find(function (p) { return String(p.id) === String(editId); });
+            }
+
+            if (!editId && !asDesignedFiles.length && !asBuiltFiles.length) {
+                alert('Please add at least one image under As Designed or As Built.');
                 return;
             }
 
+            if (editId && existingProject) {
+                var existingDesigned = existingProject.asDesignedImages || existingProject.projectImages || [];
+                var existingBuilt = existingProject.asBuiltImages || [];
+                if (!asDesignedFiles.length && !asBuiltFiles.length && !existingDesigned.length && !existingBuilt.length) {
+                    alert('Please add at least one image under As Designed or As Built.');
+                    return;
+                }
+            }
+
             function uploadFilesToCloudinary(fileList) {
-                console.log('uploadFilesToCloudinary called with:', fileList.length, 'files');
+                if (!fileList.length) return Promise.resolve([]);
                 var token = sessionStorage.getItem('authToken');
-                var promises = Array.prototype.slice.call(fileList).map(function(file) {
-                    return new Promise(function(resolve, reject) {
+                var promises = fileList.map(function (file) {
+                    return new Promise(function (resolve, reject) {
                         var formData = new FormData();
                         formData.append('image', file);
-                        
-                        console.log('Uploading:', file.name, '(' + (file.size / 1024 / 1024).toFixed(2) + ' MB)');
-                        
                         fetch((window.API_BASE || '') + '/api/upload-image', {
                             method: 'POST',
-                            headers: {
-                                'Authorization': 'Bearer ' + token
-                            },
+                            headers: { 'Authorization': 'Bearer ' + token },
                             body: formData
-                        }).then(function(r) {
-                            return r.json().then(function(data) {
-                                if (!r.ok) {
-                                    throw new Error(data.details || data.error || ('Upload failed: ' + r.status));
-                                }
+                        }).then(function (r) {
+                            return r.json().then(function (data) {
+                                if (!r.ok) throw new Error(data.details || data.error || ('Upload failed: ' + r.status));
                                 return data;
                             });
-                        }).then(function(data) {
-                            console.log('✓ Image uploaded:', file.name, '→', data.url);
+                        }).then(function (data) {
                             resolve(data.url);
-                        }).catch(function(err) {
-                            console.error('Upload error:', err);
-                            reject(err);
-                        });
+                        }).catch(reject);
                     });
                 });
-                return Promise.all(promises).then(function(results) {
-                    console.log('✓ All images uploaded:', results.length, 'images');
-                    return results;
-                });
+                return Promise.all(promises);
             }
-            
-            function saveWebProj(projectImageUrls) {
-                console.log('saveWebProj called with:', projectImageUrls.length, 'image URLs');
-                projectImageUrls.forEach(function(url, i) {
-                    console.log(`  Image ${i + 1}: ${url.substring(0, 80)}...`);
-                });
-                
+
+            function saveWebProj(newDesignedUrls, newBuiltUrls) {
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                
+                var priorDesigned = existingProject ? (existingProject.asDesignedImages || existingProject.projectImages || []) : [];
+                var priorBuilt = existingProject ? (existingProject.asBuiltImages || []) : [];
+                var finalDesigned = priorDesigned.concat(newDesignedUrls || []);
+                var finalBuilt = priorBuilt.concat(newBuiltUrls || []);
+
                 var newProject = {
-                    id: editId ? parseInt(editId) : Date.now(), 
-                    slug: projectSlug, 
-                    title: title, 
+                    id: editId ? editId : Date.now(),
+                    slug: projectSlug,
+                    title: title,
                     category: category,
                     categorySecondary: categorySecondary || '',
-                    projectImages: projectImageUrls && projectImageUrls.length ? projectImageUrls : undefined,
+                    asDesignedImages: finalDesigned,
+                    asBuiltImages: finalBuilt,
+                    projectImages: finalDesigned.length ? finalDesigned : finalBuilt,
+                    image: finalDesigned[0] || finalBuilt[0] || '',
                     description: description,
                     metrics: {
                         costEfficiency: metricCost,
@@ -3676,28 +3667,17 @@ async function loadAdminDashboard() {
                         innovation: metricInnovation
                     }
                 };
-                
-                console.log('newProject.projectImages:', newProject.projectImages ? newProject.projectImages.length + ' URLs' : 'undefined');
-                
+
                 if (editId) {
-                    // Edit existing project
                     var index = list.findIndex(function (p) { return String(p.id) === String(editId); });
                     if (index !== -1) {
                         list[index] = Object.assign({}, list[index], newProject);
                     }
                 } else {
-                    // Create new project
                     list.push(newProject);
                 }
-                
-                // Send to backend via API
+
                 var token = sessionStorage.getItem('authToken');
-                console.log('📤 Sending project list to backend - Total projects:', list.length);
-                list.forEach(function(proj, idx) {
-                    console.log(`  Project ${idx + 1}: ${proj.title}, Images: ${proj.projectImages ? proj.projectImages.length : 0}`);
-                });
-                // With Cloudinary URLs, no need to validate size - URLs are small strings
-                // Size limitations are now on Cloudinary side (much higher)
                 fetch((window.API_BASE || '') + '/api/admin/projects', {
                     method: 'PUT',
                     headers: {
@@ -3705,40 +3685,36 @@ async function loadAdminDashboard() {
                         'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify(list)
-                }).then(function(response) {
-                    return response.json().then(function(data) {
+                }).then(function (response) {
+                    return response.json().then(function (data) {
                         if (response.ok) {
-                            setWebsiteProjects(list).then(function () { 
-                                webProjForm.reset(); 
+                            setWebsiteProjects(list).then(function () {
+                                webProjForm.reset();
                                 if (editIdField) editIdField.value = '';
+                                var hint = document.getElementById('webProjectExistingImagesHint');
+                                if (hint) hint.textContent = '';
                                 if (modalTitle) modalTitle.textContent = 'Add Website Project';
-                                webProjModal.classList.remove('open'); 
+                                webProjModal.classList.remove('open');
+                                renderAdminWebsiteProjects();
                                 alert('Website project saved successfully!');
                             }).catch(function () { alert('Could not save project locally.'); });
                         } else {
-                            console.error('Server error response:', data);
                             alert('Failed to save project to server: ' + (data.details || data.error || 'Unknown error'));
                         }
-                    }).catch(function(parseErr) {
-                        console.error('Error parsing response:', parseErr);
-                        alert('Error parsing server response: ' + parseErr.message);
                     });
-                }).catch(function(err) {
-                    console.error('Network error saving project:', err);
+                }).catch(function (err) {
                     alert('Network error saving project: ' + err.message);
                 });
             }
-            
-            if (files.length) { 
-                uploadFilesToCloudinary(files).then(saveWebProj).catch(function(err) {
-                    alert('Image upload failed: ' + err.message);
-                });
-            } else if (editId) {
-                // Keep existing images if editing and no new files
-                var list = getWebsiteProjects();
-                var existing = list.find(function (p) { return String(p.id) === String(editId); });
-                saveWebProj(existing ? existing.projectImages : []);
-            }
+
+            Promise.all([
+                uploadFilesToCloudinary(asDesignedFiles),
+                uploadFilesToCloudinary(asBuiltFiles)
+            ]).then(function (results) {
+                saveWebProj(results[0], results[1]);
+            }).catch(function (err) {
+                alert('Image upload failed: ' + err.message);
+            });
         });
     }
 

@@ -12,6 +12,8 @@
       image: p.image,
       heroImage: p.heroImage || p.image,
       projectImages: p.projectImages || [],
+      asDesignedImages: p.asDesignedImages || p.projectImages || [],
+      asBuiltImages: p.asBuiltImages || [],
       description: p.description || '',
       conceptSketches: p.conceptSketches || [],
       siteAnalysis: p.siteAnalysis || [],

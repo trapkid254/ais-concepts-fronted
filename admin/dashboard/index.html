@@ -1201,6 +1201,7 @@
                         <span class="close-modal" data-close="adminWebsiteProjectModal">&times;</span>
                     </div>
                     <form id="adminWebsiteProjectForm">
+                        <input type="hidden" id="webProjectEditId" value="">
                         <div class="form-group">
                             <label>Project Title</label>
                             <input type="text" id="webProjectTitle" placeholder="e.g., Kamakis Residence" required>
@@ -1232,12 +1233,20 @@
                             <textarea id="webProjectDescription" rows="4" placeholder="Describe the project, its purpose, and key features..." required></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Project Images <span class="required-star">*</span></label>
+                            <label>As Designed Images</label>
                             <div class="file-input-wrapper">
-                                <input type="file" id="webProjectImage" accept="image/*" multiple required>
-                                <div class="file-input-hint">📁 Click to select multiple images (hold Ctrl/Cmd to select multiple)</div>
+                                <input type="file" id="webProjectAsDesignedImages" accept="image/*" multiple>
+                                <div class="file-input-hint">Renderings, plans, and design visuals (multiple allowed)</div>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>As Built Images</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="webProjectAsBuiltImages" accept="image/*" multiple>
+                                <div class="file-input-hint">Construction and completed photos (multiple allowed)</div>
+                            </div>
+                        </div>
+                        <p id="webProjectExistingImagesHint" class="section-sub" style="margin-top:0;"></p>
                         <div class="form-group">
                             <label>Key Metrics (Optional)</label>
                             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">

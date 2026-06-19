@@ -26,22 +26,90 @@
         return String(s || '').replace(/"/g, '&quot;');
     }
 
-    function section(title, imgs) {
-        if (!imgs || !imgs.length) return '';
-        var h = '<section class="project-detail-section"><h2>' + escHtml(title) + '</h2>';
-        h += '<p class="project-gallery-hint"><i class="fas fa-search-plus"></i> Tap any image to enlarge</p>';
-        h += '<div class="project-gallery-grid">';
-        imgs.forEach(function (src) {
+    function buildGalleryGrid(imgs, indexOffset) {
+        var h = '<div class="project-gallery-grid">';
+        imgs.forEach(function (src, i) {
             if (!src) return;
-            var idx = galleryImages.length;
-            galleryImages.push(src);
-            h += '<button type="button" class="gallery-thumb" data-gallery-index="' + idx + '" aria-label="View image ' + (idx + 1) + '">';
+            var idx = indexOffset + i;
+            h += '<button type="button" class="gallery-thumb" data-gallery-index="' + idx + '" aria-label="View image ' + (i + 1) + '">';
             h += '<img src="' + escAttrUrl(src) + '" alt="" loading="lazy">';
             h += '<span class="gallery-thumb-zoom" aria-hidden="true"><i class="fas fa-expand"></i></span>';
             h += '</button>';
         });
+        h += '</div>';
+        return h;
+    }
+
+    function buildTabbedGallery(asDesignedImages, asBuiltImages) {
+        var defaultTab = asDesignedImages.length ? 'designed' : 'built';
+        var designedActive = defaultTab === 'designed';
+        var builtActive = defaultTab === 'built';
+
+        var h = '<section class="project-detail-section project-gallery-section">';
+        h += '<h2>Project Gallery</h2>';
+        h += '<div class="project-gallery-tabs" role="tablist" aria-label="Gallery categories">';
+        h += '<button type="button" class="project-gallery-tab' + (designedActive ? ' is-active' : '') + '" role="tab" data-gallery-tab="designed" aria-selected="' + designedActive + '">As Designed';
+        if (asDesignedImages.length) h += ' <span class="project-gallery-tab-count">' + asDesignedImages.length + '</span>';
+        h += '</button>';
+        h += '<button type="button" class="project-gallery-tab' + (builtActive ? ' is-active' : '') + '" role="tab" data-gallery-tab="built" aria-selected="' + builtActive + '">As Built';
+        if (asBuiltImages.length) h += ' <span class="project-gallery-tab-count">' + asBuiltImages.length + '</span>';
+        h += '</button>';
+        h += '</div>';
+        h += '<p class="project-gallery-hint"><i class="fas fa-search-plus"></i> Tap any image to enlarge</p>';
+        h += '<div class="project-gallery-panels">';
+
+        h += '<div class="project-gallery-panel' + (designedActive ? ' is-active' : '') + '" data-gallery-panel="designed" role="tabpanel"' + (designedActive ? '' : ' hidden') + '>';
+        if (asDesignedImages.length) {
+            h += buildGalleryGrid(asDesignedImages, 0);
+        } else {
+            h += '<p class="project-gallery-empty">No as designed images for this project yet.</p>';
+        }
+        h += '</div>';
+
+        h += '<div class="project-gallery-panel' + (builtActive ? ' is-active' : '') + '" data-gallery-panel="built" role="tabpanel"' + (builtActive ? '' : ' hidden') + '>';
+        if (asBuiltImages.length) {
+            h += buildGalleryGrid(asBuiltImages, 0);
+        } else {
+            h += '<p class="project-gallery-empty">No as built images for this project yet.</p>';
+        }
+        h += '</div>';
+
         h += '</div></section>';
         return h;
+    }
+
+    var galleryByCategory = { designed: [], built: [] };
+    var activeGalleryTab = 'designed';
+
+    function setActiveGalleryTab(tab) {
+        if (!root) return;
+        activeGalleryTab = tab;
+        galleryImages = tab === 'built'
+            ? (galleryByCategory.built || []).slice()
+            : (galleryByCategory.designed || []).slice();
+
+        root.querySelectorAll('.project-gallery-tab').forEach(function (btn) {
+            var isActive = btn.getAttribute('data-gallery-tab') === tab;
+            btn.classList.toggle('is-active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        root.querySelectorAll('.project-gallery-panel').forEach(function (panel) {
+            var isActive = panel.getAttribute('data-gallery-panel') === tab;
+            panel.classList.toggle('is-active', isActive);
+            if (isActive) panel.removeAttribute('hidden');
+            else panel.setAttribute('hidden', '');
+        });
+    }
+
+    function bindGalleryTabs() {
+        if (!root) return;
+        root.querySelectorAll('.project-gallery-tab').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.getAttribute('data-gallery-tab');
+                if (tab) setActiveGalleryTab(tab);
+            });
+        });
     }
 
     function updateLightbox() {
@@ -90,9 +158,12 @@
         root.addEventListener('click', function (e) {
             var thumb = e.target.closest('.gallery-thumb');
             if (thumb) {
+                if (!thumb.closest('.project-gallery-panel.is-active')) return;
                 e.preventDefault();
-                var idx = parseInt(thumb.getAttribute('data-gallery-index'), 10);
-                if (!isNaN(idx)) openLightbox(idx);
+                var activePanel = root.querySelector('.project-gallery-panel.is-active');
+                var thumbs = activePanel ? activePanel.querySelectorAll('.gallery-thumb') : [];
+                var idx = Array.prototype.indexOf.call(thumbs, thumb);
+                if (idx >= 0) openLightbox(idx);
                 return;
             }
             var heroEl = e.target.closest('.project-hero-img');
@@ -100,6 +171,7 @@
                 var heroSrc = heroEl.getAttribute('src');
                 var idx = galleryImages.indexOf(heroSrc);
                 openLightbox(idx >= 0 ? idx : 0);
+                return;
             }
         });
 
@@ -159,13 +231,26 @@
             document.title = (p.title || 'Project') + ' | AIS Concepts';
 
             galleryImages = [];
-            var mainGalleryImages = [];
-            if (p.projectImages && Array.isArray(p.projectImages) && p.projectImages.length > 0) {
-                mainGalleryImages = p.projectImages.filter(Boolean);
+            galleryByCategory = { designed: [], built: [] };
+            var asDesignedImages = [];
+            var asBuiltImages = [];
+            if (p.asDesignedImages && Array.isArray(p.asDesignedImages) && p.asDesignedImages.length) {
+                asDesignedImages = p.asDesignedImages.filter(Boolean);
+            } else if (p.projectImages && Array.isArray(p.projectImages) && p.projectImages.length) {
+                asDesignedImages = p.projectImages.filter(Boolean);
+            }
+            if (p.asBuiltImages && Array.isArray(p.asBuiltImages) && p.asBuiltImages.length) {
+                asBuiltImages = p.asBuiltImages.filter(Boolean);
             }
 
+            galleryByCategory.designed = asDesignedImages;
+            galleryByCategory.built = asBuiltImages;
+            activeGalleryTab = asDesignedImages.length ? 'designed' : 'built';
+            galleryImages = activeGalleryTab === 'built' ? asBuiltImages.slice() : asDesignedImages.slice();
+
             var hero = '';
-            if (mainGalleryImages.length > 0) hero = mainGalleryImages[0];
+            if (asDesignedImages.length > 0) hero = asDesignedImages[0];
+            else if (asBuiltImages.length > 0) hero = asBuiltImages[0];
             else if (p.heroImage) hero = p.heroImage;
             else if (p.image) hero = p.image;
 
@@ -184,14 +269,7 @@
             var metricsSection = hasMetrics ? '<div class="project-detail-section"><h2>Key metrics</h2>' + metricsHtml + '</div>' : '';
             var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
 
-            var projectGallery = mainGalleryImages.length > 0 ? section('Project Gallery', mainGalleryImages) : '';
-            var additionalSections = '';
-            additionalSections += section('Concept sketches', p.conceptSketches);
-            additionalSections += section('Site analysis', p.siteAnalysis);
-            additionalSections += section('Floor plans & sections', p.floorPlans);
-            additionalSections += section('Renderings', p.renderings);
-            additionalSections += section('Construction photos', p.constructionPhotos);
-            additionalSections += section('Completed photos', p.completedPhotos);
+            var tabbedGallery = buildTabbedGallery(asDesignedImages, asBuiltImages);
 
             root.innerHTML =
                 '<h1 class="section-title project-detail-title">' + escHtml(p.title || '') + '</h1>' +
@@ -202,10 +280,10 @@
                 '<div class="project-detail-description">' + escHtml(p.description || '') + '</div>' +
                 '</div>' +
                 metricsSection +
-                projectGallery +
-                additionalSections +
+                tabbedGallery +
                 '<p class="project-detail-back"><a href="projects/" class="btn-primary">Back to portfolio</a></p>';
 
+            bindGalleryTabs();
             bindGallery();
         })
         .catch(function () {

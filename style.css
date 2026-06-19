@@ -2693,8 +2693,102 @@ color: #e5e7eb;
     color: #f8fafc;
 }
 
+.project-gallery-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.project-gallery-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: 2px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+
+.project-gallery-tab:hover {
+    border-color: #0f766e;
+    color: #0f766e;
+}
+
+.project-gallery-tab.is-active {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35);
+}
+
+.project-gallery-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.project-gallery-tab.is-active .project-gallery-tab-count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+.project-gallery-panel[hidden] {
+    display: none !important;
+}
+
+.project-gallery-empty {
+    margin: 0;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    background: var(--card-bg);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+}
+
+[data-theme="dark"] .project-gallery-tab {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .project-gallery-tab:hover {
+    border-color: #2dd4bf;
+    color: #2dd4bf;
+}
+
+[data-theme="dark"] .project-gallery-tab.is-active {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
+}
+
+[data-theme="dark"] .project-gallery-tab-count {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .project-gallery-empty {
+    background: #1e293b;
+    border-color: #475569;
+    color: #94a3b8;
+}
+
 .project-gallery-hint {
-    margin: -8px 0 16px;
+    margin: 0 0 16px;
     font-size: 0.9rem;
     color: var(--text-tertiary);
 }
