@@ -3199,19 +3199,102 @@ async function renderAdminWebsiteProjects() {
             }
         }
     } catch (e) { list = []; }
+
+    var featuredCount = list.filter(function (p) { return p.featuredOnHomepage; }).length;
+
     tbody.innerHTML = list.length ? list.map(function (p) {
         var previewImg = (p.asDesignedImages && p.asDesignedImages[0]) || (p.projectImages && p.projectImages[0]) || (p.asBuiltImages && p.asBuiltImages[0]) || (p.image || '');
+        var isFeatured = !!p.featuredOnHomepage;
+        var homeSlot = isFeatured ? ((p.homeSortOrder || 0) + 1) : null;
+        var homepageCell = '<div class="homepage-project-controls">';
+        if (isFeatured) {
+            homepageCell += '<span class="homepage-pin-badge" title="Shown on homepage">#' + homeSlot + '</span> ';
+            homepageCell += '<button type="button" class="btn-icon btn-icon-sm" onclick="moveWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\', -1)" title="Move earlier on homepage"><i class="fas fa-arrow-up"></i></button> ';
+            homepageCell += '<button type="button" class="btn-icon btn-icon-sm" onclick="moveWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\', 1)" title="Move later on homepage"><i class="fas fa-arrow-down"></i></button> ';
+            homepageCell += '<button type="button" class="btn btn-sm btn-secondary homepage-unpin-btn" onclick="toggleWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\')" title="Remove from homepage">Remove</button>';
+        } else {
+            var pinDisabled = featuredCount >= 3 ? ' disabled title="Maximum 3 homepage projects — remove one first"' : ' title="Show on homepage"';
+            homepageCell += '<button type="button" class="btn btn-sm btn-primary homepage-pin-btn"' + pinDisabled + ' onclick="toggleWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\')"><i class="fas fa-home"></i> Show on homepage</button>';
+        }
+        homepageCell += '</div>';
+
         return '<tr>' +
             '<td><img src="' + escapeHtml(previewImg) + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
             '<td>' + escapeHtml(p.category || '') + '</td>' +
+            '<td>' + homepageCell + '</td>' +
             '<td>' + escapeHtml((p.description || '').substring(0, 100) + (p.description && p.description.length > 100 ? '...' : '')) + '</td>' +
             '<td>' +
             '<button class="btn-icon" onclick="editWebsiteProject(\'' + escapeAttr(String(p.id)) + '\')" title="Edit project"><i class="fas fa-edit"></i></button> ' +
             '<button class="btn-icon" onclick="deleteWebsiteProject(\'' + escapeAttr(String(p.id)) + '\')" title="Delete project"><i class="fas fa-trash"></i></button>' +
             '</td></tr>';
-    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No website projects yet. Click "Add Website Project" to get started.</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;">No website projects yet. Click "Add Website Project" to get started.</td></tr>';
 }
+
+function normalizeHomepageOrder(list) {
+    var featured = list.filter(function (p) { return p.featuredOnHomepage; })
+        .sort(function (a, b) { return (a.homeSortOrder || 0) - (b.homeSortOrder || 0); });
+    featured.forEach(function (p, i) { p.homeSortOrder = i; });
+}
+
+function persistWebsiteProjects(list, successMessage) {
+    if (typeof setWebsiteProjects !== 'function') {
+        alert('Could not save projects.');
+        return Promise.resolve();
+    }
+    return setWebsiteProjects(list).then(function () {
+        return renderAdminWebsiteProjects();
+    }).then(function () {
+        if (successMessage) alert(successMessage);
+    }).catch(function (err) {
+        alert('Failed to update homepage: ' + (err.message || 'Unknown error'));
+    });
+}
+
+window.toggleWebsiteProjectHomepage = function (id) {
+    if (typeof getWebsiteProjects !== 'function') return;
+    var list = getWebsiteProjects().slice();
+    var index = list.findIndex(function (p) { return String(p.id) === String(id); });
+    if (index === -1) return;
+
+    var project = list[index];
+    var featured = list.filter(function (p) { return p.featuredOnHomepage; });
+
+    if (project.featuredOnHomepage) {
+        project.featuredOnHomepage = false;
+        project.homeSortOrder = 0;
+        normalizeHomepageOrder(list);
+        persistWebsiteProjects(list, 'Project removed from homepage.');
+        return;
+    }
+
+    if (featured.length >= 3) {
+        alert('The homepage shows up to 3 projects. Remove one from the homepage first, then add this project.');
+        return;
+    }
+
+    project.featuredOnHomepage = true;
+    project.homeSortOrder = featured.length;
+    normalizeHomepageOrder(list);
+    persistWebsiteProjects(list, 'Project is now on the homepage. Refresh the public site to see it.');
+};
+
+window.moveWebsiteProjectHomepage = function (id, direction) {
+    if (typeof getWebsiteProjects !== 'function') return;
+    var list = getWebsiteProjects().slice();
+    var featured = list.filter(function (p) { return p.featuredOnHomepage; })
+        .sort(function (a, b) { return (a.homeSortOrder || 0) - (b.homeSortOrder || 0); });
+    var idx = featured.findIndex(function (p) { return String(p.id) === String(id); });
+    if (idx === -1) return;
+
+    var newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= featured.length) return;
+
+    var moved = featured.splice(idx, 1)[0];
+    featured.splice(newIdx, 0, moved);
+    featured.forEach(function (p, i) { p.homeSortOrder = i; });
+    persistWebsiteProjects(list);
+};
 
 async function renderAdminFAQsInContent() {
     var tbody = document.getElementById('adminFAQsInContentBody');

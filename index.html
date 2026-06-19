@@ -592,7 +592,8 @@
         var filterBtns = document.querySelectorAll('#homePortfolioFilters .filter-btn');
         if (!grid || typeof loadWebsiteProjects !== 'function') return;
         function render(filter, projects) {
-            var toShow = filterProjectsByCategory(projects, filter || 'all').slice(0, 3);
+            var filtered = filterProjectsByCategory(projects, filter || 'all');
+            var toShow = (typeof selectHomepageProjects === 'function' ? selectHomepageProjects(filtered) : filtered).slice(0, 3);
             grid.innerHTML = '';
             if (emptyMsg) emptyMsg.style.display = 'none';
             if (toShow.length === 0) {

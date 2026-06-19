@@ -22,7 +22,9 @@
       constructionPhotos: p.constructionPhotos || [],
       completedPhotos: p.completedPhotos || [],
       metrics: p.metrics || {},
-      hasMetrics: p.hasMetrics || false
+      hasMetrics: p.hasMetrics || false,
+      featuredOnHomepage: !!p.featuredOnHomepage,
+      homeSortOrder: p.homeSortOrder != null ? p.homeSortOrder : 0
     };
   }
 
@@ -73,6 +75,18 @@
       var cat2 = (p.categorySecondary || '').toLowerCase().replace(/\s*&\s*/g, ' & ');
       return cat === f || cat2 === f || cat.indexOf(f) !== -1 || cat2.indexOf(f) !== -1;
     });
+  };
+
+  /** Homepage shows up to 3 projects: pinned first, then the rest in list order. */
+  global.selectHomepageProjects = function (projects) {
+    if (!projects || !projects.length) return [];
+    var featured = projects.filter(function (p) { return p.featuredOnHomepage; })
+      .sort(function (a, b) { return (a.homeSortOrder || 0) - (b.homeSortOrder || 0); });
+    if (!featured.length) return projects.slice();
+    var featuredIds = {};
+    featured.forEach(function (p) { featuredIds[String(p.id)] = true; });
+    var rest = projects.filter(function (p) { return !featuredIds[String(p.id)]; });
+    return featured.concat(rest);
   };
 
   global.PROJECT_CATEGORIES = ['Residential', 'Commercial', 'Urban', 'Interior', 'Conceptual'];
