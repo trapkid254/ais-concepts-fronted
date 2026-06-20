@@ -77,7 +77,7 @@
     });
   };
 
-  /** Homepage shows up to 3 projects: pinned first, then the rest in list order. */
+  /** Homepage shows up to 4 projects: pinned first, then the rest in list order. */
   global.selectHomepageProjects = function (projects) {
     if (!projects || !projects.length) return [];
     var featured = projects.filter(function (p) { return p.featuredOnHomepage; })

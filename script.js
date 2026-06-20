@@ -384,7 +384,14 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.replace('client/login.html');
     }
 
-    /* ===== Footer: clickable phone & email ===== */
+    /* ===== Footer: dynamic copyright year & clickable phone/email ===== */
+    (function () {
+        var year = new Date().getFullYear();
+        document.querySelectorAll('.footer-copyright-year').forEach(function (el) {
+            el.textContent = year;
+        });
+    })();
+
     (function () {
         document.querySelectorAll('.footer address').forEach(function (addr) {
             if (addr.dataset.contactLinked === '1') return;

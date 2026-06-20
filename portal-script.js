@@ -3213,7 +3213,7 @@ async function renderAdminWebsiteProjects() {
             homepageCell += '<button type="button" class="btn-icon btn-icon-sm" onclick="moveWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\', 1)" title="Move later on homepage"><i class="fas fa-arrow-down"></i></button> ';
             homepageCell += '<button type="button" class="btn btn-sm btn-secondary homepage-unpin-btn" onclick="toggleWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\')" title="Remove from homepage">Remove</button>';
         } else {
-            var pinDisabled = featuredCount >= 3 ? ' disabled title="Maximum 3 homepage projects — remove one first"' : ' title="Show on homepage"';
+            var pinDisabled = featuredCount >= 4 ? ' disabled title="Maximum 4 homepage projects — remove one first"' : ' title="Show on homepage"';
             homepageCell += '<button type="button" class="btn btn-sm btn-primary homepage-pin-btn"' + pinDisabled + ' onclick="toggleWebsiteProjectHomepage(\'' + escapeAttr(String(p.id)) + '\')"><i class="fas fa-home"></i> Show on homepage</button>';
         }
         homepageCell += '</div>';
@@ -3268,8 +3268,8 @@ window.toggleWebsiteProjectHomepage = function (id) {
         return;
     }
 
-    if (featured.length >= 3) {
-        alert('The homepage shows up to 3 projects. Remove one from the homepage first, then add this project.');
+    if (featured.length >= 4) {
+        alert('The homepage shows up to 4 projects. Remove one from the homepage first, then add this project.');
         return;
     }
 
