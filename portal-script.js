@@ -3184,6 +3184,94 @@ window.deleteProjectEnquiry = async function (id) {
     }
 };
 
+var webProjectImageEditState = { designed: [], built: [] };
+
+function resetWebProjectImageEditState(designed, built) {
+    webProjectImageEditState.designed = (designed || []).filter(Boolean).slice();
+    webProjectImageEditState.built = (built || []).filter(Boolean).slice();
+}
+
+function renderWebProjectSavedImageGalleries() {
+    var section = document.getElementById('webProjectSavedImagesSection');
+    var designedEl = document.getElementById('webProjectSavedDesignedGallery');
+    var builtEl = document.getElementById('webProjectSavedBuiltGallery');
+    var hint = document.getElementById('webProjectExistingImagesHint');
+    var designed = webProjectImageEditState.designed || [];
+    var built = webProjectImageEditState.built || [];
+    var hasAny = designed.length > 0 || built.length > 0;
+    var editIdField = document.getElementById('webProjectEditId');
+    var isEditing = editIdField && editIdField.value;
+
+    if (section) section.style.display = (isEditing || hasAny) ? 'block' : 'none';
+
+    function galleryHtml(images, category) {
+        if (!images.length) {
+            return '<p class="admin-project-image-gallery-empty">No images in this category yet.</p>';
+        }
+        return images.map(function (url, i) {
+            return '<div class="admin-project-image-item">' +
+                '<img src="' + escapeAttr(url) + '" alt="Saved image ' + (i + 1) + '">' +
+                '<button type="button" class="admin-project-image-remove" data-category="' + escapeAttr(category) + '" data-url="' + escapeAttr(url) + '" onclick="removeWebProjectSavedImage(this)" title="Remove image" aria-label="Remove image">&times;</button>' +
+                '</div>';
+        }).join('');
+    }
+
+    if (designedEl) designedEl.innerHTML = galleryHtml(designed, 'designed');
+    if (builtEl) builtEl.innerHTML = galleryHtml(built, 'built');
+
+    if (hint) {
+        hint.textContent = hasAny
+            ? designed.length + ' As Designed, ' + built.length + ' As Built saved. Upload below to add more, or remove with × (updates public site right away).'
+            : (isEditing ? 'No images left — upload new ones or save to keep this project without gallery images.' : '');
+    }
+}
+
+function saveWebProjectImageChanges(successMessage) {
+    var editIdField = document.getElementById('webProjectEditId');
+    if (!editIdField || !editIdField.value || typeof getWebsiteProjects !== 'function') {
+        return Promise.resolve();
+    }
+    var list = getWebsiteProjects().slice();
+    var index = list.findIndex(function (p) { return String(p.id) === String(editIdField.value); });
+    if (index === -1) return Promise.resolve();
+
+    var designed = (webProjectImageEditState.designed || []).slice();
+    var built = (webProjectImageEditState.built || []).slice();
+    list[index] = Object.assign({}, list[index], {
+        asDesignedImages: designed,
+        asBuiltImages: built,
+        projectImages: designed.length ? designed : built,
+        image: designed[0] || built[0] || ''
+    });
+
+    return persistWebsiteProjects(list, successMessage);
+}
+
+window.removeWebProjectSavedImage = function (btn) {
+    if (!btn) return;
+    var category = btn.getAttribute('data-category');
+    var url = btn.getAttribute('data-url');
+    if (!url || !category) return;
+
+    var editIdField = document.getElementById('webProjectEditId');
+    var isEditing = editIdField && editIdField.value;
+    var msg = isEditing
+        ? 'Remove this image from the project? It will be removed from the public website immediately.'
+        : 'Remove this image from the project? It will be deleted when you save.';
+    if (!confirm(msg)) return;
+
+    if (category === 'built') {
+        webProjectImageEditState.built = (webProjectImageEditState.built || []).filter(function (u) { return u !== url; });
+    } else {
+        webProjectImageEditState.designed = (webProjectImageEditState.designed || []).filter(function (u) { return u !== url; });
+    }
+    renderWebProjectSavedImageGalleries();
+
+    if (isEditing) {
+        saveWebProjectImageChanges('Image removed. Refresh the public website to see the update.');
+    }
+};
+
 async function renderAdminWebsiteProjects() {
     var tbody = document.getElementById('adminWebsiteProjectsBody');
     if (!tbody) return;
@@ -3464,14 +3552,11 @@ window.editWebsiteProject = function(id) {
     if (designedInput) designedInput.value = '';
     if (builtInput) builtInput.value = '';
 
-    var hint = document.getElementById('webProjectExistingImagesHint');
-    if (hint) {
-        var designedCount = (project.asDesignedImages || project.projectImages || []).length;
-        var builtCount = (project.asBuiltImages || []).length;
-        hint.textContent = designedCount || builtCount
-            ? 'Currently saved: ' + designedCount + ' As Designed, ' + builtCount + ' As Built. Upload more images to add to each category.'
-            : '';
-    }
+    resetWebProjectImageEditState(
+        project.asDesignedImages || project.projectImages || [],
+        project.asBuiltImages || []
+    );
+    renderWebProjectSavedImageGalleries();
 
     if (webProjModal) webProjModal.classList.add('open');
 };
@@ -3645,6 +3730,8 @@ async function loadAdminDashboard() {
         var builtInput = document.getElementById('webProjectAsBuiltImages');
         if (designedInput) designedInput.value = '';
         if (builtInput) builtInput.value = '';
+        resetWebProjectImageEditState([], []);
+        renderWebProjectSavedImageGalleries();
         var modalTitle = webProjModal.querySelector('h2');
         if (modalTitle) modalTitle.textContent = 'Add Website Project';
         if (typeof renderCategorySelectOptions === 'function') {
@@ -3705,18 +3792,17 @@ async function loadAdminDashboard() {
                 existingProject = currentList.find(function (p) { return String(p.id) === String(editId); });
             }
 
-            if (!editId && !asDesignedFiles.length && !asBuiltFiles.length) {
+            var savedDesigned = (webProjectImageEditState.designed || []).slice();
+            var savedBuilt = (webProjectImageEditState.built || []).slice();
+
+            if (!editId && !asDesignedFiles.length && !asBuiltFiles.length && !savedDesigned.length && !savedBuilt.length) {
                 alert('Please add at least one image under As Designed or As Built.');
                 return;
             }
 
-            if (editId && existingProject) {
-                var existingDesigned = existingProject.asDesignedImages || existingProject.projectImages || [];
-                var existingBuilt = existingProject.asBuiltImages || [];
-                if (!asDesignedFiles.length && !asBuiltFiles.length && !existingDesigned.length && !existingBuilt.length) {
-                    alert('Please add at least one image under As Designed or As Built.');
-                    return;
-                }
+            if (editId && !asDesignedFiles.length && !asBuiltFiles.length && !savedDesigned.length && !savedBuilt.length) {
+                alert('Please add at least one image under As Designed or As Built.');
+                return;
             }
 
             function uploadFilesToCloudinary(fileList) {
@@ -3746,10 +3832,8 @@ async function loadAdminDashboard() {
             function saveWebProj(newDesignedUrls, newBuiltUrls) {
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                var priorDesigned = existingProject ? (existingProject.asDesignedImages || existingProject.projectImages || []) : [];
-                var priorBuilt = existingProject ? (existingProject.asBuiltImages || []) : [];
-                var finalDesigned = priorDesigned.concat(newDesignedUrls || []);
-                var finalBuilt = priorBuilt.concat(newBuiltUrls || []);
+                var finalDesigned = savedDesigned.concat(newDesignedUrls || []);
+                var finalBuilt = savedBuilt.concat(newBuiltUrls || []);
 
                 var newProject = {
                     id: editId ? editId : Date.now(),
@@ -3792,8 +3876,8 @@ async function loadAdminDashboard() {
                             setWebsiteProjects(list).then(function () {
                                 webProjForm.reset();
                                 if (editIdField) editIdField.value = '';
-                                var hint = document.getElementById('webProjectExistingImagesHint');
-                                if (hint) hint.textContent = '';
+                                resetWebProjectImageEditState([], []);
+                                renderWebProjectSavedImageGalleries();
                                 if (modalTitle) modalTitle.textContent = 'Add Website Project';
                                 webProjModal.classList.remove('open');
                                 renderAdminWebsiteProjects();
