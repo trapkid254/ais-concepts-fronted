@@ -496,21 +496,31 @@ document.addEventListener('DOMContentLoaded', async function () {
         var overlay = document.createElement('div');
         overlay.className = 'sidebar-overlay';
         overlay.addEventListener('click', function () {
-            var sidebar = document.querySelector('.sidebar');
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+            setMobileSidebarOpen(false);
         });
         document.body.appendChild(overlay);
         return overlay;
+    }
+
+    function setMobileSidebarOpen(open) {
+        var sidebar = document.querySelector('.sidebar');
+        var overlay = document.querySelector('.sidebar-overlay');
+        if (sidebar) sidebar.classList.toggle('active', open);
+        if (overlay) overlay.classList.toggle('active', open);
+        if (window.innerWidth <= 768) {
+            document.body.classList.toggle('portal-sidebar-open', open);
+        } else {
+            document.body.classList.remove('portal-sidebar-open');
+        }
     }
 
     var menuToggle = document.getElementById('menuToggle');
     if (menuToggle) {
         menuToggle.addEventListener('click', function () {
             var sidebar = document.querySelector('.sidebar');
-            var overlay = document.querySelector('.sidebar-overlay') || createSidebarOverlay();
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            var isOpen = sidebar && sidebar.classList.contains('active');
+            if (!document.querySelector('.sidebar-overlay')) createSidebarOverlay();
+            setMobileSidebarOpen(!isOpen);
         });
     }
 
@@ -521,17 +531,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('active') &&
             toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) &&
             overlay && !overlay.contains(e.target)) {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+            setMobileSidebarOpen(false);
         }
     });
 
     window.addEventListener('resize', function () {
-        var sidebar = document.querySelector('.sidebar');
-        var overlay = document.querySelector('.sidebar-overlay');
         if (window.innerWidth > 768) {
-            if (sidebar) sidebar.classList.remove('active');
-            if (overlay) overlay.classList.remove('active');
+            setMobileSidebarOpen(false);
         }
     });
 
@@ -580,6 +586,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 // Update URL hash
                 window.location.hash = sectionId;
                 if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
+                if (window.innerWidth <= 768) setMobileSidebarOpen(false);
             });
         });
     }
