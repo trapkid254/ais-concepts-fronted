@@ -2,6 +2,9 @@
   var API_BASE = global.API_BASE || '';
   var __projects = [];
 
+  var PROJECT_CATEGORIES = ['Hospitality', 'Residential', 'Commercial', 'Interior', 'Apartments'];
+  var LEGACY_PROJECT_CATEGORIES = ['Urban', 'Conceptual'];
+
   function mapProject(p) {
     return {
       id: p.id,
@@ -31,6 +34,51 @@
   function defaultProjects() {
     return [];
   }
+
+  function categoryFilterSlug(category) {
+    return String(category || '').trim().toLowerCase();
+  }
+
+  function allCategoryOptions(includeLegacy) {
+    var list = PROJECT_CATEGORIES.slice();
+    if (includeLegacy) {
+      LEGACY_PROJECT_CATEGORIES.forEach(function (c) {
+        if (list.indexOf(c) === -1) list.push(c);
+      });
+    }
+    return list;
+  }
+
+  function renderCategoryFilterButtons(container, activeFilter) {
+    if (!container) return;
+    var active = (activeFilter || 'all').toLowerCase();
+    var html = '<button type="button" class="filter-btn' + (active === 'all' ? ' active' : '') + '" data-filter="all">All</button>';
+    PROJECT_CATEGORIES.forEach(function (cat) {
+      var slug = categoryFilterSlug(cat);
+      html += '<button type="button" class="filter-btn' + (active === slug ? ' active' : '') + '" data-filter="' + slug + '">' + cat + '</button>';
+    });
+    container.innerHTML = html;
+  }
+
+  function renderCategorySelectOptions(currentValue, includeLegacy, includeBlank) {
+    var html = includeBlank !== false ? '<option value="">Select category...</option>' : '';
+    var seen = {};
+    allCategoryOptions(includeLegacy).forEach(function (cat) {
+      seen[cat] = true;
+      var selected = currentValue === cat ? ' selected' : '';
+      html += '<option value="' + cat + '"' + selected + '>' + cat + '</option>';
+    });
+    if (currentValue && !seen[currentValue]) {
+      html += '<option value="' + currentValue + '" selected>' + currentValue + ' (legacy)</option>';
+    }
+    return html;
+  }
+
+  global.buildProjectCategorySelect = function (projectId, currentValue, includeLegacy) {
+    var opts = renderCategorySelectOptions(currentValue || '', includeLegacy, false);
+    return '<select class="form-control admin-category-select" title="Change category" onchange="changeWebsiteProjectCategory(\'' +
+      String(projectId).replace(/'/g, "\\'") + '\', this.value)">' + opts + '</select>';
+  };
 
   global.loadWebsiteProjects = function () {
     return fetch(API_BASE + '/api/projects')
@@ -89,5 +137,10 @@
     return featured.concat(rest);
   };
 
-  global.PROJECT_CATEGORIES = ['Residential', 'Commercial', 'Urban', 'Interior', 'Conceptual'];
+  global.PROJECT_CATEGORIES = PROJECT_CATEGORIES;
+  global.LEGACY_PROJECT_CATEGORIES = LEGACY_PROJECT_CATEGORIES;
+  global.categoryFilterSlug = categoryFilterSlug;
+  global.allCategoryOptions = allCategoryOptions;
+  global.renderCategoryFilterButtons = renderCategoryFilterButtons;
+  global.renderCategorySelectOptions = renderCategorySelectOptions;
 })(typeof window !== 'undefined' ? window : this);

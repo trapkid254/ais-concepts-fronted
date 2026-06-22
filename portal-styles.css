@@ -1721,6 +1721,12 @@ td {
     white-space: nowrap;
 }
 
+.admin-category-select {
+    min-width: 140px;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+}
+
 /* ===== Project Grid ===== */
 .projects-grid {
     display: grid;

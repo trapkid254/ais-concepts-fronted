@@ -141,11 +141,11 @@
                 <a href="projects/">Portfolio <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
                     <li><a href="projects/">All Projects</a></li>
+                    <li><a href="projects/?filter=hospitality">Hospitality</a></li>
+                    <li><a href="projects/?filter=apartments">Apartments</a></li>
                     <li><a href="projects/?filter=residential">Residential</a></li>
                     <li><a href="projects/?filter=commercial">Commercial</a></li>
-                    <li><a href="projects/?filter=urban">Urban</a></li>
                     <li><a href="projects/?filter=interior">Interior</a></li>
-                    <li><a href="projects/?filter=conceptual">Conceptual</a></li>
                 </ul>
             </li>
             <li><a href="contact/">Contact Us</a></li>
@@ -287,14 +287,7 @@
             <h2 class="section-title typewriter-title" data-typewriter="Featured Projects">Featured Projects</h2>
             <p class="section-subtitle typewriter-text" data-typewriter="Showcasing our best work">Showcasing our best work</p>
             
-            <div class="portfolio-filters portfolio-filters--wrap" id="homePortfolioFilters">
-                <button type="button" class="filter-btn active" data-filter="all">All</button>
-                <button type="button" class="filter-btn" data-filter="residential">Residential</button>
-                <button type="button" class="filter-btn" data-filter="commercial">Commercial</button>
-                <button type="button" class="filter-btn" data-filter="urban">Urban</button>
-                <button type="button" class="filter-btn" data-filter="interior">Interior</button>
-                <button type="button" class="filter-btn" data-filter="conceptual">Conceptual</button>
-            </div>
+            <div class="portfolio-filters portfolio-filters--wrap" id="homePortfolioFilters"></div>
             <div id="homePortfolioEmpty" class="portfolio-empty-message" style="display: none;">
                 <p>No projects in this category at the moment.</p>
                 <p>Please check our other project categories.</p>
@@ -518,11 +511,11 @@
                 { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: '#services' },
                 
                 // Portfolio Categories
+                { title: 'Hospitality Projects', description: 'Hotels, resorts, and hospitality architecture', url: 'projects/?filter=hospitality' },
+                { title: 'Apartments Projects', description: 'Multi-unit residential and apartment developments', url: 'projects/?filter=apartments' },
                 { title: 'Residential Projects', description: 'Modern home designs and residential architecture', url: 'projects/?filter=residential' },
                 { title: 'Commercial Projects', description: 'Office buildings and commercial spaces', url: 'projects/?filter=commercial' },
-                { title: 'Urban Projects', description: 'City planning and urban development projects', url: 'projects/?filter=urban' },
                 { title: 'Interior Projects', description: 'Interior design and space transformations', url: 'projects/?filter=interior' },
-                { title: 'Conceptual Projects', description: 'Innovative conceptual designs and proposals', url: 'projects/?filter=conceptual' },
                 
                 // Specific Projects (sample data)
                 { title: 'Modern Residence Design', description: 'Contemporary home with sustainable materials and energy-efficient features', url: 'projects/' },
@@ -587,8 +580,12 @@
     (function() {
         var grid = document.getElementById('homePortfolioGrid');
         var emptyMsg = document.getElementById('homePortfolioEmpty');
-        var filterBtns = document.querySelectorAll('#homePortfolioFilters .filter-btn');
+        var filterBtns;
         if (!grid || typeof loadWebsiteProjects !== 'function') return;
+        if (typeof renderCategoryFilterButtons === 'function') {
+            renderCategoryFilterButtons(document.getElementById('homePortfolioFilters'));
+        }
+        filterBtns = document.querySelectorAll('#homePortfolioFilters .filter-btn');
         function render(filter, projects) {
             var filtered = filterProjectsByCategory(projects, filter || 'all');
             var toShow = (typeof selectHomepageProjects === 'function' ? selectHomepageProjects(filtered) : filtered).slice(0, 4);

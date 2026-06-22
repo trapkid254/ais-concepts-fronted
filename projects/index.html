@@ -77,11 +77,11 @@
                 <a href="../projects/" class="active">Portfolio <i class="fas fa-chevron-down"></i></a>
                 <ul class="nav-dropdown">
                     <li><a href="../projects/">All Projects</a></li>
+                    <li><a href="projects.html?filter=hospitality">Hospitality</a></li>
+                    <li><a href="projects.html?filter=apartments">Apartments</a></li>
                     <li><a href="projects.html?filter=residential">Residential</a></li>
                     <li><a href="projects.html?filter=commercial">Commercial</a></li>
-                    <li><a href="projects.html?filter=urban">Urban</a></li>
                     <li><a href="projects.html?filter=interior">Interior</a></li>
-                    <li><a href="projects.html?filter=conceptual">Conceptual</a></li>
                 </ul>
             </li>
                         <li><a href="../contact/">Contact Us</a></li>
@@ -130,14 +130,7 @@
             <h1 class="section-title typewriter-title" data-typewriter="Our Projects">Our Projects</h1>
             <p class="section-subtitle typewriter-text" data-typewriter="Filter by category to explore our work">Filter by category to explore our work</p>
 
-            <div class="portfolio-filters portfolio-filters--wrap" id="portfolioFilters">
-                <button type="button" class="filter-btn active" data-filter="all">All</button>
-                <button type="button" class="filter-btn" data-filter="residential">Residential</button>
-                <button type="button" class="filter-btn" data-filter="commercial">Commercial</button>
-                <button type="button" class="filter-btn" data-filter="urban">Urban</button>
-                <button type="button" class="filter-btn" data-filter="interior">Interior</button>
-                <button type="button" class="filter-btn" data-filter="conceptual">Conceptual</button>
-            </div>
+            <div class="portfolio-filters portfolio-filters--wrap" id="portfolioFilters"></div>
 
             <div id="portfolioEmptyMessage" class="portfolio-empty-message" style="display: none;">
                 <p>No projects in this category at the moment.</p>
@@ -208,7 +201,11 @@
 
         var grid = document.getElementById('projectsPageGrid');
         var emptyMsg = document.getElementById('portfolioEmptyMessage');
-        var filterBtns = document.querySelectorAll('#portfolioFilters .filter-btn');
+        var filterBtns;
+        if (typeof renderCategoryFilterButtons === 'function') {
+            renderCategoryFilterButtons(document.getElementById('portfolioFilters'), initialFilter);
+        }
+        filterBtns = document.querySelectorAll('#portfolioFilters .filter-btn');
 
         function render(filterKey, projects) {
             var filter = filterKey === 'all' ? '' : filterKey;
@@ -324,11 +321,11 @@
             { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: 'index.html#services' },
             
             // Portfolio Categories
+            { title: 'Hospitality Projects', description: 'Hotels, resorts, and hospitality architecture', url: 'projects.html?filter=hospitality' },
+            { title: 'Apartments Projects', description: 'Multi-unit residential and apartment developments', url: 'projects.html?filter=apartments' },
             { title: 'Residential Projects', description: 'Modern home designs and residential architecture', url: 'projects.html?filter=residential' },
             { title: 'Commercial Projects', description: 'Office buildings and commercial spaces', url: 'projects.html?filter=commercial' },
-            { title: 'Urban Projects', description: 'City planning and urban development projects', url: 'projects.html?filter=urban' },
             { title: 'Interior Projects', description: 'Interior design and space transformations', url: 'projects.html?filter=interior' },
-            { title: 'Conceptual Projects', description: 'Innovative conceptual designs and proposals', url: 'projects.html?filter=conceptual' },
             
             // Client Portal
             { title: 'Client Login', description: 'Access your project portal and track progress', url: 'client/login.html' },

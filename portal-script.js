@@ -3221,7 +3221,7 @@ async function renderAdminWebsiteProjects() {
         return '<tr>' +
             '<td><img src="' + escapeHtml(previewImg) + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
-            '<td>' + escapeHtml(p.category || '') + '</td>' +
+            '<td>' + (typeof buildProjectCategorySelect === 'function' ? buildProjectCategorySelect(p.id, p.category || '', true) : escapeHtml(p.category || '')) + '</td>' +
             '<td>' + homepageCell + '</td>' +
             '<td>' + escapeHtml((p.description || '').substring(0, 100) + (p.description && p.description.length > 100 ? '...' : '')) + '</td>' +
             '<td>' +
@@ -3277,6 +3277,16 @@ window.toggleWebsiteProjectHomepage = function (id) {
     project.homeSortOrder = featured.length;
     normalizeHomepageOrder(list);
     persistWebsiteProjects(list, 'Project is now on the homepage. Refresh the public site to see it.');
+};
+
+window.changeWebsiteProjectCategory = function (id, category) {
+    if (!category || typeof getWebsiteProjects !== 'function') return;
+    var list = getWebsiteProjects().slice();
+    var index = list.findIndex(function (p) { return String(p.id) === String(id); });
+    if (index === -1) return;
+    if (list[index].category === category) return;
+    list[index].category = category;
+    persistWebsiteProjects(list, 'Project category updated.');
 };
 
 window.moveWebsiteProjectHomepage = function (id, direction) {
@@ -3431,7 +3441,11 @@ window.editWebsiteProject = function(id) {
     
     if (document.getElementById('webProjectTitle')) document.getElementById('webProjectTitle').value = project.title || '';
     if (document.getElementById('webProjectSlug')) document.getElementById('webProjectSlug').value = project.slug || '';
-    if (document.getElementById('webProjectCategory')) document.getElementById('webProjectCategory').value = project.category || '';
+    if (document.getElementById('webProjectCategory') && typeof renderCategorySelectOptions === 'function') {
+        document.getElementById('webProjectCategory').innerHTML = renderCategorySelectOptions(project.category || '', true);
+    } else if (document.getElementById('webProjectCategory')) {
+        document.getElementById('webProjectCategory').value = project.category || '';
+    }
     if (document.getElementById('webProjectCategorySecondary')) document.getElementById('webProjectCategorySecondary').value = project.categorySecondary || '';
     if (document.getElementById('webProjectDescription')) document.getElementById('webProjectDescription').value = project.description || '';
     
@@ -3633,6 +3647,10 @@ async function loadAdminDashboard() {
         if (builtInput) builtInput.value = '';
         var modalTitle = webProjModal.querySelector('h2');
         if (modalTitle) modalTitle.textContent = 'Add Website Project';
+        if (typeof renderCategorySelectOptions === 'function') {
+            var catSel = document.getElementById('webProjectCategory');
+            if (catSel) catSel.innerHTML = renderCategorySelectOptions('', false);
+        }
         webProjModal.classList.add('open');
     });
     if (addWebServBtn && webServModal) addWebServBtn.addEventListener('click', function () { if (webServForm) webServForm.reset(); webServModal.classList.add('open'); });
