@@ -9,6 +9,7 @@
     })(window,document,'script','dataLayer','GTM-W8GS28XZ');</script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
+    <script src="/url-cleanup.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Primary SEO Meta Tags -->
@@ -60,7 +61,7 @@
     <!-- End Google Tag Manager (noscript) -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <a href="../index.html">
+            <a href="/">
                 <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img">
             </a>
         </div>
@@ -71,7 +72,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links">
-            <li><a href="../index.html">Home</a></li>
+            <li><a href="/">Home</a></li>
             <li><a href="../about/">About Us</a></li>
             <li class="has-dropdown">
                 <a href="../projects/" class="active">Portfolio <i class="fas fa-chevron-down"></i></a>
@@ -223,7 +224,7 @@
                 var fallback = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjdmN2Y3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UHJvamVjdDwvdGV4dD48L3N2Zz4=';
                 if (!imgSrc) imgSrc = fallback;
                 var slug = p.slug || '';
-                var detailHref = slug ? ('../project-detail.html?slug=' + encodeURIComponent(slug)) : 'index.html#portfolio';
+                var detailHref = slug ? ('../project-detail.html?slug=' + encodeURIComponent(slug)) : '/';
                 var el = document.createElement('div');
                 el.className = 'portfolio-item';
                 el.innerHTML = '<div class="portfolio-card-inner">' +
@@ -307,7 +308,7 @@
         // Comprehensive search across all website content
         const allContent = [
             // Pages
-            { title: 'Home', description: 'Main landing page with hero section and overview', url: 'index.html' },
+            { title: 'Home', description: 'Main landing page with hero section and overview', url: '/' },
             { title: 'About Us', description: 'Learn about AIS Concepts architecture firm', url: 'about.html' },
             { title: 'Contact Us', description: 'Get in touch with our team', url: 'contact.html' },
             { title: 'Careers', description: 'Join our team - view open positions', url: 'careers.html' },
@@ -315,10 +316,10 @@
             { title: 'Blog', description: 'Latest news and insights from our team', url: 'blog.html' },
             
             // Services
-            { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: 'index.html#services' },
-            { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: 'index.html#services' },
-            { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: 'index.html#services' },
-            { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: 'index.html#services' },
+            { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: '/' },
+            { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: '/' },
+            { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: '/' },
+            { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: '/' },
             
             // Portfolio Categories
             { title: 'Hospitality Projects', description: 'Hotels, resorts, and hospitality architecture', url: 'projects.html?filter=hospitality' },

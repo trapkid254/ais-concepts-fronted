@@ -6,6 +6,11 @@
       "use": "@vercel/static"
     }
   ],
+  "redirects": [
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/home", "destination": "/", "permanent": true },
+    { "source": "/home/", "destination": "/", "permanent": true }
+  ],
   "routes": [
     {
       "src": "/(.*)",

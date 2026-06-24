@@ -9,6 +9,7 @@
     })(window,document,'script','dataLayer','GTM-W8GS28XZ');</script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
+    <script src="url-cleanup.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;">
     
@@ -124,7 +125,7 @@
     <!-- Navigation Bar (Studio Infinity Style) -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <a href="index.html">
+            <a href="/">
                 <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
             </a>
         </div>
@@ -135,7 +136,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <ul class="nav-links">
-            <li><a href="#home">Home</a></li>
+            <li><a href="/" class="active">Home</a></li>
             <li><a href="about/">About Us</a></li>
             <li class="has-dropdown">
                 <a href="projects/">Portfolio <i class="fas fa-chevron-down"></i></a>
@@ -424,7 +425,7 @@
             var limitedServices = services.slice(0, 3);
             sg.innerHTML = limitedServices.map(function(s) {
                 var imgSrc = s.image || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(s.title || '');
-                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (s.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="#services" class="btn-primary see-more-btn">See more</a></div></div></div>';
+                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (s.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="projects/" class="btn-primary see-more-btn">See more</a></div></div></div>';
             }).join('');
         });
         var currentUser = null;
@@ -497,7 +498,7 @@
             // Comprehensive search across all website content
             const allContent = [
                 // Pages
-                { title: 'Home', description: 'Main landing page with hero section and overview', url: 'index.html' },
+                { title: 'Home', description: 'Main landing page with hero section and overview', url: '/' },
                 { title: 'About Us', description: 'Learn about AIS Concepts architecture firm', url: 'about/' },
                 { title: 'Contact Us', description: 'Get in touch with our team', url: 'contact/' },
                 { title: 'Careers', description: 'Join our team - view open positions', url: 'careers/' },
@@ -505,10 +506,10 @@
                 { title: 'Blog', description: 'Latest news and insights from our team', url: 'blog/' },
                 
                 // Services
-                { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: '#services' },
-                { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: '#services' },
-                { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: '#services' },
-                { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: '#services' },
+                { title: 'Architectural Design', description: 'Complete architectural design services for residential and commercial projects', url: '/' },
+                { title: 'Interior Architecture', description: 'Interior design and space planning solutions', url: '/' },
+                { title: 'Urban Planning', description: 'Comprehensive urban planning and development services', url: '/' },
+                { title: 'Sustainable Design', description: 'Eco-friendly and sustainable architectural solutions', url: '/' },
                 
                 // Portfolio Categories
                 { title: 'Hospitality Projects', description: 'Hotels, resorts, and hospitality architecture', url: 'projects/?filter=hospitality' },

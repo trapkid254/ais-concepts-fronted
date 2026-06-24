@@ -70,9 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
     (function() {
         const splash = document.getElementById('splashIntro');
         if (!splash) return;
-        const isHome = /index\.html?$|\/$/.test(window.location.pathname) || window.location.pathname === '' || window.location.pathname === '/';
+        const path = window.location.pathname;
+        const isHome = path === '/' || path === '' || /\/home\/?$/i.test(path) || /\/index\.html$/i.test(path);
         const referrer = document.referrer || '';
-        const fromOtherPage = referrer.indexOf(window.location.origin) >= 0 && referrer.indexOf('index') === -1 && referrer.indexOf('/') !== referrer.length - 1;
+        const fromOtherPage = referrer.indexOf(window.location.origin) >= 0 && !/\/(index\.html|home\/?)?$/.test(referrer.replace(window.location.origin, ''));
 
         // Always hide splash if not on home page or coming from another page
         if (!isHome || fromOtherPage) {
@@ -369,7 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
                 document.querySelectorAll('.nav-links a').forEach(link => {
                     link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${sectionId}`) {
+                    var href = link.getAttribute('href');
+                    if (href === `#${sectionId}` || (sectionId === 'home' && (href === '/' || href === '/home' || href === '/home/'))) {
                         link.classList.add('active');
                     }
                 });
