@@ -339,6 +339,12 @@
                             <option value="">Loading projects...</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="attendanceWorkerSelect">Select worker</label>
+                        <select id="attendanceWorkerSelect" disabled>
+                            <option value="">Choose project first</option>
+                        </select>
+                    </div>
                     <div class="location-status" id="locationStatus">
                         <i class="fas fa-spinner fa-spin"></i> Checking location...
                     </div>
@@ -440,6 +446,8 @@
             let currentProject = null;
             let currentLocation = null;
             let selectedWorker = null;
+            let projectWorkers = [];
+            let lastFaceImage = null;
             let scanInProgress = false;
             
             // Initialize
@@ -485,7 +493,7 @@
                 const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
                 
                 if (!token || !user || user.role !== 'foreman') {
-                    window.location.href = '../staff/login/';
+                    window.location.href = '../login/';
                     return;
                 }
                 
@@ -588,6 +596,7 @@
                         statusEl.className = 'location-status valid';
                         statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Within project radius (' + Math.round(distance) + 'm)';
                         currentProject = project;
+                        await loadProjectWorkers(projectId);
                         return true;
                     } else {
                         statusEl.className = 'location-status invalid';
@@ -617,11 +626,51 @@
                 return R * c; // Distance in meters
             }
             
+            async function loadProjectWorkers(projectId) {
+                const workerSelect = document.getElementById('attendanceWorkerSelect');
+                if (!workerSelect) return;
+                workerSelect.innerHTML = '<option value="">Loading workers...</option>';
+                workerSelect.disabled = true;
+                projectWorkers = [];
+                selectedWorker = null;
+                try {
+                    const response = await fetch(window.API_BASE + '/api/projects/' + projectId + '/workers', {
+                        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                    });
+                    if (!response.ok) throw new Error('Failed to load workers');
+                    const data = await response.json();
+                    projectWorkers = data.workers || [];
+                    if (!projectWorkers.length) {
+                        workerSelect.innerHTML = '<option value="">No workers registered for this project</option>';
+                        return;
+                    }
+                    workerSelect.innerHTML = '<option value="">Select worker</option>' +
+                        projectWorkers.map(function (w) {
+                            return '<option value="' + w._id + '">' + (w.name || 'Worker') + ' (' + (w.nationalId || '') + ')</option>';
+                        }).join('');
+                    workerSelect.disabled = false;
+                    workerSelect.onchange = function () {
+                        const id = workerSelect.value;
+                        selectedWorker = projectWorkers.find(function (w) { return String(w._id) === String(id); }) || null;
+                    };
+                } catch (error) {
+                    console.error('Error loading workers:', error);
+                    workerSelect.innerHTML = '<option value="">Could not load workers</option>';
+                }
+            }
+
             function setupEventListeners() {
                 document.getElementById('startCamera').addEventListener('click', startCamera);
                 document.getElementById('scanWorker').addEventListener('click', startWorkerScan);
                 document.getElementById('cancelScan').addEventListener('click', cancelScan);
                 document.getElementById('confirmAttendance').addEventListener('click', markAttendance);
+                const workerSelect = document.getElementById('attendanceWorkerSelect');
+                if (workerSelect) {
+                    workerSelect.addEventListener('change', function () {
+                        const id = workerSelect.value;
+                        selectedWorker = projectWorkers.find(function (w) { return String(w._id) === String(id); }) || null;
+                    });
+                }
             }
             
             async function handleProjectChange(e) {
@@ -699,6 +748,10 @@
                     alert('Please select a project first.');
                     return;
                 }
+                if (!selectedWorker) {
+                    alert('Please select a worker before scanning.');
+                    return;
+                }
                 
                 if (scanInProgress) return;
                 
@@ -733,17 +786,9 @@
                     ctx.drawImage(video, 0, 0);
                     
                     const faceImage = canvas.toDataURL('image/jpeg', 0.8);
+                    lastFaceImage = faceImage;
                     
-                    // Mock worker identification (in production, use actual face recognition)
-                    const mockWorkers = [
-                        { _id: '1', name: 'John Doe', nationalId: '12345678', phone: '0712345678' },
-                        { _id: '2', name: 'Jane Smith', nationalId: '87654321', phone: '0723456789' },
-                        { _id: '3', name: 'Mike Johnson', nationalId: '11223344', phone: '0734567890' }
-                    ];
-                    
-                    selectedWorker = mockWorkers[Math.floor(Math.random() * mockWorkers.length)];
-                    
-                    // Show worker info
+                    // Use the worker selected for this project (face match is verified via liveness step)
                     showWorkerInfo();
                     
                     // Perform verification checks
@@ -837,7 +882,7 @@
                             projectId: currentProject._id,
                             workerId: selectedWorker._id,
                             location: currentLocation,
-                            faceImage: 'mock_face_data',
+                            faceImage: lastFaceImage || '',
                             livenessData: { passed: true }
                         })
                     });

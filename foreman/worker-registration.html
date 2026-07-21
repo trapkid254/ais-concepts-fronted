@@ -538,7 +538,7 @@
                 const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
                 
                 if (!token || !user || user.role !== 'foreman') {
-                    window.location.href = '../staff/login/';
+                    window.location.href = '../login/';
                     return;
                 }
                 

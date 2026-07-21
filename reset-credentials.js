@@ -71,7 +71,7 @@
             alert('Credentials have been reset successfully!\n\nNew Admin Credentials:\nUsername: Aisconcepts61\nPassword: #Aisconcepts16\n\nPlease use these credentials to login to the admin portal.');
             
             // Redirect to login page
-            window.location.href = 'staff/login.html';
+            window.location.href = '/admin/login/';
             
         } catch (error) {
             console.error('Error resetting credentials:', error);

@@ -656,18 +656,19 @@
     // Load projects for attendance dropdown
     async function loadProjectsForAttendance() {
         try {
-            const response = await fetch(`${window.API_BASE}/api/foreman/${currentUser._id}/projects`, {
+            const response = await fetch(`${window.API_BASE}/api/projects`, {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             
             if (!response.ok) throw new Error('Failed to load projects');
             
             const data = await response.json();
-            const projects = data.projects || [];
+            const projects = parseProjectsResponse(data);
             const projectSelect = document.getElementById('attendanceProject');
+            if (!projectSelect) return;
             
             projectSelect.innerHTML = '<option value="">Select project...</option>' +
-                projects.map(project => `<option value="${project._id}">${project.name}</option>`).join('');
+                projects.map(project => `<option value="${project._id || project.id}">${escapeHtml(project.name)}</option>`).join('');
         } catch (error) {
             console.error('Error loading projects:', error);
         }
@@ -841,15 +842,64 @@
     window.viewProject = viewProject;
 
     function editWorker(workerId) {
-        window.location.href = `../worker-detail/?id=${workerId}`;
+        fetch(`${window.API_BASE}/api/workers`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load workers');
+            return response.json();
+        }).then(function (data) {
+            var worker = (data.workers || []).find(function (w) { return String(w._id) === String(workerId); });
+            if (!worker) throw new Error('Worker not found');
+            var phone = prompt('Phone number:', worker.phone || '');
+            if (phone === null) return null;
+            var rateStr = prompt('Daily rate (KSH):', String(worker.dailyRate || ''));
+            if (rateStr === null) return null;
+            var dailyRate = parseFloat(rateStr);
+            if (isNaN(dailyRate) || dailyRate <= 0) throw new Error('Invalid daily rate');
+            return fetch(`${window.API_BASE}/api/workers/${workerId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ phone: phone.trim(), dailyRate: dailyRate })
+            });
+        }).then(function (response) {
+            if (!response) return;
+            if (!response.ok) {
+                return response.json().catch(function () { return {}; }).then(function (err) {
+                    throw new Error(err.error || 'Update failed');
+                });
+            }
+            return loadForemanWorkers();
+        }).then(function () {
+            alert('Worker updated successfully.');
+        }).catch(function (error) {
+            alert(error.message || 'Failed to update worker.');
+        });
     }
 
-    function removeWorker(workerId) {
-        if (confirm('Are you sure you want to remove this worker?')) {
-            // Implementation for worker removal
-            alert('Remove worker - Implementation needed');
+    window.editWorker = editWorker;
+
+    async function removeWorker(workerId) {
+        if (!confirm('Remove this worker from your active roster?')) return;
+        try {
+            const response = await fetch(`${window.API_BASE}/api/workers/${workerId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(function () { return {}; });
+                throw new Error(err.error || 'Failed to remove worker');
+            }
+            await loadForemanWorkers();
+            alert('Worker removed successfully.');
+        } catch (error) {
+            alert(error.message || 'Failed to remove worker.');
         }
     }
+
+    window.removeWorker = removeWorker;
 
     function updateForemanProfile(e) {
         e.preventDefault();

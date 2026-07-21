@@ -1,5 +1,14 @@
 // ===== portal-script.js =====
 
+function getPortalLoginPath() {
+    var path = window.location.pathname || '';
+    if (path.indexOf('/admin/') !== -1) return '/admin/login/';
+    if (path.indexOf('/employee/') !== -1) return '/employee/login/';
+    if (path.indexOf('/foreman/') !== -1) return '/foreman/login/';
+    if (path.indexOf('/client/') !== -1) return '/client/login/';
+    return '/client/login/';
+}
+
 var __portalCache = {};
 
 function getStored(key, fallback) {
@@ -432,8 +441,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
 
     if (!token || !currentUser) {
-        var loginPage = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
-        window.location.href = loginPage;
+        window.location.href = getPortalLoginPath();
+        return;
+    }
+
+    // Ensure the stored role matches this portal
+    var expectedRole = path.includes('/admin/') ? 'admin'
+        : path.includes('/employee/') ? 'employee'
+        : path.includes('/foreman/') ? 'foreman'
+        : path.includes('/client/') ? 'client' : null;
+    if (expectedRole && currentUser.role && currentUser.role !== expectedRole) {
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('currentUser');
+        window.location.href = getPortalLoginPath();
         return;
     }
 
@@ -444,13 +464,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (r.status === 401) {
             sessionStorage.removeItem('authToken');
             sessionStorage.removeItem('currentUser');
-            window.location.href = path.includes('/client/') ? '../client/login.html' : '../staff/login.html';
+            window.location.href = getPortalLoginPath();
             return;
         }
         if (r.status === 403) {
             sessionStorage.removeItem('authToken');
             sessionStorage.removeItem('currentUser');
-            window.location.href = (path.includes('/client/') ? '../client/login.html' : '../staff/login.html') + '?pending=1';
+            window.location.href = getPortalLoginPath() + '?pending=1';
             return;
         }
         var data = await r.json();
@@ -610,8 +630,24 @@ document.addEventListener('DOMContentLoaded', async function () {
                 var subject = document.getElementById('supportSubject').value;
                 var message = document.getElementById('supportMessage').value;
                 var tickets = getStored('clientSupportTickets', []);
-                tickets.push({ name: name, email: email, subject: subject, message: message, date: new Date().toISOString() });
+                tickets.push({
+                    name: name,
+                    email: email || (currentUser && currentUser.email) || '',
+                    subject: subject,
+                    message: message,
+                    date: new Date().toISOString()
+                });
                 setStored('clientSupportTickets', tickets);
+                // Notify admin via message channel
+                var messages = getStored('portalMessages', []);
+                messages.push({
+                    from: (email || (currentUser && currentUser.email) || '').toLowerCase(),
+                    to: 'admin',
+                    project: '',
+                    body: 'Support: ' + subject + '\n\n' + message,
+                    date: new Date().toISOString()
+                });
+                setStored('portalMessages', messages);
                 supportForm.reset();
                 if (currentUser) {
                     var sn = document.getElementById('supportName');
@@ -673,33 +709,38 @@ document.addEventListener('DOMContentLoaded', async function () {
             var transactionId = document.getElementById('fundsTransactionId').value;
             var notes = document.getElementById('fundsNotes').value;
             var urlParams = new URLSearchParams(window.location.search);
-            var projectId = urlParams.get('projectId');
-            if (projectId) {
-                var projects = getStored('clientProjects', []);
-                var project = projects.find(function (p) { return p.id === projectId; });
-                if (project) {
-                    var currentPaid = parseFloat((project.moneyPaid || '0').replace(/[^0-9.]/g, '')) || 0;
-                    var newPaid = currentPaid + parseFloat(amount);
-                    var currentRemaining = parseFloat((project.moneyRemaining || '0').replace(/[^0-9.]/g, '')) || 0;
-                    var newRemaining = currentRemaining + parseFloat(amount);
-                    project.moneyPaid = 'KES ' + newPaid.toLocaleString();
-                    project.moneyRemaining = 'KES ' + newRemaining.toLocaleString();
-                    var updatedProjects = projects.map(function (p) { return p.id === projectId ? project : p; });
-                    setStored('clientProjects', updatedProjects);
-                    var transactions = getStored('clientTransactions', []);
-                    transactions.push({
-                        id: Date.now(), projectId: projectId, projectName: project.name,
-                        amount: 'KES ' + parseFloat(amount).toLocaleString(),
-                        paymentMethod: paymentMethod, transactionId: transactionId,
-                        notes: notes, date: new Date().toISOString(), type: 'payment'
-                    });
-                    setStored('clientTransactions', transactions);
-                    alert('Funds added successfully! Amount: KES ' + parseFloat(amount).toLocaleString());
-                    addFundsModal.classList.remove('open');
-                    addFundsForm.reset();
-                    viewProjectDetails(projectId);
-                }
+            var projectId = urlParams.get('projectId') || (window._activeClientProjectId || '');
+            if (!projectId && window._clientProjectsList && window._clientProjectsList[0]) {
+                projectId = window._clientProjectsList[0].id || window._clientProjectsList[0]._id;
             }
+            if (!projectId) {
+                alert('Select a project before adding funds.');
+                return;
+            }
+            var token = sessionStorage.getItem('authToken');
+            fetch((window.API_BASE || '') + '/api/projects/' + encodeURIComponent(projectId) + '/add-funds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    paymentMethod: paymentMethod,
+                    transactionId: transactionId,
+                    notes: notes
+                })
+            }).then(function (r) {
+                if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Failed'); });
+                return r.json();
+            }).then(function () {
+                alert('Funds added successfully! Amount: KES ' + parseFloat(amount).toLocaleString());
+                addFundsModal.classList.remove('open');
+                addFundsForm.reset();
+                loadClientDashboard();
+            }).catch(function (err) {
+                alert(err.message || 'Failed to add funds');
+            });
         });
     }
 
@@ -1012,20 +1053,43 @@ function setupAdminInteractions(currentUser) {
     if (invoiceForm) {
         invoiceForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var invoices = getStored('portalInvoices', []);
-            invoices.push({
-                id: Date.now(),
+            var payload = {
                 number: document.getElementById('invNumber').value,
-                client: document.getElementById('invClient').value,
+                clientEmail: document.getElementById('invClient').value,
                 project: document.getElementById('invProject').value || '',
                 amount: document.getElementById('invAmount').value,
                 dueDate: document.getElementById('invDueDate').value,
                 status: document.getElementById('invStatus').value
+            };
+            var token = sessionStorage.getItem('authToken');
+            fetch((window.API_BASE || '') + '/api/invoices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + token
+                },
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Failed'); });
+                return r.json();
+            }).then(function (inv) {
+                var invoices = getStored('portalInvoices', []);
+                invoices.push({
+                    id: inv.id || inv._id || Date.now(),
+                    number: inv.number || inv.invoiceNumber || payload.number,
+                    client: payload.clientEmail,
+                    project: payload.project,
+                    amount: payload.amount,
+                    dueDate: payload.dueDate,
+                    status: payload.status
+                });
+                setStored('portalInvoices', invoices);
+                renderAdminInvoices(document.getElementById('adminInvoicesBody'));
+                invoiceForm.reset();
+                invoiceModal.classList.remove('open');
+            }).catch(function (err) {
+                alert(err.message || 'Failed to create invoice');
             });
-            setStored('portalInvoices', invoices);
-            renderAdminInvoices(document.getElementById('adminInvoicesBody'));
-            invoiceForm.reset();
-            invoiceModal.classList.remove('open');
         });
     }
 
@@ -2193,7 +2257,9 @@ function viewInvoice(invoiceNumber) {
     var path = window.location.pathname || '';
     if (path.includes('/client/')) {
         var invoices = getStored('clientInvoices', []);
-        var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
+        var inv = invoices.find(function (i) {
+            return i.number === invoiceNumber || i.invoiceNumber === invoiceNumber || String(i.id) === String(invoiceNumber) || String(i._id) === String(invoiceNumber);
+        });
         var content = document.getElementById('clientInvoiceViewContent');
         var modal = document.getElementById('clientInvoiceViewModal');
         if (content && modal) {
@@ -2236,31 +2302,35 @@ function viewInvoice(invoiceNumber) {
 
 function downloadDocument(docName) {
     var docs = getStored('clientDocuments', []);
-    var doc = docs.find(function (d) { return d.name === docName; });
-    if (doc && doc.data) {
+    var doc = docs.find(function (d) {
+        return d.name === docName || String(d.id) === String(docName) || String(d._id) === String(docName) || d.fileName === docName;
+    });
+    var href = doc && (doc.url || doc.filePath || doc.data);
+    if (href) {
         try {
             var a = document.createElement('a');
-            a.href = doc.data; a.download = docName; a.click();
-        } catch (e) { window.open(doc.data, '_blank'); }
+            a.href = href;
+            a.download = (doc && (doc.name || doc.fileName)) || docName || 'document';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.click();
+        } catch (e) { window.open(href, '_blank'); }
     } else {
-        var blob = new Blob(['Placeholder for ' + docName + '. Uploaded documents will download here.'], { type: 'text/plain' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = docName.replace(/\.pdf$/i, '') + '-details.txt';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        alert('No file data available for download');
     }
 }
 
 function downloadClientInvoice(invoiceNumber) {
     var invoices = getStored('clientInvoices', []);
-    var inv = invoices.find(function (i) { return i.number === invoiceNumber; });
+    var inv = invoices.find(function (i) {
+        return i.number === invoiceNumber || i.invoiceNumber === invoiceNumber || String(i.id) === String(invoiceNumber) || String(i._id) === String(invoiceNumber);
+    });
     if (!inv) return;
-    var text = 'Invoice ' + (inv.number || '') + '\nAmount: ' + (inv.amount || '') + '\nDate: ' + (inv.date || '') + '\nStatus: ' + (inv.status || '') + '\n' + (inv.project ? 'Project: ' + inv.project + '\n' : '');
+    var text = 'Invoice ' + (inv.number || inv.invoiceNumber || '') + '\nAmount: ' + (inv.amount || '') + '\nDate: ' + (inv.date || inv.dueDate || '') + '\nStatus: ' + (inv.status || '') + '\n' + (inv.project ? 'Project: ' + inv.project + '\n' : '');
     var blob = new Blob([text], { type: 'text/plain' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'invoice-' + (inv.number || 'inv') + '.txt';
+    a.download = 'invoice-' + (inv.number || inv.invoiceNumber || 'inv') + '.txt';
     a.click();
     URL.revokeObjectURL(a.href);
 }
@@ -2742,7 +2812,7 @@ window.applyClientProjectFilter = function () {
         });
         var upHtml = ups.length ? '<div class="client-admin-updates"><strong>Updates from your team</strong>' +
             ups.slice().reverse().slice(0, 3).map(function (u) {
-                return '<p class="small-meta">' + (u.at ? new Date(u.at).toLocaleString() : '') + ': ' + escapeHtml((u.message || '').slice(0, 160)) + '</p>';
+                return '<p class="small-meta">' + (u.createdAt || u.at || u.date ? new Date(u.createdAt || u.at || u.date).toLocaleString() : '') + ': ' + escapeHtml((u.message || '').slice(0, 160)) + '</p>';
             }).join('') + '</div>' : '';
         var pid = escapeAttr(String(project._id || project.id));
         var pname = escapeAttr(project.name || '');
@@ -2820,6 +2890,43 @@ function updateMoneyOverview(projects) {
     });
 }
 
+function renderClientTimeline(projects) {
+    var list = document.getElementById('clientTimelineList');
+    if (!list) return;
+    var items = [];
+    (projects || []).forEach(function (p) {
+        items.push({
+            date: p.endDate || p.deadline || p.updatedAt || new Date().toISOString(),
+            title: p.name || 'Project',
+            detail: 'Status: ' + (p.status || 'Active') + ' · Progress: ' + (p.progress || 0) + '%'
+        });
+    });
+    (getStored('adminClientProgressUpdates', []) || []).forEach(function (u) {
+        items.push({
+            date: u.createdAt || u.date || new Date().toISOString(),
+            title: 'Update · ' + (u.projectName || 'Project'),
+            detail: u.message || u.text || 'Progress update'
+        });
+    });
+    (getStored('employeeTaskUpdates', []) || []).forEach(function (u) {
+        items.push({
+            date: u.createdAt || u.date || new Date().toISOString(),
+            title: 'Employee update · ' + (u.project || u.projectName || 'Project'),
+            detail: u.description || u.message || 'Progress submitted'
+        });
+    });
+    items.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+    if (!items.length) {
+        list.innerHTML = '<p class="empty-state">No timeline events yet.</p>';
+        return;
+    }
+    list.innerHTML = items.slice(0, 40).map(function (it) {
+        return '<div class="timeline-item"><strong>' + escapeHtml(it.title) + '</strong>' +
+            '<div class="timeline-date">' + escapeHtml(new Date(it.date).toLocaleString()) + '</div>' +
+            '<p>' + escapeHtml(it.detail) + '</p></div>';
+    }).join('');
+}
+
 function loadClientDashboard() {
     var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
     var authToken = sessionStorage.getItem('authToken');
@@ -2852,14 +2959,6 @@ function loadClientDashboard() {
     }
 
     if (authToken && currentUser) {
-        // Clear any existing client data from localStorage to prevent showing old static data
-        setStored('clientProjects', []);
-        setStored('clientDocuments', []);
-        setStored('clientInvoices', []);
-        setStored('clientTransactions', []);
-        setStored('clientNotifications', []);
-        setStored('clientSupportTickets', []);
-        
         // Load client's own projects
         fetch(window.API_BASE + '/api/projects?client=true', {
             headers: { 'Authorization': 'Bearer ' + authToken }
@@ -2893,9 +2992,11 @@ function loadClientDashboard() {
                     moneyUsed: p.moneyUsed || 0,
                     moneyRemaining: p.moneyRemaining || 0,
                     moneyOwed: p.moneyOwed || 0,
-                    budget: p.budget || 0
+                    budget: p.budget || 0,
+                    updatedAt: p.updatedAt
                 };
             });
+            renderClientTimeline(window._clientProjectsList);
             window._clientProjectFilter = window._clientProjectFilter || 'all';
             window.applyClientProjectFilter();
             updateClientStats();
@@ -2932,7 +3033,11 @@ function loadClientDashboard() {
         }).then(function (r) {
             if (!r.ok) throw new Error('Failed');
             return r.json();
-        }).then(renderClientDocuments).catch(function () { renderClientDocuments([]); });
+        }).then(function (docs) {
+            setStored('clientDocuments', docs || []);
+            renderClientDocuments(docs || []);
+            updateClientStats();
+        }).catch(function () { renderClientDocuments([]); });
     }
 
     function renderClientDocuments(docs) {
@@ -2968,20 +3073,47 @@ function loadClientDashboard() {
             var name = document.getElementById('clientDocName').value.trim() || 'Document';
             var fileInput = document.getElementById('clientDocFile');
             var file = fileInput && fileInput.files[0];
-            var size = file ? (file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB') : '0 KB';
-            function saveDoc(data) {
-                var docs = getStored('clientDocuments', []);
-                docs.push({ name: name, date: new Date().toISOString().slice(0, 10), size: size, data: data });
-                setStored('clientDocuments', docs);
-                renderClientDocuments(docs);
-                uploadDocForm.reset();
-                uploadDocModal.classList.remove('open');
+            function postDoc(fileData, fileMeta) {
+                var token = sessionStorage.getItem('authToken');
+                return fetch((window.API_BASE || '') + '/api/documents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        title: name,
+                        name: name,
+                        fileName: fileMeta.fileName,
+                        fileData: fileData,
+                        fileSize: fileMeta.fileSize,
+                        mimeType: fileMeta.mimeType,
+                        clientEmail: currentUser.email
+                    })
+                }).then(function (r) {
+                    if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Failed'); });
+                    return r.json();
+                }).then(function () {
+                    loadClientDocuments();
+                    uploadDocForm.reset();
+                    uploadDocModal.classList.remove('open');
+                }).catch(function (err) {
+                    alert(err.message || 'Failed to upload document');
+                });
             }
             if (file) {
                 var reader = new FileReader();
-                reader.onload = function () { saveDoc(reader.result); };
+                reader.onload = function () {
+                    postDoc(reader.result, {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        mimeType: file.type || 'application/octet-stream'
+                    });
+                };
                 reader.readAsDataURL(file);
-            } else { saveDoc(null); }
+            } else {
+                alert('Please choose a file to upload.');
+            }
         });
     }
 
@@ -2992,7 +3124,11 @@ function loadClientDashboard() {
         }).then(function (r) {
             if (!r.ok) throw new Error('Failed');
             return r.json();
-        }).then(renderClientInvoices).catch(function () { renderClientInvoices([]); });
+        }).then(function (invoices) {
+            setStored('clientInvoices', invoices || []);
+            renderClientInvoices(invoices || []);
+            updateClientStats();
+        }).catch(function () { renderClientInvoices([]); });
     }
 
     function renderClientInvoices(invoices) {
@@ -3002,12 +3138,13 @@ function loadClientDashboard() {
             invoicesList.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">No invoices available</td></tr>';
         } else {
             invoicesList.innerHTML = invoices.map(function (invoice) {
-                var iid = escapeAttr(String(invoice._id || invoice.id));
+                var number = invoice.number || invoice.invoiceNumber || '';
+                var iid = escapeAttr(String(number || invoice._id || invoice.id));
                 return '<tr>' +
-                    '<td>' + escapeHtml(invoice.number) + '</td>' +
-                    '<td>' + escapeHtml(invoice.amount) + '</td>' +
-                    '<td>' + new Date(invoice.createdAt).toLocaleDateString() + '</td>' +
-                    '<td><span class="status-badge status-' + escapeHtml((invoice.status || '').toLowerCase()) + '">' + escapeHtml(invoice.status) + '</span></td>' +
+                    '<td>' + escapeHtml(number) + '</td>' +
+                    '<td>' + escapeHtml(String(invoice.amount != null ? invoice.amount : '')) + '</td>' +
+                    '<td>' + (invoice.createdAt || invoice.dueDate ? new Date(invoice.createdAt || invoice.dueDate).toLocaleDateString() : '-') + '</td>' +
+                    '<td><span class="status-badge status-' + escapeHtml((invoice.status || '').toLowerCase()) + '">' + escapeHtml(invoice.status || '') + '</span></td>' +
                     '<td>' +
                     '<button class="btn-icon" onclick="viewInvoice(\'' + iid + '\')" title="View"><i class="fas fa-eye"></i></button> ' +
                     '<button class="btn-icon" onclick="downloadClientInvoice(\'' + iid + '\')" title="Download"><i class="fas fa-download"></i></button>' +
