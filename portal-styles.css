@@ -1314,12 +1314,16 @@ body {
     top: 0;
     right: 0;
     bottom: 0;
-    background: url(../images/logo.png) center/28% no-repeat;
+    background: url(images/logo.png) center/min(280px, 40vw) no-repeat;
     opacity: 0.035;
     pointer-events: none;
     z-index: 0;
 }
-.portal-container .sidebar,
+/* Sidebar must stay fixed (not relative) or it reserves full viewport height on mobile */
+.portal-container .sidebar {
+    position: fixed;
+    z-index: 100;
+}
 .portal-container .main-content {
     position: relative;
     z-index: 1;
@@ -2675,6 +2679,7 @@ body > .modal.open {
         display: none;
     }
 
+    .portal-container .sidebar,
     .sidebar {
         position: fixed;
         width: min(var(--portal-sidebar-width), 86vw);
@@ -2683,6 +2688,7 @@ body > .modal.open {
         z-index: 1000;
         transition: transform 0.3s ease;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+        overflow: hidden;
     }
     
     .main-content {
@@ -2691,6 +2697,7 @@ body > .modal.open {
         min-height: 100dvh;
     }
     
+    .portal-container .sidebar.active,
     .sidebar.active {
         transform: translateX(0);
     }
@@ -2733,7 +2740,13 @@ body > .modal.open {
 
     body.portal-sidebar-open {
         overflow: hidden;
-        touch-action: none;
+        /* Do not set touch-action: none — it blocks scrolling inside the sidebar */
+    }
+
+    body.portal-sidebar-open .sidebar,
+    body.portal-sidebar-open .sidebar-nav {
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
     }
     
     .stats-grid {
@@ -3990,7 +4003,8 @@ body > .modal.open {
 
 /* ===== Enhanced Mobile Responsiveness ===== */
 @media (max-width: 768px) {
-    /* Improved Sidebar */
+    /* Improved Sidebar — use .portal-container .sidebar so specificity beats base rules */
+    .portal-container .sidebar,
     .sidebar {
         position: fixed;
         top: 0;
@@ -4004,14 +4018,28 @@ body > .modal.open {
         transition: transform 0.3s ease;
         overflow: hidden;
         padding-top: env(safe-area-inset-top, 0px);
+        -webkit-overflow-scrolling: touch;
     }
     
+    .portal-container .sidebar.active,
     .sidebar.active {
         transform: translateX(0);
     }
     
+    .portal-container .sidebar:not(.active),
     .sidebar:not(.active) {
         transform: translateX(-100%);
+    }
+
+    .portal-container .sidebar-nav,
+    .sidebar-nav {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
     }
     
     /* Overlay for mobile sidebar */
@@ -4490,18 +4518,26 @@ body > .modal.open {
 
 /* ===== Comprehensive Portal Mobile Responsiveness ===== */
 @media (max-width: 768px) {
-    /* Portal Layout */
+    /* Keep row layout; fixed sidebar is out of flow and must not push content down */
     .portal-container {
-        flex-direction: column;
+        display: block;
+        min-height: 100dvh;
+    }
+
+    .portal-container::before {
+        display: none;
     }
     
     /* Sidebar improvements */
+    .portal-container .sidebar,
     .sidebar {
+        position: fixed;
         width: min(var(--portal-sidebar-width), 86vw);
         max-width: 86vw;
         transform: translateX(-100%);
     }
     
+    .portal-container .sidebar.active,
     .sidebar.active {
         transform: translateX(0);
     }

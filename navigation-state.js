@@ -124,8 +124,8 @@ class NavigationStateManager {
             e.preventDefault();
             const sectionId = target.getAttribute('data-section');
             
-            // Update URL without full page reload
-            const newUrl = window.location.pathname + '#' + sectionId;
+            // Update URL without full page reload or scroll jump
+            const newUrl = window.location.pathname + window.location.search + '#' + sectionId;
             history.pushState(
                 { navigationState: { currentSection: sectionId } }, 
                 '', 
@@ -134,6 +134,7 @@ class NavigationStateManager {
             
             this.showSection(sectionId);
             this.saveNavigationState();
+            window.scrollTo(0, 0);
         }
     }
 

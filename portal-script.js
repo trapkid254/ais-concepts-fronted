@@ -574,6 +574,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         var initialLink = document.querySelector('.sidebar-nav a[data-section="' + initialSectionId + '"]');
         if (initialLink) initialLink.classList.add('active');
 
+        // Land at top of dashboard (avoid leftover scroll / hash jump on mobile)
+        window.scrollTo(0, 0);
+
         sidebarLinks.forEach(function (link) {
             link.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -583,8 +586,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                 portalSections.forEach(function (sec) {
                     sec.style.display = sec.id === sectionId ? '' : 'none';
                 });
-                // Update URL hash
-                window.location.hash = sectionId;
+                // Update URL hash without scrolling the page
+                if (history.replaceState) {
+                    history.replaceState(null, '', window.location.pathname + window.location.search + '#' + sectionId);
+                } else {
+                    window.location.hash = sectionId;
+                }
+                window.scrollTo(0, 0);
                 if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
                 if (window.innerWidth <= 768) setMobileSidebarOpen(false);
             });
