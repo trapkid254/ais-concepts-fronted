@@ -565,6 +565,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         setupAdminInteractions(currentUser);
         setupCommunicationHub();
         setupSiteManagement();
+        setupTaskManagement();
         setupFinancialManagement();
         setupMarketingManagement();
         setupApprovalsWorkflow();
@@ -1200,8 +1201,39 @@ function setupAdminInteractions(currentUser) {
     if (userForm && userModal) {
         userForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            alert('Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals. This form is for reference only.');
-            userModal.classList.remove('open');
+            var userId = document.getElementById('adminUserId').value;
+            if (!userId) {
+                alert('Users are created when they register on the Client login or Staff (employee) pages. Approve them under Pending approvals.');
+                userModal.classList.remove('open');
+                return;
+            }
+            var token = sessionStorage.getItem('authToken');
+            var payload = {
+                name: document.getElementById('adminUserName').value,
+                email: document.getElementById('adminUserEmail').value,
+                role: document.getElementById('adminUserRole').value,
+                status: document.getElementById('adminUserStatus').value
+            };
+            fetch((window.API_BASE || '') + '/api/admin/users/' + encodeURIComponent(userId), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                if (!r.ok) {
+                    return r.json().then(function (err) { throw new Error(err.error || 'Failed to update user'); });
+                }
+                return r.json();
+            }).then(function (data) {
+                var updated = data.user;
+                __portalCache.portalUsers = (__portalCache.portalUsers || []).map(function (u) {
+                    return String(u.id) === String(userId) ? updated : u;
+                });
+                renderAdminUsers(document.querySelector('.users-list tbody'), __portalCache.portalUsers);
+                userModal.classList.remove('open');
+                alert('User updated successfully.');
+            }).catch(function (err) {
+                alert(err.message || 'Could not update user.');
+            });
         });
     }
 
@@ -1213,8 +1245,8 @@ function setupAdminInteractions(currentUser) {
     var selectedForemanNameEl = document.querySelector('.selected-foreman-name');
     var selectedForeman = null;
 
-    // Load clients for project creation dropdown
-    function loadClientsForProject(done) {
+    // Load clients for project creation dropdown (exposed for editProject)
+    window.loadClientsForProject = function loadClientsForProject(done) {
         var clientSelect = document.getElementById('adminProjectClient');
         if (!clientSelect) {
             if (typeof done === 'function') done();
@@ -1229,10 +1261,10 @@ function setupAdminInteractions(currentUser) {
         }).then(function(clients) {
             var selected = clientSelect.value;
             clientSelect.innerHTML = '<option value="">Select a client</option>';
-            clients.forEach(function(client) {
+            (clients || []).forEach(function(client) {
                 var option = document.createElement('option');
                 option.value = client._id || client.id;
-                option.textContent = client.name + ' (' + client.email + ')';
+                option.textContent = (client.name || 'Client') + ' (' + (client.email || '') + ')';
                 clientSelect.appendChild(option);
             });
             if (selected) clientSelect.value = selected;
@@ -1241,7 +1273,7 @@ function setupAdminInteractions(currentUser) {
             console.error('Error loading clients:', err);
             if (typeof done === 'function') done();
         });
-    }
+    };
 
     function formatProjectDeadlineValue(project) {
         var raw = project.deadline || project.endDate || project.completionDate || '';
@@ -1276,7 +1308,7 @@ function setupAdminInteractions(currentUser) {
         };
     }
 
-    function populateAdminProjectForm(project) {
+    window.populateAdminProjectForm = function populateAdminProjectForm(project) {
         var snap = snapshotProjectForEdit(project);
         window._editingProjectSnapshot = snap;
         document.getElementById('adminProjectModalTitle').textContent = 'Edit Project';
@@ -1335,7 +1367,7 @@ function setupAdminInteractions(currentUser) {
         }
         var createForemanCb = document.getElementById('createForemanAccount');
         if (createForemanCb) createForemanCb.checked = false;
-    }
+    };
 
     if (newProjectBtn && projectModal) {
         newProjectBtn.addEventListener('click', function () {
@@ -1670,6 +1702,7 @@ function setupAdminInteractions(currentUser) {
                     alert('Project updated successfully!');
                     window._editingProjectSnapshot = null;
                     renderAdminProjectsTable();
+                    if (typeof window.refreshAdminActiveProjectsCount === 'function') window.refreshAdminActiveProjectsCount();
                     projectModal.classList.remove('open');
                 }).catch(function(error) {
                     console.error('Update project error:', error);
@@ -1694,6 +1727,7 @@ function setupAdminInteractions(currentUser) {
                 }).then(function(newProject) {
                     alert('Project created successfully!');
                     renderAdminProjectsTable();
+                    if (typeof window.refreshAdminActiveProjectsCount === 'function') window.refreshAdminActiveProjectsCount();
                     projectModal.classList.remove('open');
                 }).catch(function(error) {
                     console.error('Create project error:', error);
@@ -1733,6 +1767,102 @@ function setupAdminInteractions(currentUser) {
 
 // ===== ADMIN PROJECT HELPERS =====
 
+window.refreshAdminActiveProjectsCount = function () {
+    var activeProjectsEl = document.getElementById('activeProjects');
+    if (!activeProjectsEl) return Promise.resolve();
+    return fetch((window.API_BASE || '') + '/api/projects', {
+        headers: { Authorization: 'Bearer ' + (sessionStorage.getItem('authToken') || '') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load projects');
+        return r.json();
+    }).then(function (projects) {
+        // Client projects only (EnhancedProject via authenticated /api/projects)
+        var count = (projects || []).filter(function (p) {
+            return adminPortalProjectGroup(p) === 'ongoing';
+        }).length;
+        activeProjectsEl.textContent = String(count);
+        window._clientProjectsCache = projects || [];
+        return count;
+    }).catch(function (e) {
+        console.warn('Could not refresh active projects count:', e);
+    });
+};
+
+window.populateProjectDropdown = function (selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return Promise.resolve();
+    var selected = select.value;
+    select.innerHTML = '<option value="">Loading projects…</option>';
+    return fetch((window.API_BASE || '') + '/api/projects', {
+        headers: { Authorization: 'Bearer ' + (sessionStorage.getItem('authToken') || '') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load projects');
+        return r.json();
+    }).then(function (projects) {
+        window._clientProjectsCache = projects || [];
+        select.innerHTML = '<option value="">Select project</option>';
+        (projects || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = String(p._id || p.id || '');
+            opt.textContent = p.name || p.title || 'Untitled project';
+            select.appendChild(opt);
+        });
+        if (selected) select.value = selected;
+    }).catch(function (err) {
+        console.error('populateProjectDropdown:', err);
+        select.innerHTML = '<option value="">No projects available</option>';
+    });
+};
+
+window.getProjectName = function (projectIdOrName) {
+    if (!projectIdOrName) return '';
+    var cache = window._clientProjectsCache || getStored('portalProjects', []) || [];
+    var found = cache.find(function (p) {
+        return String(p._id || p.id) === String(projectIdOrName) || p.name === projectIdOrName;
+    });
+    return found ? (found.name || found.title || String(projectIdOrName)) : String(projectIdOrName);
+};
+
+window.editUser = function (userId) {
+    var users = __portalCache.portalUsers || [];
+    var user = users.find(function (u) { return String(u.id) === String(userId); });
+    var modal = document.getElementById('adminUserModal');
+    if (!modal) return;
+    function fill(u) {
+        document.getElementById('adminUserModalTitle').textContent = 'Edit User';
+        document.getElementById('adminUserId').value = String(u.id || u._id || '');
+        document.getElementById('adminUserName').value = u.name || '';
+        document.getElementById('adminUserEmail').value = u.email || '';
+        var role = (u.role || 'Client');
+        role = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+        if (role === 'Foreman') role = 'Employee';
+        document.getElementById('adminUserRole').value = role === 'Admin' || role === 'Employee' || role === 'Client' ? role : 'Client';
+        var st = (u.status || 'Active');
+        document.getElementById('adminUserStatus').value = String(st).toLowerCase() === 'inactive' || String(st).toLowerCase() === 'pending' ? 'Inactive' : 'Active';
+        modal.classList.add('open');
+    }
+    if (user) {
+        fill(user);
+        return;
+    }
+    fetch((window.API_BASE || '') + '/api/users/' + encodeURIComponent(userId), {
+        headers: { Authorization: 'Bearer ' + (sessionStorage.getItem('authToken') || '') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('User not found');
+        return r.json();
+    }).then(function (u) {
+        fill({
+            id: u._id || u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            status: u.approvalStatus === 'pending' ? 'Inactive' : 'Active'
+        });
+    }).catch(function () {
+        alert('Could not load user details.');
+    });
+};
+
 window.deleteUser = async function (userId) {
     if (!confirm('Permanently delete this user from the database?')) return;
     var token = sessionStorage.getItem('authToken');
@@ -1761,10 +1891,10 @@ window.editProject = function (projectId) {
     }).then(function (projects) {
         var project = projects.find(function (p) { return String(p._id || p.id) === String(projectId); });
         if (!project) return;
-        var clientSelect = document.getElementById('adminProjectClient');
-        if (clientSelect) clientSelect.value = getProjectClientId(project.client);
-        loadClientsForProject(function () {
-            populateAdminProjectForm(project);
+        window.loadClientsForProject(function () {
+            var clientSelect = document.getElementById('adminProjectClient');
+            if (clientSelect) clientSelect.value = getProjectClientId(project.client);
+            window.populateAdminProjectForm(project);
             document.getElementById('adminProjectModal').classList.add('open');
         });
     }).catch(function (error) {
@@ -1898,6 +2028,7 @@ window.deleteProject = function (projectId) {
         var projects = getStored('portalProjects', []);
         setStored('portalProjects', projects.filter(function (p) { return String(p._id || p.id) !== String(projectId); }));
         renderAdminProjectsTable();
+        if (typeof window.refreshAdminActiveProjectsCount === 'function') window.refreshAdminActiveProjectsCount();
         alert('Project deleted successfully!');
     }).catch(function (error) {
         console.error('Delete project error:', error);
@@ -2169,6 +2300,7 @@ window.renderAdminProjectsTable = function () {
         if (!response.ok) throw new Error('Failed to load projects');
         return response.json();
     }).then(function (projects) {
+        window._clientProjectsCache = projects || [];
         // Clear localStorage projects that aren't in database
         var localProjects = getStored('portalProjects', []);
         var validLocalProjects = localProjects.filter(function(lp) {
@@ -2178,6 +2310,15 @@ window.renderAdminProjectsTable = function () {
         });
         if (validLocalProjects.length !== localProjects.length) {
             setStored('portalProjects', validLocalProjects);
+        }
+        // Keep dashboard Active Projects in sync with client projects list
+        if (typeof window.refreshAdminActiveProjectsCount === 'function') {
+            var activeProjectsEl = document.getElementById('activeProjects');
+            if (activeProjectsEl) {
+                activeProjectsEl.textContent = String((projects || []).filter(function (p) {
+                    return adminPortalProjectGroup(p) === 'ongoing';
+                }).length);
+            }
         }
         
         var f = window._adminProjectFilter || 'all';
@@ -3769,16 +3910,8 @@ async function loadAdminDashboard() {
     var totalClientsEl = document.getElementById('totalClients');
     if (totalClientsEl) totalClientsEl.textContent = String(clients.length);
     
-    var activeProjects = 0;
-    try {
-        var pr = await fetch((window.API_BASE || '') + '/api/projects', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
-        if (pr.ok) {
-            var projects = await pr.json();
-            activeProjects = projects.filter(function (p) { return p.status === 'active' || p.status === 'ongoing'; }).length;
-        }
-    } catch (e) { console.warn(e); }
-    var activeProjectsEl = document.getElementById('activeProjects');
-    if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects);
+    // Client projects (not website portfolio) — count non-completed as active
+    await window.refreshAdminActiveProjectsCount();
 
     window._adminProjectFilter = 'all';
     window.renderAdminProjectsTable();
@@ -3840,24 +3973,26 @@ async function loadAdminDashboard() {
     }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
 
     var totalUsersEl = document.getElementById('totalUsers');
-    var activeProjectsEl = document.getElementById('activeProjects');
     // Filter to show only admin, employees, and foreman (exclude clients)
     var teamMembers = directoryUsers.filter(function(u) {
         var role = (u.role || '').toLowerCase();
         return role === 'admin' || role === 'employee' || role === 'foreman';
     });
     if (totalUsersEl) totalUsersEl.textContent = String(teamMembers.length);
-    if (activeProjectsEl) activeProjectsEl.textContent = '0';
 
     updateFinancialSummary();
 
-    var pendingCount = 0;
-    try {
-        var pr = await fetch((window.API_BASE || '') + '/api/admin/pending-users', { headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') } });
-        if (pr.ok) { var plist = await pr.json(); pendingCount = (plist && plist.length) || 0; }
-    } catch (e) {}
-    var pendingTasks = document.getElementById('pendingTasks');
-    if (pendingTasks) pendingTasks.textContent = String(pendingCount);
+    if (typeof window.refreshAdminPendingTasksCount === 'function') {
+        window.refreshAdminPendingTasksCount();
+    } else {
+        var pendingTasksEl = document.getElementById('pendingTasks');
+        var tasks = getStored('adminTasks', []) || [];
+        var pendingTaskCount = tasks.filter(function (t) {
+            var s = String(t.status || 'pending').toLowerCase();
+            return s === 'pending' || s === 'in-progress';
+        }).length;
+        if (pendingTasksEl) pendingTasksEl.textContent = String(pendingTaskCount);
+    }
 
     await renderAdminEnquiries();
     await renderPendingApprovals();
@@ -4280,6 +4415,158 @@ function renderCommunications(tbody, communications) {
 window.viewCommunication = function (id) { alert('View communication functionality would open conversation'); };
 window.replyCommunication = function (id) { alert('Reply functionality would open message composer'); };
 
+// ===== TASK MANAGEMENT =====
+
+window.refreshAdminPendingTasksCount = function () {
+    var pendingTasksEl = document.getElementById('pendingTasks');
+    if (!pendingTasksEl) return;
+    var tasks = getStored('adminTasks', []) || [];
+    var count = tasks.filter(function (t) {
+        var s = String(t.status || 'pending').toLowerCase();
+        return s === 'pending' || s === 'in-progress';
+    }).length;
+    pendingTasksEl.textContent = String(count);
+};
+
+function renderAdminTasksTable(filter) {
+    var tbody = document.getElementById('adminTasksTableBody');
+    if (!tbody) return;
+    var f = filter || window._adminTaskFilter || 'all';
+    var tasks = getStored('adminTasks', []) || [];
+    var filtered = f === 'all' ? tasks : tasks.filter(function (t) {
+        return String(t.status || 'pending').toLowerCase() === f;
+    });
+    tbody.innerHTML = filtered.length ? filtered.map(function (task) {
+        var tid = escapeAttr(String(task.id));
+        var st = String(task.status || 'pending').toLowerCase();
+        return '<tr>' +
+            '<td><strong>' + escapeHtml(task.title || '') + '</strong>' +
+            (task.description ? '<br><span style="font-size:12px;color:#64748b;">' + escapeHtml(task.description) + '</span>' : '') +
+            '</td>' +
+            '<td>' + escapeHtml(task.assigneeName || task.assignee || '-') + '</td>' +
+            '<td>' + escapeHtml(task.projectName || getProjectName(task.project) || '-') + '</td>' +
+            '<td><span class="priority-' + escapeHtml(task.priority || 'medium') + '">' + escapeHtml(task.priority || 'medium') + '</span></td>' +
+            '<td>' + (task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-') + '</td>' +
+            '<td><span class="status-badge status-' + escapeHtml(st) + '">' + escapeHtml(st) + '</span></td>' +
+            '<td>' +
+            (st !== 'completed' ? '<button type="button" class="btn-icon" title="Mark complete" onclick="completeAdminTask(\'' + tid + '\')"><i class="fas fa-check"></i></button> ' : '') +
+            '<button type="button" class="btn-icon" title="Delete" onclick="deleteAdminTask(\'' + tid + '\')"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="7">No tasks found. Click "Add Task" to create one.</td></tr>';
+}
+
+window.completeAdminTask = function (taskId) {
+    var tasks = getStored('adminTasks', []) || [];
+    tasks = tasks.map(function (t) {
+        if (String(t.id) === String(taskId)) t.status = 'completed';
+        return t;
+    });
+    setStored('adminTasks', tasks);
+    renderAdminTasksTable();
+    window.refreshAdminPendingTasksCount();
+};
+
+window.deleteAdminTask = function (taskId) {
+    if (!confirm('Delete this task?')) return;
+    var tasks = (getStored('adminTasks', []) || []).filter(function (t) { return String(t.id) !== String(taskId); });
+    setStored('adminTasks', tasks);
+    renderAdminTasksTable();
+    window.refreshAdminPendingTasksCount();
+};
+
+function populateTaskAssigneeDropdown() {
+    var select = document.getElementById('taskAssignee');
+    if (!select) return;
+    var selected = select.value;
+    var users = (__portalCache.portalUsers || []).filter(function (u) {
+        var role = String(u.role || '').toLowerCase();
+        return role === 'employee' || role === 'foreman' || role === 'admin';
+    });
+    select.innerHTML = '<option value="">Select team member</option>';
+    users.forEach(function (u) {
+        var opt = document.createElement('option');
+        opt.value = String(u.id || u._id || u.email || '');
+        opt.textContent = (u.name || u.email || 'User') + (u.role ? ' (' + u.role + ')' : '');
+        opt.setAttribute('data-name', u.name || u.email || '');
+        select.appendChild(opt);
+    });
+    if (selected) select.value = selected;
+}
+
+function setupTaskManagement() {
+    var addTaskBtn = document.getElementById('adminAddTaskBtn');
+    var taskModal = document.getElementById('adminAddTaskModal');
+    var taskForm = document.getElementById('adminAddTaskForm');
+    if (!addTaskBtn && !taskModal) return;
+
+    if (addTaskBtn && taskModal) {
+        addTaskBtn.addEventListener('click', function () {
+            if (taskForm) taskForm.reset();
+            populateTaskAssigneeDropdown();
+            window.populateProjectDropdown('taskProject');
+            taskModal.classList.add('open');
+        });
+    }
+    document.querySelectorAll('[data-close="adminAddTaskModal"]').forEach(function (el) {
+        el.addEventListener('click', function () { if (taskModal) taskModal.classList.remove('open'); });
+    });
+    if (taskModal) {
+        taskModal.addEventListener('click', function (e) {
+            if (e.target === taskModal) taskModal.classList.remove('open');
+        });
+    }
+
+    var filterBtns = document.querySelectorAll('#admin-tasks .task-filters .filter-btn');
+    filterBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filterBtns.forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            window._adminTaskFilter = btn.getAttribute('data-filter') || 'all';
+            renderAdminTasksTable(window._adminTaskFilter);
+        });
+    });
+
+    if (taskForm) {
+        taskForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var title = (document.getElementById('taskTitle') || {}).value;
+            if (!title || !String(title).trim()) {
+                alert('Please enter a task title.');
+                return;
+            }
+            var assigneeSelect = document.getElementById('taskAssignee');
+            var projectSelect = document.getElementById('taskProject');
+            var assigneeOpt = assigneeSelect && assigneeSelect.options[assigneeSelect.selectedIndex];
+            var projectOpt = projectSelect && projectSelect.options[projectSelect.selectedIndex];
+            var task = {
+                id: Date.now(),
+                title: String(title).trim(),
+                description: (document.getElementById('taskDescription') || {}).value || '',
+                assignee: assigneeSelect ? assigneeSelect.value : '',
+                assigneeName: assigneeOpt ? (assigneeOpt.getAttribute('data-name') || assigneeOpt.textContent) : '',
+                project: projectSelect ? projectSelect.value : '',
+                projectName: projectOpt && projectOpt.value ? projectOpt.textContent : '',
+                priority: (document.getElementById('taskPriority') || {}).value || 'medium',
+                dueDate: (document.getElementById('taskDueDate') || {}).value || '',
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            var tasks = getStored('adminTasks', []) || [];
+            tasks.unshift(task);
+            setStored('adminTasks', tasks);
+            taskModal.classList.remove('open');
+            taskForm.reset();
+            renderAdminTasksTable();
+            window.refreshAdminPendingTasksCount();
+            alert('Task added successfully.');
+        });
+    }
+
+    window._adminTaskFilter = 'all';
+    renderAdminTasksTable('all');
+    window.refreshAdminPendingTasksCount();
+}
+
 // ===== SITE MANAGEMENT =====
 
 function setupSiteManagement() {
@@ -4288,7 +4575,7 @@ function setupSiteManagement() {
     var siteForm = document.getElementById('adminAddSiteVisitForm');
     var siteTableBody = document.getElementById('adminSiteManagementTableBody');
     if (addSiteVisitBtn && siteModal) {
-        addSiteVisitBtn.addEventListener('click', function () { if (siteForm) siteForm.reset(); populateProjectDropdown('siteVisitProject'); siteModal.classList.add('open'); });
+        addSiteVisitBtn.addEventListener('click', function () { if (siteForm) siteForm.reset(); window.populateProjectDropdown('siteVisitProject'); siteModal.classList.add('open'); });
     }
     document.querySelectorAll('[data-close="adminAddSiteVisitModal"]').forEach(function (el) { el.addEventListener('click', function () { siteModal.classList.remove('open'); }); });
     if (siteModal) siteModal.addEventListener('click', function (e) { if (e.target === siteModal) siteModal.classList.remove('open'); });
@@ -4352,8 +4639,10 @@ window.editSite = function (siteId) {
     document.getElementById('siteVisitNotes').value = site.notes || '';
     document.getElementById('siteVisitDate').value = site.visitDate;
     document.getElementById('siteVisitNextDate').value = site.nextVisit || '';
-    populateProjectDropdown('siteVisitProject');
-    setTimeout(function () { document.getElementById('siteVisitProject').value = site.project; }, 100);
+    window.populateProjectDropdown('siteVisitProject').then(function () {
+        var sel = document.getElementById('siteVisitProject');
+        if (sel) sel.value = site.project;
+    });
     document.getElementById('adminAddSiteVisitModal').classList.add('open');
 };
 window.deleteSite = function (siteId) {
