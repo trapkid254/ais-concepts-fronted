@@ -2626,36 +2626,56 @@ function syncEmployeeAssignmentsFromApi(currentUser, callback) {
         return r.json();
     }).then(function (projects) {
         var uid = String(currentUser._id || currentUser.id || '');
+        var emailLc = String(currentUser.email || '').toLowerCase();
         var fromApi = [];
         (projects || []).forEach(function (p) {
-            (p.assignedEmployees || []).forEach(function (a) {
-                if (String(a.employeeId) === uid) {
-                    var deadline = p.endDate ? new Date(p.endDate).toISOString().slice(0, 10) : '';
-                    fromApi.push({
-                        project: p.name,
-                        employeeEmail: currentUser.email,
-                        due: deadline,
-                        deadline: deadline,
-                        notes: a.duties || '',
-                        projectId: String(p._id || p.id)
-                    });
-                }
+            if (!p) return;
+            // Skip public website portfolio items (title/slug only)
+            if (!p.name && p.title && !Array.isArray(p.assignedEmployees)) return;
+            var projectName = p.name || p.title || '';
+            if (!projectName) return;
+
+            var matched = (p.assignedEmployees || []).filter(function (a) {
+                if (!a) return false;
+                var eid = a.employeeId && typeof a.employeeId === 'object'
+                    ? String(a.employeeId._id || a.employeeId.id || '')
+                    : String(a.employeeId || '');
+                if (uid && eid && eid === uid) return true;
+                if (a.employeeEmail && String(a.employeeEmail).toLowerCase() === emailLc) return true;
+                return false;
+            });
+
+            // Employee /api/projects is already scoped — show project even if ID field mismatched
+            if (!matched.length && currentUser.role === 'employee' && p.name) {
+                matched = [{ duties: '' }];
+            }
+
+            matched.forEach(function (a) {
+                var deadline = p.endDate ? new Date(p.endDate).toISOString().slice(0, 10) : '';
+                fromApi.push({
+                    project: projectName,
+                    employeeEmail: currentUser.email,
+                    due: deadline,
+                    deadline: deadline,
+                    notes: a.duties || '',
+                    projectId: String(p._id || p.id || '')
+                });
             });
         });
+
         var stored = getStored('assignments', []);
-        var merged = stored.slice();
+        var others = stored.filter(function (a) {
+            return !(a.employeeEmail && String(a.employeeEmail).toLowerCase() === emailLc);
+        });
+        var seen = {};
+        var mine = [];
         fromApi.forEach(function (a) {
-            if (!merged.some(function (m) {
-                return String(m.project) === String(a.project) &&
-                    String(m.employeeEmail || '').toLowerCase() === String(a.employeeEmail).toLowerCase();
-            })) {
-                merged.push(a);
-            }
+            var k = String(a.project || '').toLowerCase();
+            if (seen[k]) return;
+            seen[k] = true;
+            mine.push(a);
         });
-        setStored('assignments', merged);
-        var mine = merged.filter(function (a) {
-            return a.employeeEmail && a.employeeEmail.toLowerCase() === currentUser.email.toLowerCase();
-        });
+        setStored('assignments', others.concat(mine));
         if (callback) callback(mine);
         return mine;
     }).catch(function () {
