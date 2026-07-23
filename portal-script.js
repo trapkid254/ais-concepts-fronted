@@ -1123,28 +1123,65 @@ function setupAdminInteractions(currentUser) {
         });
     }
 
-    // Assignments
+    // Assignments — write through to EnhancedProject so employees see them
     var assignForm = document.getElementById('assignProjectForm');
     var assignmentsBody = document.getElementById('assignmentsTableBody');
     var assignments = getStored('assignments', []);
     renderAssignments(assignmentsBody, assignments);
 
     if (assignForm && assignmentsBody) {
+        window.populateProjectDropdown('assignProjectName');
         assignForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var project = document.getElementById('assignProjectName').value;
-            var employeeEmail = document.getElementById('assignEmployeeEmail').value;
+            var projectSelect = document.getElementById('assignProjectName');
+            var projectId = projectSelect ? projectSelect.value : '';
+            var projectOpt = projectSelect && projectSelect.options[projectSelect.selectedIndex];
+            var projectName = projectOpt ? (projectOpt.getAttribute('data-name') || projectOpt.textContent) : '';
+            var employeeEmail = (document.getElementById('assignEmployeeEmail').value || '').trim();
             var due = document.getElementById('assignDueDate').value;
             var notes = document.getElementById('assignNotes').value;
             var deadline = document.getElementById('assignDeadline') ? document.getElementById('assignDeadline').value : '';
             var clientEmailEl = document.getElementById('assignClientEmail');
             var clientEmail = clientEmailEl ? clientEmailEl.value.trim() : '';
-            var updated = getStored('assignments', []);
-            updated.push({ project: project, employeeEmail: employeeEmail, due: due, deadline: deadline, notes: notes, clientEmail: clientEmail || undefined });
-            setStored('assignments', updated);
-            renderAssignments(assignmentsBody, updated);
-            assignForm.reset();
-            alert('Project assigned.');
+            if (!projectId) {
+                alert('Please select a project.');
+                return;
+            }
+            if (!employeeEmail) {
+                alert('Please enter the employee email.');
+                return;
+            }
+            window.assignEmployeeToProjectApi(projectId, {
+                employeeEmail: employeeEmail,
+                duties: notes || ''
+            }).then(function (data) {
+                var row = data.assignment || {
+                    project: projectName,
+                    employeeEmail: employeeEmail,
+                    due: due,
+                    deadline: deadline || due,
+                    notes: notes,
+                    clientEmail: clientEmail || undefined,
+                    projectId: projectId
+                };
+                if (due) row.due = due;
+                if (deadline) row.deadline = deadline;
+                if (clientEmail) row.clientEmail = clientEmail;
+                var updated = getStored('assignments', []);
+                var idx = updated.findIndex(function (a) {
+                    return String(a.project) === String(row.project) &&
+                        String(a.employeeEmail || '').toLowerCase() === String(employeeEmail).toLowerCase();
+                });
+                if (idx >= 0) updated[idx] = Object.assign({}, updated[idx], row);
+                else updated.push(row);
+                setStored('assignments', updated);
+                renderAssignments(assignmentsBody, updated);
+                assignForm.reset();
+                if (typeof renderAdminProjectsTable === 'function') renderAdminProjectsTable();
+                alert('Project assigned. The employee will see it on their portal.');
+            }).catch(function (err) {
+                alert('Failed to assign: ' + (err.message || 'Please try again.'));
+            });
         });
     }
 
@@ -1542,13 +1579,20 @@ function setupAdminInteractions(currentUser) {
                 item.innerHTML =
                     '<div class="foreman-avatar">' + foreman.name.charAt(0).toUpperCase() + '</div>' +
                     '<div class="foreman-info"><div class="foreman-name">' + escapeHtml(foreman.name) + '</div>' +
-                    '<div class="foreman-details">ID: ' + escapeHtml(foreman.id || '') + ' | ' + escapeHtml(foreman.email || 'No email') + '</div></div>' +
-                    '<div class="foreman-status">' + escapeHtml(foreman.status || 'Active') + '</div>';
+                    '<div class="foreman-details">' + escapeHtml(foreman.email || 'No email') + '</div></div>' +
+                    '<div class="foreman-status">' + escapeHtml(foreman.status || foreman.approvalStatus || 'Active') + '</div>';
                 item.addEventListener('click', function () {
                     document.querySelectorAll('.foreman-item').forEach(function (i) { i.classList.remove('selected'); });
                     item.classList.add('selected');
-                    selectedForeman = foreman;
-                    updateSelectedForemanDisplay(foreman);
+                    var mongoId = foreman._id || foreman.id;
+                    selectedForeman = {
+                        _id: mongoId,
+                        id: mongoId,
+                        name: foreman.name,
+                        email: foreman.email || '',
+                        phone: foreman.phone || ''
+                    };
+                    updateSelectedForemanDisplay(selectedForeman);
                     if (pickExistingForemanModal) pickExistingForemanModal.classList.remove('open');
                 });
                 foremenList.appendChild(item);
@@ -1638,10 +1682,12 @@ function setupAdminInteractions(currentUser) {
             if (isEdit && snap && !deadline) deadline = snap.deadline || '';
             var assignedForeman = selectedForeman ? {
                 name: selectedForeman.name || selectedForeman.fullName || '',
-                id: selectedForeman.id || selectedForeman._id || selectedForeman.username || '',
+                _id: selectedForeman._id || selectedForeman.id || '',
+                id: selectedForeman._id || selectedForeman.id || '',
                 email: selectedForeman.email || ''
             } : (isEdit && snap && (snap.foremanName || snap.foremanId) ? {
                 name: snap.foremanName || '',
+                _id: snap.foremanId || '',
                 id: snap.foremanId || '',
                 email: ''
             } : null);
@@ -1805,12 +1851,36 @@ window.populateProjectDropdown = function (selectId) {
             var opt = document.createElement('option');
             opt.value = String(p._id || p.id || '');
             opt.textContent = p.name || p.title || 'Untitled project';
+            opt.setAttribute('data-name', p.name || p.title || '');
             select.appendChild(opt);
         });
         if (selected) select.value = selected;
     }).catch(function (err) {
         console.error('populateProjectDropdown:', err);
         select.innerHTML = '<option value="">No projects available</option>';
+    });
+};
+
+/** Assign an employee onto EnhancedProject so it appears on the employee portal. */
+window.assignEmployeeToProjectApi = function (projectId, opts) {
+    opts = opts || {};
+    var token = sessionStorage.getItem('authToken');
+    if (!token || !projectId) return Promise.reject(new Error('Missing project or auth'));
+    var body = { duties: opts.duties || '' };
+    if (opts.employeeId) body.employeeId = opts.employeeId;
+    if (opts.employeeEmail) body.employeeEmail = opts.employeeEmail;
+    return fetch((window.API_BASE || '') + '/api/projects/' + encodeURIComponent(projectId) + '/assign-employee', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify(body)
+    }).then(function (r) {
+        return r.json().then(function (data) {
+            if (!r.ok) throw new Error(data.error || data.details || 'Assign failed');
+            return data;
+        });
     });
 };
 
@@ -1962,27 +2032,164 @@ window.viewProjectWorkers = function (projectId) {
             '<table style="width:100%;border-collapse:collapse;">' +
             '<thead><tr><th>Name</th><th>ID</th><th>Phone</th><th>Daily Rate</th><th>Status</th><th>Actions</th></tr></thead>' +
             '<tbody>' +
-            workers.map(function (w) {
+            (workers.length ? workers.map(function (w) {
+                var wid = String(w._id || w.id || '');
                 return '<tr>' +
                     '<td>' + escapeHtml(w.name || '-') + '</td>' +
                     '<td>' + escapeHtml(w.nationalId || '-') + '</td>' +
                     '<td>' + escapeHtml(w.phone || '-') + '</td>' +
-                    '<td>$' + escapeHtml(w.dailyRate || '0') + '</td>' +
+                    '<td>KSH ' + escapeHtml(String(w.dailyRate || '0')) + '</td>' +
                     '<td><span class="status-badge status-' + escapeHtml(w.status || 'active') + '">' + escapeHtml(w.status || 'Active') + '</span></td>' +
                     '<td>' +
-                    '<button class="btn btn-sm" onclick="editWorker(\'' + escapeAttr(w._id) + '\')">Edit</button> ' +
-                    '<button class="btn btn-sm btn-danger" onclick="removeWorker(\'' + escapeAttr(w._id) + '\')">Remove</button>' +
+                    '<button type="button" class="btn btn-sm" onclick="adminEditWorker(\'' + escapeAttr(wid) + '\')">Edit</button> ' +
+                    '<button type="button" class="btn btn-sm btn-danger" onclick="adminRemoveWorker(\'' + escapeAttr(wid) + '\', \'' + escapeAttr(String(projectId)) + '\')">Remove</button>' +
                     '</td></tr>';
-            }).join('') +
+            }).join('') : '<tr><td colspan="6">No workers registered on this project yet.</td></tr>') +
             '</tbody></table>' +
             '<div style="margin-top:20px;"><p><strong>Total Workers:</strong> ' + workers.length + '</p>' +
-            '<p><strong>Total Daily Payroll:</strong> $' + totalPayroll.toFixed(2) + '</p></div></div>';
+            '<p><strong>Total Daily Payroll:</strong> KSH ' + totalPayroll.toFixed(2) + '</p></div></div>';
         document.getElementById('adminViewProjectModal').classList.add('open');
     }).catch(function () {
         var content = document.getElementById('adminViewProjectContent');
         if (content) content.innerHTML = '<p>Error loading workers data.</p>';
     });
 };
+
+window.adminEditWorker = function (workerId) {
+    var token = sessionStorage.getItem('authToken');
+    fetch(window.API_BASE + '/api/workers', {
+        headers: { Authorization: 'Bearer ' + token }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to load workers');
+        return r.json();
+    }).then(function (data) {
+        var worker = (data.workers || []).find(function (w) { return String(w._id || w.id) === String(workerId); });
+        if (!worker) throw new Error('Worker not found');
+        var phone = prompt('Phone number:', worker.phone || '');
+        if (phone === null) return null;
+        var rateStr = prompt('Daily rate (KSH):', String(worker.dailyRate || ''));
+        if (rateStr === null) return null;
+        var dailyRate = parseFloat(rateStr);
+        if (isNaN(dailyRate) || dailyRate <= 0) throw new Error('Invalid daily rate');
+        return fetch(window.API_BASE + '/api/workers/' + workerId, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ phone: phone.trim(), dailyRate: dailyRate })
+        });
+    }).then(function (response) {
+        if (!response) return;
+        if (!response.ok) {
+            return response.json().catch(function () { return {}; }).then(function (err) {
+                throw new Error(err.error || 'Update failed');
+            });
+        }
+        alert('Worker updated.');
+        if (typeof loadAdminWorkforceOverview === 'function') loadAdminWorkforceOverview();
+    }).catch(function (error) {
+        alert(error.message || 'Failed to update worker.');
+    });
+};
+
+window.adminRemoveWorker = function (workerId, projectId) {
+    if (!confirm('Remove this worker from the active roster?')) return;
+    fetch(window.API_BASE + '/api/workers/' + workerId, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
+    }).then(function (r) {
+        if (!r.ok) throw new Error('Failed to remove worker');
+        alert('Worker removed.');
+        if (projectId) viewProjectWorkers(projectId);
+        if (typeof loadAdminWorkforceOverview === 'function') loadAdminWorkforceOverview();
+        if (typeof renderAdminProjectsTable === 'function') renderAdminProjectsTable();
+    }).catch(function (error) {
+        alert(error.message || 'Failed to remove worker.');
+    });
+};
+
+async function loadAdminWorkforceOverview() {
+    var token = sessionStorage.getItem('authToken');
+    if (!token) return;
+    try {
+        var workersRes = await fetch((window.API_BASE || '') + '/api/workers', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        var workers = [];
+        if (workersRes.ok) {
+            var wdata = await workersRes.json();
+            workers = wdata.workers || [];
+        }
+        var totalWorkersEl = document.getElementById('totalWorkers');
+        if (totalWorkersEl) totalWorkersEl.textContent = String(workers.length);
+
+        var tbody = document.getElementById('adminWorkersTableBody');
+        if (tbody) {
+            tbody.innerHTML = workers.length ? workers.map(function (w) {
+                var wid = String(w._id || w.id || '');
+                var photo = (w.faceData && w.faceData.faceImage) ||
+                    ('https://ui-avatars.com/api/?name=' + encodeURIComponent(w.name || 'W') + '&background=20c4b4&color=fff&size=40');
+                return '<tr>' +
+                    '<td><img src="' + escapeAttr(photo) + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"></td>' +
+                    '<td>' + escapeHtml(w.name || '') + '</td>' +
+                    '<td>' + escapeHtml(w.nationalId || '-') + '</td>' +
+                    '<td>' + escapeHtml(w.phone || '-') + '</td>' +
+                    '<td>' + escapeHtml(w.email || '-') + '</td>' +
+                    '<td>KSH ' + escapeHtml(String(w.dailyRate || 0)) + '</td>' +
+                    '<td>' + (w.assignedProjects ? w.assignedProjects.length : 0) + '</td>' +
+                    '<td>' + (w.createdAt ? new Date(w.createdAt).toLocaleDateString() : '-') + '</td>' +
+                    '<td><span class="status-badge status-' + escapeHtml(w.status || 'active') + '">' + escapeHtml(w.status || 'active') + '</span></td>' +
+                    '<td>' +
+                    '<button type="button" class="btn-icon" onclick="adminEditWorker(\'' + escapeAttr(wid) + '\')"><i class="fas fa-edit"></i></button> ' +
+                    '<button type="button" class="btn-icon" onclick="adminRemoveWorker(\'' + escapeAttr(wid) + '\')"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            }).join('') : '<tr><td colspan="10">No workers yet. Foremen register workers on their assigned sites.</td></tr>';
+        }
+
+        var statsRes = await fetch((window.API_BASE || '') + '/api/attendance/stats', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (statsRes.ok) {
+            var stats = await statsRes.json();
+            var presentEl = document.getElementById('presentToday');
+            var absentEl = document.getElementById('absentToday');
+            var lateEl = document.getElementById('lateToday');
+            var todayAttendanceEl = document.getElementById('todayAttendance');
+            if (presentEl) presentEl.textContent = String(stats.present || 0);
+            if (absentEl) absentEl.textContent = String(stats.absent || 0);
+            if (lateEl) lateEl.textContent = String(stats.late || 0);
+            if (todayAttendanceEl) todayAttendanceEl.textContent = String((stats.present || 0) + (stats.late || 0));
+        }
+
+        var payrollRes = await fetch((window.API_BASE || '') + '/api/payroll/stats', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (payrollRes.ok) {
+            var payroll = await payrollRes.json();
+            var payrollEl = document.getElementById('monthlyPayroll') || document.getElementById('adminMonthlyPayroll');
+            if (payrollEl) payrollEl.textContent = 'KSH ' + Number(payroll.monthlyPayroll || payroll.totalPayroll || 0).toLocaleString();
+        }
+
+        var projRes = await fetch((window.API_BASE || '') + '/api/projects', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        if (projRes.ok) {
+            var projects = await projRes.json();
+            var list = Array.isArray(projects) ? projects : [];
+            var activeSitesEl = document.getElementById('activeSites');
+            if (activeSitesEl) {
+                var activeCount = list.filter(function (p) {
+                    var s = String(p.status || '').toLowerCase();
+                    return s === 'active' || s === 'ongoing' || s === 'planning' || s === 'in-progress';
+                }).length;
+                activeSitesEl.textContent = String(activeCount || list.length);
+            }
+        }
+    } catch (e) {
+        console.warn('loadAdminWorkforceOverview:', e);
+    }
+}
 
 window.deleteProject = function (projectId) {
     if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
@@ -2334,14 +2541,16 @@ window.renderAdminProjectsTable = function () {
             var locStr = formatProjectLocation(project.location);
             var clientStr = formatProjectClient(project.client);
             var foremanStr = formatProjectForeman(project);
-            var employeeCount = project.assignedEmployees ? project.assignedEmployees.length : 0;
+            var employeeCount = Array.isArray(project.assignedEmployees)
+                ? project.assignedEmployees.length
+                : (project.employeeCount || 0);
             return '<tr>' +
                 '<td>' + escapeHtml(project.name || '') + '</td>' +
                 '<td>' + escapeHtml(clientStr) + '</td>' +
                 '<td>' + escapeHtml(locStr) + '</td>' +
                 '<td>' + escapeHtml(foremanStr) + '</td>' +
-                '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\')" title="View Workers">' + (project.workerCount || 0) + ' workers</a></td>' +
-                '<td><a href="#" onclick="viewProjectEmployees(\'' + idStr + '\')" title="View Employees">' + employeeCount + ' employees</a></td>' +
+                '<td><a href="#" onclick="viewProjectWorkers(\'' + idStr + '\'); return false;" title="View Workers">' + (project.workerCount || (project.workers ? project.workers.length : 0) || 0) + ' workers</a></td>' +
+                '<td><a href="#" onclick="viewProjectEmployees(\'' + idStr + '\'); return false;" title="View Employees">' + employeeCount + ' employees</a></td>' +
                 '<td><div style="width:100px;"><div class="progress-bar"><div class="progress-fill" style="width:' + (project.progress || 0) + '%"></div></div></td>' +
                 '<td>' + escapeHtml(adminPortalProjectGroup(project) === 'completed' ? '-' : project.deadline || '') + '</td>' +
                 '<td><span class="status-badge status-' + st + '">' + escapeHtml(project.status || 'Active') + '</span></td>' +
@@ -2664,16 +2873,38 @@ function syncEmployeeAssignmentsFromApi(currentUser, callback) {
         });
 
         var stored = getStored('assignments', []);
+        var storedMine = stored.filter(function (a) {
+            return a.employeeEmail && String(a.employeeEmail).toLowerCase() === emailLc;
+        });
         var others = stored.filter(function (a) {
             return !(a.employeeEmail && String(a.employeeEmail).toLowerCase() === emailLc);
         });
+        // Merge API + portal/bootstrap rows (do not wipe PortalState-only assigns)
         var seen = {};
         var mine = [];
-        fromApi.forEach(function (a) {
-            var k = String(a.project || '').toLowerCase();
-            if (seen[k]) return;
+        function pushRow(a) {
+            var k = String(a.projectId || a.project || '').toLowerCase();
+            if (!k || seen[k]) return;
             seen[k] = true;
             mine.push(a);
+        }
+        fromApi.forEach(pushRow);
+        storedMine.forEach(pushRow);
+        // Also merge tasks assigned via Task Management
+        (getStored('adminTasks', []) || getStored('employeeTasks', []) || []).forEach(function (t) {
+            var assigneeEmail = String(t.assigneeEmail || t.employeeEmail || '').toLowerCase();
+            var assigneeId = String(t.assignee || t.assigneeId || '');
+            if (assigneeEmail !== emailLc && !(uid && assigneeId === uid)) return;
+            var projectLabel = t.projectName || t.project || '';
+            if (!projectLabel) return;
+            pushRow({
+                project: projectLabel,
+                employeeEmail: currentUser.email,
+                due: t.dueDate || '',
+                deadline: t.dueDate || '',
+                notes: t.title || t.description || '',
+                projectId: String(t.projectId || t.project || '')
+            });
         });
         setStored('assignments', others.concat(mine));
         if (callback) callback(mine);
@@ -3936,6 +4167,30 @@ async function loadAdminDashboard() {
     window._adminProjectFilter = 'all';
     window.renderAdminProjectsTable();
 
+    await loadAdminWorkforceOverview();
+    var adminAddWorkerBtn = document.getElementById('adminAddWorkerBtn');
+    if (adminAddWorkerBtn && !adminAddWorkerBtn._wired) {
+        adminAddWorkerBtn._wired = true;
+        adminAddWorkerBtn.addEventListener('click', function () {
+            alert('Workers are registered by foremen on site. Open Foreman Management to assign a foreman, then use the foreman Worker Registration page.');
+        });
+    }
+    var adminAttendanceReportBtn = document.getElementById('adminAttendanceReportBtn');
+    if (adminAttendanceReportBtn && !adminAttendanceReportBtn._wired) {
+        adminAttendanceReportBtn._wired = true;
+        adminAttendanceReportBtn.addEventListener('click', async function () {
+            try {
+                var r = await fetch((window.API_BASE || '') + '/api/attendance/stats', {
+                    headers: { Authorization: 'Bearer ' + sessionStorage.getItem('authToken') }
+                });
+                var s = r.ok ? await r.json() : {};
+                alert('Today\'s attendance\nPresent: ' + (s.present || 0) + '\nLate: ' + (s.late || 0) + '\nAbsent: ' + (s.absent || 0));
+            } catch (e) {
+                alert('Could not load attendance report.');
+            }
+        });
+    }
+
     var adminProjTabs = document.querySelectorAll('#adminProjectFilterTabs .filter-btn');
     adminProjTabs.forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -3948,17 +4203,7 @@ async function loadAdminDashboard() {
 
     var assignSel = document.getElementById('assignProjectName');
     if (assignSel) {
-        var pl = getStored('portalProjects', []);
-        var assignments = getStored('assignments', []);
-        var assignedProjectNames = new Set(assignments.map(function (a) { return a.project; }));
-        var activeUnassignedProjects = pl.filter(function (p) {
-            var isActive = p.status === 'ongoing' || p.status === 'active' || p.status === 'Active';
-            var isUnassigned = !assignedProjectNames.has(p.name);
-            return isActive && isUnassigned;
-        });
-        assignSel.innerHTML = activeUnassignedProjects.length ? activeUnassignedProjects.map(function (p) {
-            return '<option value="' + escapeHtml(p.name || '') + '">' + escapeHtml(p.name || '') + '</option>';
-        }).join('') : '<option value="">No active unassigned projects</option>';
+        window.populateProjectDropdown('assignProjectName');
     }
 
     renderAdminInvoices(document.getElementById('adminInvoicesBody'));
@@ -4505,9 +4750,11 @@ function populateTaskAssigneeDropdown() {
     select.innerHTML = '<option value="">Select team member</option>';
     users.forEach(function (u) {
         var opt = document.createElement('option');
-        opt.value = String(u.id || u._id || u.email || '');
+        opt.value = String(u._id || u.id || u.email || '');
         opt.textContent = (u.name || u.email || 'User') + (u.role ? ' (' + u.role + ')' : '');
         opt.setAttribute('data-name', u.name || u.email || '');
+        opt.setAttribute('data-email', u.email || '');
+        opt.setAttribute('data-role', u.role || '');
         select.appendChild(opt);
     });
     if (selected) select.value = selected;
@@ -4558,27 +4805,84 @@ function setupTaskManagement() {
             var projectSelect = document.getElementById('taskProject');
             var assigneeOpt = assigneeSelect && assigneeSelect.options[assigneeSelect.selectedIndex];
             var projectOpt = projectSelect && projectSelect.options[projectSelect.selectedIndex];
+            var assigneeId = assigneeSelect ? assigneeSelect.value : '';
+            var projectId = projectSelect ? projectSelect.value : '';
+            var projectName = projectOpt && projectOpt.value
+                ? (projectOpt.getAttribute('data-name') || projectOpt.textContent)
+                : '';
+            var users = __portalCache.portalUsers || [];
+            var assigneeUser = users.find(function (u) {
+                return String(u._id || u.id) === String(assigneeId) ||
+                    String(u.email || '').toLowerCase() === String(assigneeId).toLowerCase();
+            });
+            var assigneeEmail = assigneeUser ? (assigneeUser.email || '') : '';
+            var assigneeRole = assigneeUser ? String(assigneeUser.role || '').toLowerCase() : '';
             var task = {
                 id: Date.now(),
                 title: String(title).trim(),
                 description: (document.getElementById('taskDescription') || {}).value || '',
-                assignee: assigneeSelect ? assigneeSelect.value : '',
+                assignee: assigneeId,
+                assigneeId: assigneeId,
                 assigneeName: assigneeOpt ? (assigneeOpt.getAttribute('data-name') || assigneeOpt.textContent) : '',
-                project: projectSelect ? projectSelect.value : '',
-                projectName: projectOpt && projectOpt.value ? projectOpt.textContent : '',
+                assigneeEmail: assigneeEmail,
+                employeeEmail: assigneeEmail,
+                project: projectId,
+                projectId: projectId,
+                projectName: projectName,
                 priority: (document.getElementById('taskPriority') || {}).value || 'medium',
                 dueDate: (document.getElementById('taskDueDate') || {}).value || '',
                 status: 'pending',
                 createdAt: new Date().toISOString()
             };
-            var tasks = getStored('adminTasks', []) || [];
-            tasks.unshift(task);
-            setStored('adminTasks', tasks);
-            taskModal.classList.remove('open');
-            taskForm.reset();
-            renderAdminTasksTable();
-            window.refreshAdminPendingTasksCount();
-            alert('Task added successfully.');
+
+            function finishSave() {
+                var tasks = getStored('adminTasks', []) || [];
+                tasks.unshift(task);
+                setStored('adminTasks', tasks);
+                if (assigneeEmail && projectName) {
+                    var assignments = getStored('assignments', []);
+                    var row = {
+                        project: projectName,
+                        employeeEmail: assigneeEmail,
+                        due: task.dueDate || '',
+                        deadline: task.dueDate || '',
+                        notes: task.title + (task.description ? ' — ' + task.description : ''),
+                        projectId: projectId
+                    };
+                    var idx = assignments.findIndex(function (a) {
+                        return String(a.project) === String(projectName) &&
+                            String(a.employeeEmail || '').toLowerCase() === assigneeEmail.toLowerCase();
+                    });
+                    if (idx >= 0) assignments[idx] = Object.assign({}, assignments[idx], row);
+                    else assignments.push(row);
+                    setStored('assignments', assignments);
+                }
+                taskModal.classList.remove('open');
+                taskForm.reset();
+                renderAdminTasksTable();
+                window.refreshAdminPendingTasksCount();
+                if (typeof renderAdminProjectsTable === 'function') renderAdminProjectsTable();
+                alert(assigneeRole === 'employee' && projectId
+                    ? 'Task added and project assigned to the employee portal.'
+                    : 'Task added successfully.');
+            }
+
+            // Employees: also attach to EnhancedProject so Projects tab fills in
+            if (assigneeRole === 'employee' && projectId && (assigneeId || assigneeEmail)) {
+                window.assignEmployeeToProjectApi(projectId, {
+                    employeeId: assigneeId,
+                    employeeEmail: assigneeEmail,
+                    duties: task.title + (task.description ? ': ' + task.description : '')
+                }).then(function () {
+                    finishSave();
+                }).catch(function (err) {
+                    alert('Task saved locally, but project assign failed: ' + (err.message || 'error') +
+                        '\nFix: use Assignments or the project Assign Employee button.');
+                    finishSave();
+                });
+            } else {
+                finishSave();
+            }
         });
     }
 

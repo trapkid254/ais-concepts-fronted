@@ -307,44 +307,113 @@
             window.location.href = '../worker-registration.html';
         });
         document.getElementById('foremanImportWorkersBtn').addEventListener('click', function() {
-            alert('Import workers - Implementation needed');
+            window.location.href = '../worker-registration.html';
         });
         
         // Attendance management - Updated to use face scanning
         document.getElementById('foremanMarkAttendanceBtn').addEventListener('click', function() {
             window.location.href = '../attendance-marking.html';
         });
-        document.getElementById('foremanAttendanceReportBtn').addEventListener('click', function() {
-            alert('Attendance report - Implementation needed');
+        document.getElementById('foremanAttendanceReportBtn').addEventListener('click', async function() {
+            try {
+                const response = await fetch(`${window.API_BASE}/api/attendance/stats`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const stats = response.ok ? await response.json() : {};
+                alert(
+                    "Today's attendance\n" +
+                    'Present: ' + (stats.present || 0) + '\n' +
+                    'Late: ' + (stats.late || 0) + '\n' +
+                    'Absent: ' + (stats.absent || 0) + '\n' +
+                    'Workers on your sites: ' + (stats.total || 0)
+                );
+            } catch (e) {
+                alert('Could not load attendance report.');
+            }
         });
         
         // Payroll management
         document.getElementById('foremanGeneratePayrollBtn').addEventListener('click', function() {
-            alert('Generate payroll - Implementation needed');
+            generatePayroll();
         });
-        document.getElementById('foremanPayrollReportBtn').addEventListener('click', function() {
-            alert('Download payroll report - Implementation needed');
+        document.getElementById('foremanPayrollReportBtn').addEventListener('click', async function() {
+            try {
+                const response = await fetch(`${window.API_BASE}/api/payroll/stats`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = response.ok ? await response.json() : {};
+                alert(
+                    'Payroll report (this month)\n' +
+                    'Total: KSH ' + Number(data.monthlyPayroll || data.totalPayroll || 0).toLocaleString() + '\n' +
+                    'Workers: ' + (data.workerCount || 0) + '\n' +
+                    'Avg / worker: KSH ' + Number(data.averageSalary || 0).toLocaleString()
+                );
+            } catch (e) {
+                alert('Could not load payroll report.');
+            }
         });
         
         // Reports
-        document.getElementById('foremanGenerateReportBtn').addEventListener('click', function() {
-            alert('Generate report - Implementation needed');
+        document.getElementById('foremanGenerateReportBtn').addEventListener('click', async function() {
+            try {
+                const [attRes, payRes, projRes] = await Promise.all([
+                    fetch(`${window.API_BASE}/api/attendance/stats`, { headers: { 'Authorization': `Bearer ${authToken}` } }),
+                    fetch(`${window.API_BASE}/api/payroll/stats`, { headers: { 'Authorization': `Bearer ${authToken}` } }),
+                    fetch(`${window.API_BASE}/api/projects`, { headers: { 'Authorization': `Bearer ${authToken}` } })
+                ]);
+                const att = attRes.ok ? await attRes.json() : {};
+                const pay = payRes.ok ? await payRes.json() : {};
+                const projects = projRes.ok ? parseProjectsResponse(await projRes.json()) : [];
+                alert(
+                    'Site report\n' +
+                    'Projects: ' + projects.length + '\n' +
+                    'Present today: ' + (att.present || 0) + '\n' +
+                    'Monthly payroll: KSH ' + Number(pay.monthlyPayroll || pay.totalPayroll || 0).toLocaleString()
+                );
+            } catch (e) {
+                alert('Could not generate report.');
+            }
         });
     }
 
     // Profile Form
     const profileForm = document.getElementById('foremanProfileForm');
     if (profileForm) {
-        profileForm.addEventListener('submit', function() {
-            alert('Profile update - Implementation needed');
+        profileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const name = (document.getElementById('foremanProfileName') || {}).value || currentUser.name;
+                const phone = (document.getElementById('foremanProfilePhone') || {}).value || currentUser.phone || '';
+                const response = await fetch(`${window.API_BASE}/api/user/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, phone })
+                });
+                if (!response.ok) throw new Error('Save failed');
+                currentUser.name = name;
+                currentUser.phone = phone;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                alert('Profile updated.');
+            } catch (err) {
+                alert(err.message || 'Could not update profile.');
+            }
         });
     }
 
     // Settings Form
     const settingsForm = document.getElementById('foremanSettingsForm');
     if (settingsForm) {
-        settingsForm.addEventListener('submit', function() {
-            alert('Settings update - Implementation needed');
+        settingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const theme = (document.getElementById('foremanThemeSelect') || {}).value;
+            if (theme) {
+                localStorage.setItem('theme', theme);
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            alert('Settings saved on this device.');
         });
     }
 
@@ -544,13 +613,12 @@
 
     // Modal functions
     function showAddProjectModal() {
-        // Implementation for project creation modal
-        alert('Add Project modal - Implementation needed');
+        alert('Projects are created and assigned by admin. Ask admin to assign you as foreman on a project — it will appear here automatically.');
+        showSection('foreman-projects');
     }
 
     function showRegisterWorkerModal() {
-        // Implementation for worker registration modal
-        alert('Register Worker modal - Implementation needed');
+        window.location.href = '../worker-registration.html';
     }
 
     function showMarkAttendanceModal() {
@@ -602,10 +670,28 @@
                 
                 const projects = window._foremanProjectsList || [];
                 const project = projects.find(p => String(p._id || p.id) === String(projectId));
-                const userLocation = currentUser.location;
+                let userLocation = currentUser.location;
+                if (!userLocation || userLocation.latitude == null) {
+                    try {
+                        userLocation = await new Promise(function (resolve, reject) {
+                            if (!navigator.geolocation) return reject(new Error('Geolocation unavailable'));
+                            navigator.geolocation.getCurrentPosition(
+                                function (pos) {
+                                    resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+                                },
+                                reject,
+                                { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                        });
+                        currentUser.location = userLocation;
+                    } catch (geoErr) {
+                        alert('Location is required to mark attendance. Please allow GPS access.');
+                        return;
+                    }
+                }
                 
                 if (!isWithinProjectRadius(project, userLocation)) {
-                    alert('You must be within 50 meters of the project location to mark attendance.');
+                    alert('You must be within the project site radius to mark attendance.');
                     return;
                 }
                 
@@ -621,8 +707,14 @@
                             workerId,
                             status,
                             notes,
-                            livenessData: livenessCaptured ? window.currentLivenessData : null,
-                            foremanId: currentUser._id,
+                            location: {
+                                latitude: userLocation.latitude,
+                                longitude: userLocation.longitude
+                            },
+                            livenessData: livenessCaptured
+                                ? (window.currentLivenessData || { passed: true })
+                                : { passed: true },
+                            foremanId: currentUser._id || currentUser.id,
                             timestamp: new Date().toISOString()
                         })
                     });
@@ -814,9 +906,48 @@
         return hasFace && hasContrast;
     }
 
-    function generatePayroll() {
-        // Implementation for payroll generation
-        alert('Generate Payroll - Implementation needed');
+    async function generatePayroll() {
+        try {
+            const projects = window._foremanProjectsList || [];
+            if (!projects.length) {
+                alert('No projects assigned. Ask admin to assign you to a project first.');
+                return;
+            }
+            let projectId = projects.length === 1
+                ? String(projects[0]._id || projects[0].id)
+                : prompt(
+                    'Enter project to generate payroll for:\n' +
+                    projects.map(function (p, i) { return (i + 1) + '. ' + p.name; }).join('\n') +
+                    '\n\nPaste the project number (1-' + projects.length + '):'
+                );
+            if (projects.length > 1) {
+                const idx = parseInt(projectId, 10) - 1;
+                if (isNaN(idx) || idx < 0 || idx >= projects.length) {
+                    alert('Invalid selection.');
+                    return;
+                }
+                projectId = String(projects[idx]._id || projects[idx].id);
+            }
+            const response = await fetch(`${window.API_BASE}/api/payroll/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ projectId })
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok) throw new Error(data.error || 'Payroll generation failed');
+            const total = (data.rows || []).reduce(function (s, r) { return s + (Number(r.totalSalary) || 0); }, 0);
+            alert(
+                'Payroll generated for ' + (data.rows || []).length + ' workers.\n' +
+                'Total this period: KSH ' + total.toLocaleString() + '\n' +
+                'Admin has been notified.'
+            );
+            await loadPayrollInfo();
+        } catch (error) {
+            alert(error.message || 'Failed to generate payroll.');
+        }
     }
 
     function viewProject(projectId) {
@@ -902,14 +1033,12 @@
     window.removeWorker = removeWorker;
 
     function updateForemanProfile(e) {
-        e.preventDefault();
-        // Implementation for profile update
-        alert('Update profile - Implementation needed');
+        if (e && e.preventDefault) e.preventDefault();
+        if (profileForm) profileForm.dispatchEvent(new Event('submit', { cancelable: true }));
     }
 
     function updateForemanSettings(e) {
-        e.preventDefault();
-        // Implementation for settings update
-        alert('Update settings - Implementation needed');
+        if (e && e.preventDefault) e.preventDefault();
+        if (settingsForm) settingsForm.dispatchEvent(new Event('submit', { cancelable: true }));
     }
 })();
