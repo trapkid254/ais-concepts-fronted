@@ -4023,15 +4023,69 @@ window.deleteBlogPost = function(id) {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     
     var list = typeof getWebsiteBlogPosts === 'function' ? getWebsiteBlogPosts() : [];
-    var index = list.findIndex(function(p) { return String(p.id) === String(id); });
-    if (index !== -1) {
-        list.splice(index, 1);
-        if (typeof setWebsiteBlogPosts === 'function') {
-            setWebsiteBlogPosts(list).then(function() {
-                renderAdminBlogPosts();
-                alert('Blog post deleted successfully!');
-            }).catch(function() { alert('Could not delete blog post.'); });
+    list = list.filter(function(p) { return String(p.id) !== String(id); });
+    
+    if (typeof setWebsiteBlogPosts === 'function') {
+        setWebsiteBlogPosts(list).then(function() {
+            renderAdminBlogPosts();
+        }).catch(function() {
+            alert('Could not delete blog post.');
+        });
+    }
+};
+
+async function renderAdminWebsiteServices() {
+    var tbody = document.getElementById('adminWebsiteServicesBody');
+    if (!tbody) return;
+    var services = [];
+    try {
+        if (typeof getWebsiteServices === 'function') {
+            services = getWebsiteServices();
         }
+    } catch (e) { services = []; }
+    tbody.innerHTML = services.length ? services.map(function (s) {
+        var optimizedImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(s.image || '', 'THUMBNAIL') : (s.image || '');
+        return '<tr>' +
+            '<td><img src="' + escapeHtml(optimizedImg) + '" alt="' + escapeHtml(s.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(s.title || '') + '</td>' +
+            '<td>' + escapeHtml(s.category || '') + '</td>' +
+            '<td>' + escapeHtml((s.description || '').substring(0, 100) + (s.description && s.description.length > 100 ? '...' : '')) + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editWebsiteService(\'' + escapeAttr(String(s.id)) + '\')" title="Edit service"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteWebsiteService(\'' + escapeAttr(String(s.id)) + '\')" title="Delete service"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;">No services yet. Click "Add Website Service" to get started.</td></tr>';
+}
+
+window.editWebsiteService = function(id) {
+    var list = typeof getWebsiteServices === 'function' ? getWebsiteServices() : [];
+    var service = list.find(function(s) { return String(s.id) === String(id); });
+    if (!service) return;
+    
+    var servModal = document.getElementById('adminWebsiteServiceModal');
+    var servForm = document.getElementById('adminWebsiteServiceForm');
+    var modalTitle = servModal.querySelector('h2');
+    
+    if (document.getElementById('webServiceTitle')) document.getElementById('webServiceTitle').value = service.title || '';
+    if (document.getElementById('webServiceCategory')) document.getElementById('webServiceCategory').value = service.category || '';
+    if (document.getElementById('webServiceDescription')) document.getElementById('webServiceDescription').value = service.description || '';
+    if (modalTitle) modalTitle.textContent = 'Edit Website Service';
+    
+    if (servModal) servModal.classList.add('open');
+};
+
+window.deleteWebsiteService = function(id) {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+    
+    var list = typeof getWebsiteServices === 'function' ? getWebsiteServices() : [];
+    list = list.filter(function(s) { return String(s.id) !== String(id); });
+    
+    if (typeof setWebsiteServices === 'function') {
+        setWebsiteServices(list).then(function() {
+            renderAdminWebsiteServices();
+        }).catch(function() {
+            alert('Could not delete service.');
+        });
     }
 };
 
@@ -4269,6 +4323,7 @@ async function loadAdminDashboard() {
     await renderAdminEnquiries();
     await renderPendingApprovals();
     await renderAdminWebsiteProjects();
+    await renderAdminWebsiteServices();
     await renderAdminFAQsInContent();
     await renderAdminBlogPosts();
 

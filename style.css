@@ -242,11 +242,10 @@ section {
     letter-spacing: 1px;
     opacity: 0.8;
     order: 2;
-    margin: 0 8px 0 12px;
+    flex: 1;
+    min-width: 200px;
     overflow: hidden;
     position: relative;
-    flex: 1;
-    max-width: 280px;
 }
 
 .navbar .nav-ticker span {
@@ -727,8 +726,7 @@ section {
 
 .nav-ticker {
     flex: 1;
-    max-width: 420px;
-    margin: 0 4px;
+    min-width: 200px;
     color: #6b7280;
     font-size: 0.9rem;
     white-space: nowrap;
@@ -2322,7 +2320,10 @@ section {
     }
     
     .navbar .nav-ticker {
-        display: none;
+        display: block;
+        flex: 1;
+        min-width: 150px;
+        font-size: 0.75rem;
     }
     
     .navbar-social-icons {

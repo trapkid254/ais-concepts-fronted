@@ -133,7 +133,7 @@
             </a>
         </div>
         <div class="nav-ticker">
-            <span>Art in Spaces. </span>
+            <span>Art in Spaces. Innovate . design . sustainable concepts</span>
         </div>
         <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
             <i class="fas fa-bars"></i>
@@ -175,7 +175,7 @@
             <li><a href="blog/">Blog</a></li>
             <li><a href="faq/">FAQ</a></li>
             <li class="nav-auth-wrap">
-                <a href="#" id="loginBtn" class="nav-login-link">Login</a>
+                <a href="client/login/" id="loginBtn" class="nav-login-link">Client Login</a>
                 <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
                     <a href="client/dashboard/"><i class="fas fa-th-large"></i> My Portal</a>
                     <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -212,13 +212,13 @@
         </div>
     </div>
 
-    <!-- Login Options Modal -->
+    <!-- Client Login Modal -->
     <div id="loginOptionsModal" class="modal">
         <div class="modal-content login-options-content">
             <span class="close-modal" id="loginOptionsClose">&times;</span>
-            <h2>Select Login Type</h2>
-            <p class="login-subtitle">Choose your portal to access your dashboard</p>
-            
+            <h2>Client Portal Login</h2>
+            <p class="login-subtitle">Access your project dashboard and track progress</p>
+
             <div class="login-options-grid">
                 <div class="login-option-card" data-role="client">
                     <div class="login-option-icon">
@@ -227,33 +227,6 @@
                     <h3>Client Portal</h3>
                     <p>View your projects, track progress, and manage documents</p>
                     <button class="btn-primary login-option-btn">Login as Client</button>
-                </div>
-                
-                <div class="login-option-card" data-role="admin">
-                    <div class="login-option-icon">
-                        <i class="fas fa-user-shield"></i>
-                    </div>
-                    <h3>Admin Portal</h3>
-                    <p>Manage system settings, users, and overall operations</p>
-                    <button class="btn-primary login-option-btn">Login as Admin</button>
-                </div>
-                
-                <div class="login-option-card" data-role="employee">
-                    <div class="login-option-icon">
-                        <i class="fas fa-user-hard-hat"></i>
-                    </div>
-                    <h3>Employee Portal</h3>
-                    <p>Access work assignments, timesheets, and company resources</p>
-                    <button class="btn-primary login-option-btn">Login as Employee</button>
-                </div>
-                
-                <div class="login-option-card" data-role="foreman">
-                    <div class="login-option-icon">
-                        <i class="fas fa-clipboard-check"></i>
-                    </div>
-                    <h3>Foreman Portal</h3>
-                    <p>Manage construction sites, workers, and project progress</p>
-                    <button class="btn-primary login-option-btn">Login as Foreman</button>
                 </div>
             </div>
         </div>
@@ -694,7 +667,7 @@
         }).catch(function() {});
     })();
 
-    // Login Options Modal Functionality
+    // Client Login Modal Functionality (for direct client login)
     (function() {
         const loginBtn = document.getElementById('loginBtn');
         const loginOptionsModal = document.getElementById('loginOptionsModal');
@@ -703,7 +676,7 @@
         const loginOptionBtns = document.querySelectorAll('.login-option-btn');
 
         // Open login options modal
-        if (loginBtn) {
+        if (loginBtn && loginOptionsModal) {
             loginBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 loginOptionsModal.style.display = 'block';
@@ -713,8 +686,10 @@
 
         // Close login options modal
         function closeLoginModal() {
-            loginOptionsModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            if (loginOptionsModal) {
+                loginOptionsModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
         }
 
         if (loginOptionsClose) {
@@ -722,24 +697,18 @@
         }
 
         // Close modal when clicking outside
-        loginOptionsModal.addEventListener('click', function(e) {
-            if (e.target === loginOptionsModal) {
-                closeLoginModal();
-            }
-        });
+        if (loginOptionsModal) {
+            loginOptionsModal.addEventListener('click', function(e) {
+                if (e.target === loginOptionsModal) {
+                    closeLoginModal();
+                }
+            });
+        }
 
-        // Handle login option selection
+        // Handle login option selection (only client)
         function handleLoginSelection(role) {
-            const loginPaths = {
-                'client': 'client/login/',
-                'admin': 'admin/login/',
-                'employee': 'employee/login/',
-                'foreman': 'foreman/login/'
-            };
-
-            const loginPath = loginPaths[role];
-            if (loginPath) {
-                window.location.href = loginPath;
+            if (role === 'client') {
+                window.location.href = 'client/login/';
             }
         }
 
@@ -762,7 +731,7 @@
 
         // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && loginOptionsModal.style.display === 'block') {
+            if (e.key === 'Escape' && loginOptionsModal && loginOptionsModal.style.display === 'block') {
                 closeLoginModal();
             }
         });

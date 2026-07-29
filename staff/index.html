@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Portal | AIS Concepts</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../vendor/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="logo">
+            <a href="/">
+                <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img" width="200" height="60">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Art in Spaces. Innovate . design . sustainable concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="../about/">About Us</a></li>
+            <li><a href="../projects/">Portfolio</a></li>
+            <li><a href="../services/">Services</a></li>
+            <li><a href="../contact/">Contact Us</a></li>
+            <li><a href="../blog/">Blog</a></li>
+            <li><a href="../faq/">FAQ</a></li>
+        </ul>
+    </nav>
+
+    <section class="staff-portal-selection">
+        <div class="container">
+            <div class="staff-selection-header">
+                <h1>Staff Portal Login</h1>
+                <p>Select your role to access your dashboard</p>
+            </div>
+
+            <div class="staff-selection-grid">
+                <div class="staff-card" data-role="admin">
+                    <div class="staff-card-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h2>Admin Portal</h2>
+                    <p>Manage system settings, users, projects, and overall operations</p>
+                    <button class="btn-primary staff-login-btn" onclick="window.location.href='../admin/login/'">
+                        Login as Admin
+                    </button>
+                </div>
+
+                <div class="staff-card" data-role="employee">
+                    <div class="staff-card-icon">
+                        <i class="fas fa-user-hard-hat"></i>
+                    </div>
+                    <h2>Employee Portal</h2>
+                    <p>Access work assignments, timesheets, and company resources</p>
+                    <button class="btn-primary staff_login-btn" onclick="window.location.href='../employee/login/'">
+                        Login as Employee
+                    </button>
+                </div>
+
+                <div class="staff-card" data-role="foreman">
+                    <div class="staff-card-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <h2>Foreman Portal</h2>
+                    <p>Manage construction sites, workers, and project progress</p>
+                    <button class="btn-primary staff-login-btn" onclick="window.location.href='../foreman/login/'">
+                        Login as Foreman
+                    </button>
+                </div>
+            </div>
+
+            <div class="staff-selection-footer">
+                <p>Not a staff member? <a href="../client/login/">Client Portal Login</a></p>
+                <p><a href="/">Return to Home</a></p>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        .staff-portal-selection {
+            padding: 120px 20px 60px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+        }
+
+        .staff-selection-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .staff-selection-header h1 {
+            font-size: 2.5rem;
+            color: #1a202c;
+            margin-bottom: 16px;
+        }
+
+        .staff-selection-header p {
+            font-size: 1.1rem;
+            color: #718096;
+        }
+
+        .staff-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .staff-card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .staff-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .staff-card-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .staff-card-icon i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .staff-card h2 {
+            font-size: 1.5rem;
+            color: #1a202c;
+            margin-bottom: 12px;
+        }
+
+        .staff-card p {
+            color: #718096;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .staff-login-btn {
+            width: 100%;
+            padding: 12px 24px;
+            font-size: 1rem;
+        }
+
+        .staff-selection-footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .staff-selection-footer p {
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .staff-selection-footer a {
+            color: #0f766e;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .staff-selection-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .staff-portal-selection {
+                padding: 100px 20px 40px;
+            }
+
+            .staff-selection-header h1 {
+                font-size: 2rem;
+            }
+
+            .staff-selection-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script src="../script.js"></script>
+</body>
+</html>
