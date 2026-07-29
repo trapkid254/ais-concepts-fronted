@@ -2,7 +2,7 @@
   var API_BASE = global.API_BASE || '';
   var __projects = [];
 
-  var PROJECT_CATEGORIES = ['Hospitality', 'Residential', 'Commercial', 'Interior', 'Apartments'];
+  var PROJECT_CATEGORIES = ['Residential', 'Apartments', 'Hospitality', 'Interior Design', 'Institutional', 'Commercial', 'Industrial', 'Landscape & Urban Design'];
   var LEGACY_PROJECT_CATEGORIES = ['Urban', 'Conceptual'];
 
   function mapProject(p) {

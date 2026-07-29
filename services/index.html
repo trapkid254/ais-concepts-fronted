@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-W8GS28XZ');</script>
+    <!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <script src="/url-cleanup.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Our Services | AIS Concepts - Architectural Design & Construction Services</title>
+    <meta name="description" content="Explore AIS Concepts' comprehensive architectural services including architectural design, interior design, master planning, feasibility studies, project management, construction supervision, and more.">
+    <meta name="keywords" content="architectural services Kenya, interior design, master planning, feasibility study, project management, construction supervision, renovation, 3D visualization, authority approvals, tender documentation">
+    <meta name="author" content="AIS Concepts">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://aisconcepts.com/services/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://aisconcepts.com/services/">
+    <meta property="og:title" content="Our Services | AIS Concepts - Architectural Design & Construction Services">
+    <meta property="og:description" content="Explore AIS Concepts' comprehensive architectural services including design, planning, project management, and construction supervision.">
+    <meta property="og:image" content="https://aisconcepts.com/images/og-image.jpg">
+    <meta property="og:site_name" content="AIS Concepts">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://aisconcepts.com/services/">
+    <meta property="twitter:title" content="Our Services | AIS Concepts - Architectural Design & Construction Services">
+    <meta property="twitter:description" content="Explore AIS Concepts' comprehensive architectural services including design, planning, project management, and construction supervision.">
+    <meta property="twitter:image" content="https://aisconcepts.com/images/og-image.jpg">
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HWW9C52T68"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-HWW9C52T68');
+    </script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon.png">
+    
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../vendor/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .services-section {
+            padding: 80px 0;
+        }
+        
+        .service-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+        
+        .filter-btn {
+            padding: 10px 24px;
+            border: 2px solid #0f766e;
+            background: transparent;
+            color: #0f766e;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: #0f766e;
+            color: white;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+        
+        .services-grid.single-view {
+            display: block;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .service-card-header {
+            padding: 25px;
+            background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+            color: white;
+        }
+        
+        .service-card-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .service-card-body {
+            padding: 25px;
+        }
+        
+        .service-tagline {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f766e;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+        
+        .service-description {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #4a5568;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .service-detail-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .service-detail-header {
+            padding: 40px;
+            background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .service-detail-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .service-detail-header .service-tagline {
+            font-size: 18px;
+            font-weight: 400;
+            opacity: 0.95;
+            font-style: italic;
+            color: white;
+        }
+        
+        .service-detail-body {
+            padding: 40px;
+        }
+        
+        .service-detail-body .service-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #4a5568;
+            margin-bottom: 30px;
+            display: block;
+            -webkit-line-clamp: unset;
+            line-clamp: unset;
+        }
+        
+        .service-deliverables {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 12px;
+            border-left: 4px solid #0f766e;
+        }
+        
+        .service-deliverables h3 {
+            color: #1a202c;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .deliverables-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        
+        .deliverables-list li {
+            padding: 10px 15px;
+            padding-left: 35px;
+            position: relative;
+            color: #4a5568;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .deliverables-list li:before {
+            content: '✓';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #0f766e;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .no-service {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        
+        .no-service i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-filters {
+                gap: 8px;
+            }
+            
+            .filter-btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+            
+            .service-detail-header {
+                padding: 30px 20px;
+            }
+            
+            .service-detail-header h2 {
+                font-size: 24px;
+            }
+            
+            .service-detail-body {
+                padding: 30px 20px;
+            }
+            
+            .deliverables-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8GS28XZ"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <nav class="navbar" id="navbar">
+        <div class="logo">
+            <a href="/">
+                <img src="../images/logo.png" alt="AIS Concepts logo" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-ticker">
+            <span>Architecture • Interior Design • Urban Planning • Sustainable Concepts</span>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+            <li><a href="../">Home</a></li>
+            <li><a href="../about/">About Us</a></li>
+            <li class="has-dropdown">
+                <a href="../projects/">Portfolio <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="../projects/">All Projects</a></li>
+                    <li><a href="../projects/?filter=residential">Residential</a></li>
+                    <li><a href="../projects/?filter=apartments">Apartments</a></li>
+                    <li><a href="../projects/?filter=hospitality">Hospitality</a></li>
+                    <li><a href="../projects/?filter=interior design">Interior Design</a></li>
+                    <li><a href="../projects/?filter=institutional">Institutional</a></li>
+                    <li><a href="../projects/?filter=commercial">Commercial</a></li>
+                    <li><a href="../projects/?filter=industrial">Industrial</a></li>
+                    <li><a href="../projects/?filter=landscape & urban design">Landscape & Urban Design</a></li>
+                </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="../services/" class="active">Services <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="../services/">All Services</a></li>
+                    <li><a href="../services/?filter=architectural design">Architectural Design</a></li>
+                    <li><a href="../services/?filter=interior design">Interior Design</a></li>
+                    <li><a href="../services/?filter=master planning">Master Planning</a></li>
+                    <li><a href="../services/?filter=feasibility study">Feasibility Study</a></li>
+                    <li><a href="../services/?filter=project management">Project Management</a></li>
+                    <li><a href="../services/?filter=construction supervision">Construction Supervision</a></li>
+                    <li><a href="../services/?filter=renovation%20%26%20extension">Renovation & Extension</a></li>
+                    <li><a href="../services/?filter=3d visualization">3D Visualization</a></li>
+                    <li><a href="../services/?filter=authority approvals">Authority Approvals</a></li>
+                    <li><a href="../services/?filter=tender documentation">Tender Documentation</a></li>
+                </ul>
+            </li>
+            <li><a href="../contact/">Contact Us</a></li>
+            <li><a href="../blog/">Blog</a></li>
+            <li><a href="../faq/">FAQ</a></li>
+            <li class="nav-auth-wrap">
+                <a href="../client/login/" id="loginBtn" class="nav-login-link">Client login</a>
+                <div class="nav-profile-dropdown" id="navProfileDropdown" style="display: none;">
+                    <a href="../client/dashboard/"><i class="fas fa-th-large"></i> My Portal</a>
+                    <a href="#" id="navLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+                <span class="nav-profile-trigger" id="navProfileTrigger" style="display: none;" title="Profile"><i class="fas fa-user-circle"></i></span>
+            </li>
+            <li><a href="#" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></a></li>
+            <li><a href="../careers/" class="hiring-btn">We're Hiring</a></li>
+            <li><button id="themeToggle" class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button></li>
+            <li class="nav-social-item">
+                <div class="navbar-social-icons">
+                    <a href="https://www.instagram.com/aisconcepts?igsh=YXRoZWs1bHQzejZq" class="instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.fb.com/l/6lp1kJRRR" class="facebook" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.tiktok.com/@aisconcepts?_r=1&_t=ZS-94uKGpPqSGX" class="tiktok" aria-label="Tiktok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://youtube.com/@aisconcepts?si=wP5Zp0TbxIO-vOo4" class="youtube" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://wa.me/254719548773" class="whatsapp" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <section class="services-section">
+        <div class="container">
+            <h2 class="section-title">Our Services</h2>
+            <p class="section-subtitle">Comprehensive architectural and construction solutions</p>
+            
+            <div class="service-filters" id="serviceFilters"></div>
+            
+            <div class="services-grid" id="servicesGrid"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h4>Contact Us</h4>
+                    <address>
+                        Spur Mall<br>
+                        Along Thika Road<br>
+                        <i class="fas fa-phone-alt"></i> <a href="tel:+254719548773" class="footer-contact-link">+254 719548773</a><br>
+                        <i class="fas fa-envelope"></i> <a href="mailto:aisconceptsltd@gmail.com" class="footer-contact-link">aisconceptsltd@gmail.com</a>
+                    </address>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="../about/">About Us</a></li>
+                        <li><a href="../projects/">Portfolio</a></li>
+                        <li><a href="../contact/">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Find Us</h4>
+                    <div class="footer-map">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8175!2d36.97021373372657!3d-1.1361719654782048!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMDgnMjUuNyJTIDM2wrDU3JzI1LjIiRQ!5e0!3m2!1sen!2ske!4v1234567890" 
+                            width="100%" 
+                            height="200" 
+                            style="border:0; border-radius: 8px;" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; <span class="footer-copyright-year"></span> AIS Concepts. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../api-config.js"></script>
+    <script src="../api-client.js"></script>
+    <script src="../services-data.js"></script>
+    <script src="../script.js"></script>
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var initialFilter = params.get('filter') || 'all';
+        
+        var serviceDetails = typeof getAllServiceDetails === 'function' ? getAllServiceDetails() : {};
+        var serviceCategories = typeof SERVICE_CATEGORIES !== 'undefined' ? SERVICE_CATEGORIES : Object.keys(serviceDetails);
+        
+        console.log('Service categories:', serviceCategories);
+        console.log('Service details keys:', Object.keys(serviceDetails));
+        
+        function renderFilterButtons() {
+            var container = document.getElementById('serviceFilters');
+            if (!container) return;
+            
+            var html = '<button type="button" class="filter-btn' + (initialFilter === 'all' ? ' active' : '') + '" data-filter="all">All Services</button>';
+            
+            serviceCategories.forEach(function(cat) {
+                var slug = cat.toLowerCase();
+                var active = initialFilter === slug ? ' active' : '';
+                html += '<button type="button" class="filter-btn' + active + '" data-filter="' + slug + '">' + cat + '</button>';
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function renderServices(filter) {
+            var container = document.getElementById('servicesGrid');
+            if (!container) return;
+            
+            if (filter === 'all' || !filter) {
+                renderAllServices();
+            } else {
+                renderSingleService(filter);
+            }
+        }
+        
+        function renderAllServices() {
+            var container = document.getElementById('servicesGrid');
+            if (!container) return;
+            
+            container.classList.remove('single-view');
+            
+            if (serviceCategories.length === 0) {
+                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>No services found.</p></div>';
+                return;
+            }
+            
+            container.innerHTML = serviceCategories.map(function(cat) {
+                var key = cat.toLowerCase();
+                var details = serviceDetails[key];
+                
+                if (!details) {
+                    return '';
+                }
+                
+                return '<div class="service-card" onclick="selectService(\'' + key + '\')">' +
+                    '<div class="service-card-header">' +
+                    '<h3>' + details.title + '</h3>' +
+                    '</div>' +
+                    '<div class="service-card-body">' +
+                    '<p class="service-tagline">' + details.tagline + '</p>' +
+                    '<p class="service-description">' + details.description + '</p>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+        }
+        
+        function renderSingleService(filter) {
+            var container = document.getElementById('servicesGrid');
+            if (!container) return;
+            
+            container.classList.add('single-view');
+            
+            var filterLower = filter.toLowerCase();
+            var matched = serviceCategories.find(function(cat) {
+                return cat.toLowerCase() === filterLower;
+            });
+            
+            if (!matched) {
+                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>Service not found.</p></div>';
+                return;
+            }
+            
+            var key = matched.toLowerCase();
+            var details = serviceDetails[key];
+            
+            if (!details) {
+                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>Service details not found.</p></div>';
+                return;
+            }
+            
+            var deliverablesHtml = details.deliverables && details.deliverables.length 
+                ? '<div class="service-deliverables">' +
+                  '<h3>What we deliver</h3>' +
+                  '<ul class="deliverables-list">' +
+                  details.deliverables.map(function(item) {
+                      return '<li>' + item + '</li>';
+                  }).join('') +
+                  '</ul></div>'
+                : '';
+            
+            container.innerHTML = '<div class="service-detail-container">' +
+                '<div class="service-detail-header">' +
+                '<h2>' + details.title + '</h2>' +
+                '<p class="service-tagline">' + details.tagline + '</p>' +
+                '</div>' +
+                '<div class="service-detail-body">' +
+                '<p class="service-description">' + details.description + '</p>' +
+                deliverablesHtml +
+                '</div>' +
+                '</div>';
+        }
+        
+        function selectService(key) {
+            var url = new URL(window.location);
+            url.searchParams.set('filter', key);
+            window.history.pushState({}, '', url);
+            
+            var buttons = document.querySelectorAll('#serviceFilters .filter-btn');
+            buttons.forEach(function(b) { b.classList.remove('active'); });
+            
+            var targetBtn = document.querySelector('#serviceFilters .filter-btn[data-filter="' + key + '"]');
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+            
+            renderSingleService(key);
+        }
+        
+        function setupFilterButtons() {
+            var buttons = document.querySelectorAll('#serviceFilters .filter-btn');
+            buttons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    buttons.forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    
+                    var filter = btn.getAttribute('data-filter');
+                    renderServices(filter);
+                    
+                    var url = new URL(window.location);
+                    if (filter === 'all') {
+                        url.searchParams.delete('filter');
+                    } else {
+                        url.searchParams.set('filter', filter);
+                    }
+                    window.history.replaceState({}, '', url);
+                });
+            });
+        }
+        
+        renderFilterButtons();
+        renderServices(initialFilter);
+        setupFilterButtons();
+        
+        window.selectService = selectService;
+    })();
+    </script>
+</body>
+</html>
