@@ -31,8 +31,9 @@
         imgs.forEach(function (src, i) {
             if (!src) return;
             var idx = indexOffset + i;
+            var optimizedSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(src, 'THUMBNAIL') : src;
             h += '<button type="button" class="gallery-thumb" data-gallery-index="' + idx + '" aria-label="View image ' + (i + 1) + '">';
-            h += '<img src="' + escAttrUrl(src) + '" alt="" loading="lazy">';
+            h += '<img src="' + escAttrUrl(optimizedSrc) + '" alt="" width="400" height="300" loading="lazy">';
             h += '<span class="gallery-thumb-zoom" aria-hidden="true"><i class="fas fa-expand"></i></span>';
             h += '</button>';
         });
@@ -270,11 +271,12 @@
             var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
 
             var tabbedGallery = buildTabbedGallery(asDesignedImages, asBuiltImages);
+            var optimizedHero = hero ? (typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(hero, 'HERO') : hero) : '';
 
             root.innerHTML =
                 '<h1 class="section-title project-detail-title">' + escHtml(p.title || '') + '</h1>' +
                 '<p class="section-subtitle project-detail-category">' + escHtml(cat) + '</p>' +
-                (hero ? '<img class="project-hero-img" src="' + escAttrUrl(hero) + '" alt="' + escHtml(p.title || 'Project') + '">' : '') +
+                (optimizedHero ? '<img class="project-hero-img" src="' + escAttrUrl(optimizedHero) + '" alt="' + escHtml(p.title || 'Project') + '" width="1600" height="900">' : '') +
                 '<div class="project-detail-description-wrap">' +
                 '<h2 class="project-detail-about-heading">About this project</h2>' +
                 '<div class="project-detail-description">' + escHtml(p.description || '') + '</div>' +

@@ -47,6 +47,9 @@
       gtag('config', 'G-HWW9C52T68');
     </script>
     
+    <!-- Preload hero video poster image for LCP optimization -->
+    <link rel="preload" href="images/hero-poster.jpg" as="image" fetchpriority="high">
+    
     <!-- Additional SEO -->
     <meta name="theme-color" content="#ffffff">
     <meta name="msapplication-TileColor" content="#0f766e">
@@ -113,7 +116,7 @@
     <!-- Splash Intro: only when landing on home (not when navigating from other pages) -->
     <div class="splash-intro" id="splashIntro">
         <div class="splash-logo">
-            <img src="images/logo.png" alt="AIS Concepts logo">
+            <img src="images/logo.png" alt="AIS Concepts logo" width="200" height="60">
         </div>
         <div class="splash-tagline">Creating iconic architecture that balances innovation, sustainability, and human experience</div>
         <div class="splash-loading-wrap">
@@ -126,7 +129,7 @@
     <nav class="navbar" id="navbar">
         <div class="logo">
             <a href="/">
-                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img">
+                <img src="images/logo.png" alt="AIS Concepts logo" class="logo-img" width="200" height="60">
             </a>
         </div>
         <div class="nav-ticker">
@@ -260,7 +263,7 @@
     <div class="hero-fixed-wrap" id="heroFixedWrap">
     <section id="home" class="hero">
         <div class="hero-media-wrap" aria-hidden="true">
-            <video class="hero-video" autoplay muted loop playsinline preload="metadata" webkit-playsinline>
+            <video class="hero-video" autoplay muted loop playsinline preload="metadata" webkit-playsinline poster="images/hero-poster.jpg">
                 <source src="videos/hero-background.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -373,6 +376,7 @@
 
     <script src="api-config.js"></script>
     <script src="api-client.js"></script>
+    <script src="image-optimizer.js"></script>
     <script src="projects-data.js"></script>
     <script src="services-data.js"></script>
     <script src="script.js"></script>
@@ -444,7 +448,8 @@
             var limitedServices = services.slice(0, 3);
             sg.innerHTML = limitedServices.map(function(s) {
                 var imgSrc = s.image || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(s.title || '');
-                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + imgSrc + '" alt="' + (s.title || '') + '" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="projects/" class="btn-primary see-more-btn">See more</a></div></div></div>';
+                var optimizedImgSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(imgSrc, 'PORTFOLIO_CARD') : imgSrc;
+                return '<div class="service-card"><div class="service-card-inner"><div class="service-front"><div class="service-image"><img src="' + optimizedImgSrc + '" alt="' + (s.title || '') + '" width="400" height="300" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400x300?text=Service\'"></div></div><div class="service-back"><h3>' + (s.title || '') + '</h3><p>' + (s.description || '') + '</p><a href="projects/" class="btn-primary see-more-btn">See more</a></div></div></div>';
             }).join('');
         });
         var currentUser = null;

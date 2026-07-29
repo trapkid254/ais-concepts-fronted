@@ -184,9 +184,10 @@ function buildProjectDetailsHtml(project, opts) {
     var locStr = formatProjectLocation(project.location) || 'Not specified';
     var foremanStr = formatProjectForeman(project);
     var imgSrc = (project.images && project.images[0]) || project.image || '';
+    var optimizedImgSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(imgSrc, 'GALLERY') : imgSrc;
     var html = '<div class="project-details-view">';
-    if (imgSrc) {
-        html += '<div class="project-details-hero"><img src="' + escapeHtml(imgSrc) + '" alt="' + escapeHtml(project.name || 'Project') + '" onerror="this.parentElement.style.display=\'none\'"></div>';
+    if (optimizedImgSrc) {
+        html += '<div class="project-details-hero"><img src="' + escapeHtml(optimizedImgSrc) + '" alt="' + escapeHtml(project.name || 'Project') + '" width="1200" height="800" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>';
     }
     html += '<h3>' + escapeHtml(project.name || '') + '</h3>';
     if (project.description) {
@@ -2130,8 +2131,9 @@ async function loadAdminWorkforceOverview() {
                 var wid = String(w._id || w.id || '');
                 var photo = (w.faceData && w.faceData.faceImage) ||
                     ('https://ui-avatars.com/api/?name=' + encodeURIComponent(w.name || 'W') + '&background=20c4b4&color=fff&size=40');
+                var optimizedPhoto = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(photo, 'WORKER') : photo;
                 return '<tr>' +
-                    '<td><img src="' + escapeAttr(photo) + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"></td>' +
+                    '<td><img src="' + escapeAttr(optimizedPhoto) + '" alt="" width="36" height="36" loading="lazy" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"></td>' +
                     '<td>' + escapeHtml(w.name || '') + '</td>' +
                     '<td>' + escapeHtml(w.nationalId || '-') + '</td>' +
                     '<td>' + escapeHtml(w.phone || '-') + '</td>' +
@@ -3227,8 +3229,10 @@ window.applyClientProjectFilter = function () {
             (owed > 0 ? '<p><strong>Owed:</strong> ' + fmtMoney(owed) + '</p>' : '') +
             '</div>' : '';
         var locLabel = formatProjectLocation(project.location);
+        var projectImg = (project.images && project.images[0]) || project.image || '/images/project1.jpg';
+        var optimizedProjectImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(projectImg, 'PORTFOLIO_CARD') : projectImg;
         return '<article class="project-card client-project-card">' +
-            '<div class="project-image client-project-image"><img src="' + escapeHtml((project.images && project.images[0]) || project.image || '/images/project1.jpg') + '" alt="' + escapeHtml(project.name) + '" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
+            '<div class="project-image client-project-image"><img src="' + escapeHtml(optimizedProjectImg) + '" alt="' + escapeHtml(project.name) + '" width="800" height="600" loading="lazy" onerror="this.src=\'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y3ZjdmNyIvPjwvc3ZnPg==\'"></div>' +
             '<div class="project-details client-project-details">' +
             '<h3>' + escapeHtml(project.name) + '</h3>' +
             '<p>Status: <span class="status-badge status-' + stClass + '">' + escapeHtml(project.status || '') + '</span></p>' +
@@ -3753,8 +3757,9 @@ function renderWebProjectSavedImageGalleries() {
             return '<p class="admin-project-image-gallery-empty">No images in this category yet.</p>';
         }
         return images.map(function (url, i) {
+            var optimizedUrl = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(url, 'THUMBNAIL') : url;
             return '<div class="admin-project-image-item">' +
-                '<img src="' + escapeAttr(url) + '" alt="Saved image ' + (i + 1) + '">' +
+                '<img src="' + escapeAttr(optimizedUrl) + '" alt="Saved image ' + (i + 1) + '" width="400" height="300" loading="lazy">' +
                 '<button type="button" class="admin-project-image-remove" data-category="' + escapeAttr(category) + '" data-url="' + escapeAttr(url) + '" onclick="removeWebProjectSavedImage(this)" title="Remove image" aria-label="Remove image">&times;</button>' +
                 '</div>';
         }).join('');
@@ -3850,8 +3855,9 @@ async function renderAdminWebsiteProjects() {
         }
         homepageCell += '</div>';
 
+        var optimizedPreviewImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(previewImg, 'THUMBNAIL') : previewImg;
         return '<tr>' +
-            '<td><img src="' + escapeHtml(previewImg) + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td><img src="' + escapeHtml(optimizedPreviewImg) + '" alt="' + escapeHtml(p.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
             '<td>' + (typeof buildProjectCategorySelect === 'function' ? buildProjectCategorySelect(p.id, p.category || '', true) : escapeHtml(p.category || '')) + '</td>' +
             '<td>' + homepageCell + '</td>' +
@@ -3980,8 +3986,9 @@ async function renderAdminBlogPosts() {
         }
     } catch (e) { posts = []; }
     tbody.innerHTML = posts.length ? posts.map(function (p) {
+        var optimizedBlogImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(p.image || '', 'BLOG') : (p.image || '');
         return '<tr>' +
-            '<td><img src="' + escapeHtml(p.image || '') + '" alt="' + escapeHtml(p.title || '') + '" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td><img src="' + escapeHtml(optimizedBlogImg) + '" alt="' + escapeHtml(p.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
             '<td>' + escapeHtml(p.title || '') + '</td>' +
             '<td>' + escapeHtml(p.date || '') + '</td>' +
             '<td>' + escapeHtml((p.excerpt || '').substring(0, 100) + (p.excerpt && p.excerpt.length > 100 ? '...' : '')) + '</td>' +
