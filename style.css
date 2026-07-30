@@ -849,37 +849,59 @@ section {
     margin: 0 auto;
 }
 
-/* Homepage featured row: 4 projects in one line on desktop, 2 per row on mobile */
+/* Homepage featured row: 6 projects in one line on desktop, 2 per row on mobile */
 .portfolio-grid--home,
 #homePortfolioGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(350px, 1fr));
     gap: 20px;
     max-width: 1440px;
 }
 
-#homePortfolioGrid .portfolio-card-inner,
-#homePortfolioGrid .portfolio-front,
-#homePortfolioGrid .portfolio-back {
-    background: var(--portfolio-card-bg);
+#homePortfolioGrid .portfolio-card-inner {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+}
+
+#homePortfolioGrid .portfolio-front {
+    position: absolute;
+    inset: 0;
 }
 
 #homePortfolioGrid .portfolio-image {
-    height: 220px;
+    position: absolute;
+    inset: 0;
+    height: 100%;
     background: var(--portfolio-image-bg);
 }
 
+#homePortfolioGrid .portfolio-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 #homePortfolioGrid .portfolio-back {
-    padding: 16px;
+    position: absolute;
+    inset: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%);
+    color: white;
 }
 
 #homePortfolioGrid .portfolio-back h3 {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     margin-bottom: 6px;
+    color: white;
 }
 
 #homePortfolioGrid .portfolio-back .portfolio-category {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     margin-bottom: 8px;
+    color: #99f6e4;
 }
 
 #homePortfolioGrid .portfolio-back .portfolio-description {
@@ -888,11 +910,13 @@ section {
     line-clamp: 2;
     max-height: 3em;
     margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 #homePortfolioGrid .portfolio-back .btn-primary {
-    padding: 8px 14px;
-    font-size: 0.78rem;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    align-self: flex-start;
 }
 
 .portfolio-grid:only-child,
@@ -3636,8 +3660,8 @@ body.lightbox-open {
         gap: 12px;
     }
 
-    #homePortfolioGrid .portfolio-image {
-        height: 140px;
+    #homePortfolioGrid .portfolio-card-inner {
+        aspect-ratio: 1 / 1;
     }
 
     #homePortfolioGrid .portfolio-back {

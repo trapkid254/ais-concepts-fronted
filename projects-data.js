@@ -2,7 +2,7 @@
   var API_BASE = global.API_BASE || '';
   var __projects = [];
 
-  var PROJECT_CATEGORIES = ['Residential', 'Apartments', 'Hospitality', 'Interior Design', 'Institutional', 'Commercial', 'Industrial', 'Landscape & Urban Design'];
+  var PROJECT_CATEGORIES = ['Residential', 'Apartments', 'Hospitality', 'Interior Design', 'Institutional', 'Commercial'];
   var LEGACY_PROJECT_CATEGORIES = ['Urban', 'Conceptual'];
 
   function mapProject(p) {
@@ -125,7 +125,7 @@
     });
   };
 
-  /** Homepage shows up to 4 projects: pinned first, then the rest in list order. */
+  /** Homepage shows up to 6 projects: pinned first, then the rest in list order. */
   global.selectHomepageProjects = function (projects) {
     if (!projects || !projects.length) return [];
     var featured = projects.filter(function (p) { return p.featuredOnHomepage; })
