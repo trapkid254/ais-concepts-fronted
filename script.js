@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         splash.style.display = 'flex';
         const bar = document.getElementById('splashLoadingBar');
         const pctEl = document.getElementById('splashLoadingPct');
-        const duration = 3000;
+        const duration = 3500;
         const start = performance.now();
         function tick(now) {
             const elapsed = now - start;
