@@ -585,7 +585,7 @@
         filterBtns = document.querySelectorAll('#homePortfolioFilters .filter-btn');
         function render(filter, projects) {
             var filtered = filterProjectsByCategory(projects, filter || 'all');
-            var toShow = (typeof selectHomepageProjects === 'function' ? selectHomepageProjects(filtered) : filtered).slice(0, 4);
+            var toShow = (typeof selectHomepageProjects === 'function' ? selectHomepageProjects(filtered) : filtered).slice(0, 6);
             grid.innerHTML = '';
             if (emptyMsg) emptyMsg.style.display = 'none';
             if (toShow.length === 0) {

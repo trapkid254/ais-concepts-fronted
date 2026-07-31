@@ -37,7 +37,23 @@
                     <li><a href="projects/?filter=commercial">Commercial</a></li>
                 </ul>
             </li>
-                        <li><a href="contact/">Contact Us</a></li>
+            <li class="has-dropdown">
+                <a href="services/">Services <i class="fas fa-chevron-down"></i></a>
+                <ul class="nav-dropdown">
+                    <li><a href="services/">All Services</a></li>
+                    <li><a href="services/?filter=architectural design">Architectural Design</a></li>
+                    <li><a href="services/?filter=interior design">Interior Design</a></li>
+                    <li><a href="services/?filter=master planning">Master Planning</a></li>
+                    <li><a href="services/?filter=feasibility study">Feasibility Study</a></li>
+                    <li><a href="services/?filter=project management">Project Management</a></li>
+                    <li><a href="services/?filter=construction supervision">Construction Supervision</a></li>
+                    <li><a href="services/?filter=renovation%20%26%20extension">Renovation & Extension</a></li>
+                    <li><a href="services/?filter=3d visualization">3D Visualization</a></li>
+                    <li><a href="services/?filter=authority approvals">Authority Approvals</a></li>
+                    <li><a href="services/?filter=tender documentation">Tender Documentation</a></li>
+                </ul>
+            </li>
+            <li><a href="contact/">Contact Us</a></li>
             <li><a href="blog/">Blog</a></li>
             <li><a href="faq/">FAQ</a></li>
             <li class="nav-auth-wrap">
@@ -83,6 +99,31 @@
             <p id="projectDetailLoading">Loading project…</p>
             <div id="projectDetailContent" style="display:none;"></div>
             <p id="projectDetailError" style="display:none;"><a href="projects/">← Back to projects</a></p>
+        </div>
+
+        <!-- Project Inquiry Form -->
+        <div class="container" style="margin-top: 60px;">
+            <div class="contact-form-wrap" style="max-width: 700px; margin: 0 auto;">
+                <h3 style="text-align: center; margin-bottom: 30px;">Inquire About This Project</h3>
+                <form id="projectInquiryForm">
+                    <div class="form-group">
+                        <input type="text" id="projectInquiryName" name="name" placeholder="Your Name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="projectInquiryEmail" name="email" placeholder="Your Email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="projectInquiryPhone" name="phone" placeholder="Your Phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="projectInquiryMessage" name="message" placeholder="Your Message" rows="5" class="form-control" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Send Inquiry</button>
+                </form>
+                <div id="projectInquirySuccess" style="display: none; text-align: center; padding: 20px; background: #d1fae5; border-radius: 8px; margin-top: 20px;">
+                    <p style="color: #065f46; margin: 0;">Thank you for your inquiry! We will get back to you soon.</p>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -152,5 +193,36 @@
     <script src="image-optimizer.js"></script>
     <script src="script.js"></script>
     <script src="project-detail.js?v=20260620"></script>
+    <script>
+    // Project inquiry form handling
+    var projectInquiryForm = document.getElementById('projectInquiryForm');
+    if (projectInquiryForm) {
+        projectInquiryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var name = document.getElementById('projectInquiryName').value;
+            var email = document.getElementById('projectInquiryEmail').value;
+            var phone = document.getElementById('projectInquiryPhone').value;
+            var message = document.getElementById('projectInquiryMessage').value;
+            
+            // Get project title from page
+            var projectTitle = document.querySelector('.project-detail-title') ? document.querySelector('.project-detail-title').textContent : 'Unknown Project';
+            
+            var subject = 'Project Inquiry: ' + projectTitle;
+            var body = 'Name: ' + name + '\n' +
+                       'Email: ' + email + '\n' +
+                       'Phone: ' + (phone || 'Not provided') + '\n' +
+                       'Project: ' + projectTitle + '\n\n' +
+                       'Message:\n' + message;
+            
+            var mailtoLink = 'mailto:projects@aisconcepts.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+            window.location.href = mailtoLink;
+            
+            // Show success message
+            document.getElementById('projectInquirySuccess').style.display = 'block';
+            projectInquiryForm.reset();
+        });
+    }
+    </script>
 </body>
 </html>

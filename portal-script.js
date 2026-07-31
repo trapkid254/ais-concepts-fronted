@@ -3906,8 +3906,8 @@ window.toggleWebsiteProjectHomepage = function (id) {
         return;
     }
 
-    if (featured.length >= 6) {
-        alert('The homepage shows up to 6 projects. Remove one from the homepage first, then add this project.');
+    if (featured.length >= 4) {
+        alert('The homepage shows up to 4 projects. Remove one from the homepage first, then add this project.');
         return;
     }
 
