@@ -53,6 +53,7 @@
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../vendor/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
@@ -228,16 +229,16 @@
                 loadWebsiteBlogPosts().then(function(posts) {
                     blogs = posts || [];
                     if (blogs.length === 0) {
-                        rotator.innerHTML = '<div class="no-blogs">No blog posts available.</div>';
+                        rotator.innerHTML = DOMPurify.sanitize('<div class="no-blogs">No blog posts available.</div>');
                         return;
                     }
-                    
+
                     createDots();
                     showBlog(0);
                     startRotation();
                 }).catch(function(error) {
                     console.error('Error loading blogs:', error);
-                    rotator.innerHTML = '<div class="no-blogs">Error loading blog posts.</div>';
+                    rotator.innerHTML = DOMPurify.sanitize('<div class="no-blogs">Error loading blog posts.</div>');
                 });
             }
             
@@ -468,14 +469,14 @@
             });
 
             if (filteredResults.length > 0) {
-                searchResults.innerHTML = filteredResults.map(result => `
-                    <div class="search-result-item" onclick="window.location.href='${result.url}'">
-                        <div class="search-result-title">${result.title}</div>
-                        <div class="search-result-description">${result.description}</div>
+                searchResults.innerHTML = DOMPurify.sanitize(filteredResults.map(result => `
+                    <div class="search-result-item" onclick="window.location.href='${DOMPurify.sanitize(result.url)}'">
+                        <div class="search-result-title">${DOMPurify.sanitize(result.title)}</div>
+                        <div class="search-result-description">${DOMPurify.sanitize(result.description)}</div>
                     </div>
-                `).join('');
+                `).join(''));
             } else {
-                searchResults.innerHTML = '<p>No results found for "' + query + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>';
+                searchResults.innerHTML = DOMPurify.sanitize('<p>No results found for "' + DOMPurify.sanitize(query) + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>');
             }
         }
     </script>

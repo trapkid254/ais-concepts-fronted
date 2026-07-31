@@ -51,6 +51,7 @@
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../vendor/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
@@ -314,19 +315,19 @@
                 
                 // Set image
                 if (blog.image) {
-                    image.innerHTML = '<img src="' + blog.image + '" alt="' + (blog.title || '') + '" onerror="this.style.display=\'none\'">';
+                    image.innerHTML = DOMPurify.sanitize('<img src="' + DOMPurify.sanitize(blog.image) + '" alt="' + DOMPurify.sanitize(blog.title || '') + '" onerror="this.style.display=\'none\'">');
                 } else {
                     image.style.display = 'none';
                 }
-                
+
                 // Set content
-                body.innerHTML = blog.content || blog.excerpt || '<p>No content available.</p>';
-                
+                body.innerHTML = DOMPurify.sanitize(blog.content || blog.excerpt || '<p>No content available.</p>');
+
                 // Set tags
                 if (blog.tags && blog.tags.length > 0) {
-                    tags.innerHTML = blog.tags.map(tag => 
-                        '<span class="blog-tag">' + tag + '</span>'
-                    ).join('');
+                    tags.innerHTML = DOMPurify.sanitize(blog.tags.map(tag =>
+                        '<span class="blog-tag">' + DOMPurify.sanitize(tag) + '</span>'
+                    ).join(''));
                 } else {
                     tags.style.display = 'none';
                 }
@@ -366,22 +367,22 @@
                     return;
                 }
                 
-                relatedGrid.innerHTML = relatedPosts.map((blog, index) => {
-                    const imgSrc = blog.image || 'https://via.placeholder.com/300x200?text=Blog';
+                relatedGrid.innerHTML = DOMPurify.sanitize(relatedPosts.map((blog, index) => {
+                    const imgSrc = DOMPurify.sanitize(blog.image || 'https://via.placeholder.com/300x200?text=Blog');
                     const originalIndex = allBlogs.indexOf(blog);
                     return `
                         <div class="related-post-card">
                             <div class="related-post-image">
-                                <img src="${imgSrc}" alt="${blog.title || ''}" onerror="this.src='https://via.placeholder.com/300x200?text=Blog'">
+                                <img src="${imgSrc}" alt="${DOMPurify.sanitize(blog.title || '')}" onerror="this.src='https://via.placeholder.com/300x200?text=Blog'">
                             </div>
                             <div class="related-post-content">
-                                <h4><a href="blog-detail.html?id=${originalIndex}">${blog.title || 'Untitled'}</a></h4>
-                                <p class="related-post-date">${blog.date || ''}</p>
-                                <p class="related-post-excerpt">${blog.excerpt || ''}</p>
+                                <h4><a href="blog-detail.html?id=${originalIndex}">${DOMPurify.sanitize(blog.title || 'Untitled')}</a></h4>
+                                <p class="related-post-date">${DOMPurify.sanitize(blog.date || '')}</p>
+                                <p class="related-post-excerpt">${DOMPurify.sanitize(blog.excerpt || '')}</p>
                             </div>
                         </div>
                     `;
-                }).join('');
+                }).join(''));
             }
             
             // Show error state
@@ -462,14 +463,14 @@
             });
 
             if (filteredResults.length > 0) {
-                searchResults.innerHTML = filteredResults.map(result => `
-                    <div class="search-result-item" onclick="window.location.href='${result.url}'">
-                        <div class="search-result-title">${result.title}</div>
-                        <div class="search-result-description">${result.description}</div>
+                searchResults.innerHTML = DOMPurify.sanitize(filteredResults.map(result => `
+                    <div class="search-result-item" onclick="window.location.href='${DOMPurify.sanitize(result.url)}'">
+                        <div class="search-result-title">${DOMPurify.sanitize(result.title)}</div>
+                        <div class="search-result-description">${DOMPurify.sanitize(result.description)}</div>
                     </div>
-                `).join('');
+                `).join(''));
             } else {
-                searchResults.innerHTML = '<p>No results found for "' + query + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>';
+                searchResults.innerHTML = DOMPurify.sanitize('<p>No results found for "' + DOMPurify.sanitize(query) + '". Try searching for services, projects, or pages like "about", "contact", "portfolio", or "design".</p>');
             }
         }
     </script>

@@ -3846,6 +3846,83 @@ body.lightbox-open {
         justify-content: center;
     }
 
+    /* Override container for portfolio section on mobile */
+    .portfolio > .container {
+        max-width: 100% !important;
+        padding: 0 15px !important;
+    }
+
+    /* Contact forms on mobile */
+    .contact-form-wrap {
+        padding: 20px 15px;
+    }
+
+    .contact-form-wrap h3 {
+        font-size: 1.25rem;
+        margin-bottom: 20px;
+    }
+
+    .contact-form-wrap .form-group {
+        margin-bottom: 15px;
+    }
+
+    .contact-form-wrap .form-control {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    .contact-form-wrap textarea.form-control {
+        min-height: 100px;
+    }
+
+    .contact-form-wrap .btn-primary {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    /* Service detail container on mobile */
+    .service-detail-container {
+        margin: 0 15px;
+    }
+
+    .service-detail-header {
+        padding: 30px 20px;
+    }
+
+    .service-detail-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .service-detail-header .service-tagline {
+        font-size: 0.9rem;
+    }
+
+    .service-detail-body {
+        padding: 30px 20px;
+    }
+
+    .service-deliverables {
+        padding: 20px;
+    }
+
+    .service-deliverables h3 {
+        font-size: 1rem;
+    }
+
+    .deliverables-list {
+        grid-template-columns: 1fr;
+    }
+
+    /* Project detail page on mobile */
+    .project-detail-main {
+        padding-top: 80px;
+        padding-bottom: 40px;
+    }
+
+    .project-detail-main .container {
+        padding: 0 15px;
+    }
+
     #homePortfolioGrid .portfolio-card-inner {
         aspect-ratio: 1 / 1;
     }
