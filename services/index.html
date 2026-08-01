@@ -358,9 +358,9 @@
     </nav>
 
     <section class="services-section">
-        <div class="container">
-            <h2 class="section-title">Our Services</h2>
-            <p class="section-subtitle">Comprehensive architectural and construction solutions</p>
+        <div class="container" style="text-align: center;">
+            <h2 class="section-title typewriter-title" data-typewriter="Our Services">Our Services</h2>
+            <p class="section-subtitle typewriter-text" data-typewriter="Comprehensive architectural and construction solutions">Comprehensive architectural and construction solutions</p>
             
             <div class="service-filters" id="serviceFilters"></div>
             
@@ -377,9 +377,9 @@
                     <address>
                         Spur Mall<br>
                         Along Thika Superhighway<br>
-                        First Floor Office F61<br>
+                        First Floor Office, F61<br>
                         <i class="fas fa-phone-alt"></i> <a href="tel:+254719548773" class="footer-contact-link">+254 719548773</a><br>
-                        <i class="fas fa-envelope"></i> <a href="mailto:aisconceptsltd@gmail.com" class="footer-contact-link">aisconceptsltd@gmail.com</a>
+                        <i class="fas fa-envelope"></i> <a href="mailto:info@aisconcepts.com" class="footer-contact-link">info@aisconcepts.com</a>
                     </address>
                 </div>
                 <div class="footer-col">
@@ -607,21 +607,15 @@
                 
                 // Get service title from page
                 var serviceTitle = document.querySelector('.service-detail-header h2') ? document.querySelector('.service-detail-header h2').textContent : 'Unknown Service';
-                
-                // Determine recipient email based on service type
-                var recipientEmail = 'info@aisconcepts.com';
-                if (serviceTitle.toLowerCase().includes('design') || serviceTitle.toLowerCase().includes('interior')) {
-                    recipientEmail = 'design@aisconcepts.com';
-                }
-                
+
                 var subject = 'Service Inquiry: ' + serviceTitle;
                 var body = 'Name: ' + name + '\n' +
                            'Email: ' + email + '\n' +
                            'Phone: ' + (phone || 'Not provided') + '\n' +
                            'Service: ' + serviceTitle + '\n\n' +
                            'Message:\n' + message;
-                
-                var mailtoLink = 'mailto:' + recipientEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+
+                var mailtoLink = 'mailto:info@aisconcepts.com,aisconcepts@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
                 window.location.href = mailtoLink;
                 
                 // Show success message

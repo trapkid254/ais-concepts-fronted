@@ -814,14 +814,16 @@ section {
     margin-bottom: 10px;
     color: var(--text-primary);
     position: relative;
-    display: inline-block;
+    display: block;
+    text-align: center;
 }
 
 .section-title::after {
     content: '';
     position: absolute;
     bottom: -10px;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 70px;
     height: 3px;
     background: #0f766e;
@@ -832,6 +834,7 @@ section {
     color: var(--text-tertiary);
     margin-bottom: 60px;
     font-weight: 300;
+    text-align: center;
 }
 
 /* ===== Portfolio Grid ===== */
@@ -3838,11 +3841,11 @@ body.lightbox-open {
         justify-content: flex-start;
     }
 
-    /* Homepage projects: 2 per row on mobile */
+    /* Homepage projects: 1 per row on mobile */
     .portfolio-grid--home,
     #homePortfolioGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 20px;
         justify-content: center;
     }
 
@@ -3951,10 +3954,10 @@ body.lightbox-open {
         font-size: 0.72rem;
     }
     
-    /* Portfolio page projects: 2 per row on mobile */
+    /* Portfolio page projects: 1 per row on mobile */
     #projectsPageGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 20px;
         max-width: 2550px;
         justify-content: center;
     }

@@ -1,6 +1,4 @@
 (function(){
-    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;"); }
-
     function renderApplications(apps){
         var tbody = document.getElementById('adminCareersBody');
         if (!tbody) {
@@ -8,28 +6,28 @@
             return;
         }
         if (!apps || !apps.length) {
-            tbody.innerHTML = '<tr><td colspan="7">No applications yet.</td></tr>';
+            tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7">No applications yet.</td></tr>');
             return;
         }
         console.log('Rendering applications:', apps.length);
-        tbody.innerHTML = apps.map(function(a){
+        tbody.innerHTML = DOMPurify.sanitize(apps.map(function(a){
             var id = a.id || '';
             var date = a.date ? new Date(a.date).toLocaleDateString() : '';
             var row = '<tr>' +
-                '<td>'+escapeHtml(a.name||'')+'</td>' +
-                '<td>'+escapeHtml(a.email||'')+'</td>' +
-                '<td>'+escapeHtml(a.type||'')+'</td>' +
-                '<td>'+escapeHtml(a.campus||'-')+'</td>' +
-                '<td>'+escapeHtml(a.yearOfStudy||'-')+'</td>' +
-                '<td>'+escapeHtml(date)+'</td>' +
+                '<td>'+DOMPurify.sanitize(a.name||'')+'</td>' +
+                '<td>'+DOMPurify.sanitize(a.email||'')+'</td>' +
+                '<td>'+DOMPurify.sanitize(a.type||'')+'</td>' +
+                '<td>'+DOMPurify.sanitize(a.campus||'-')+'</td>' +
+                '<td>'+DOMPurify.sanitize(a.yearOfStudy||'-')+'</td>' +
+                '<td>'+DOMPurify.sanitize(date)+'</td>' +
                 '<td style="white-space:nowrap; padding: 14px; text-align: center;">' +
-                '<button class="btn-icon" data-action="view" data-id="'+escapeHtml(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);color:#0ea5a0;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-eye" aria-hidden="true"></i> View</button> ' +
-                '<button class="btn-icon btn-danger" data-action="delete" data-id="'+escapeHtml(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.3);color:#dc3545;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>' +
+                '<button class="btn-icon" data-action="view" data-id="'+DOMPurify.sanitize(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.1);color:#0ea5a0;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-eye" aria-hidden="true"></i> View</button> ' +
+                '<button class="btn-icon btn-danger" data-action="delete" data-id="'+DOMPurify.sanitize(id)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.3);color:#dc3545;font-weight:600;cursor:pointer;min-width:60px;min-height:32px;"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>' +
                 '</td>' +
                 '</tr>';
             console.log('Row HTML for application', id, ':', row);
             return row;
-        }).join('');
+        }).join(''));
         console.log('Buttons rendered. Total buttons:', tbody.querySelectorAll('button').length);
         console.log('Total tds in tbody:', tbody.querySelectorAll('td').length);
 
@@ -159,19 +157,19 @@
     function openCareerView(appId){
         if (!appId) return;
         fetch((window.API_BASE||'') + '/api/admin/career-applications', { headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') } })
-            .then(function(r){ 
+            .then(function(r){
                 if (!r.ok) throw new Error('Server error: ' + r.status);
-                return r.json(); 
+                return r.json();
             })
             .then(function(apps){
                 var app = apps.find(function(x){ return String(x.id) === String(appId); });
                 var modal = document.getElementById('adminCareerViewModal');
                 var content = document.getElementById('adminCareerViewContent');
                 if (!modal || !content) return;
-                if (!app) { content.innerHTML = '<p>Application not found.</p>'; modal.classList.add('open'); return; }
+                if (!app) { content.innerHTML = DOMPurify.sanitize('<p>Application not found.</p>'); modal.classList.add('open'); return; }
                 content.innerHTML = '';
                 var table = document.createElement('table'); table.className = 'invoice-view-table';
-                function addRow(k,v){ var tr=document.createElement('tr'); var th=document.createElement('th'); th.textContent=k; var td=document.createElement('td'); td.innerHTML=escapeHtml(v||''); tr.appendChild(th); tr.appendChild(td); table.appendChild(tr); }
+                function addRow(k,v){ var tr=document.createElement('tr'); var th=document.createElement('th'); th.textContent=k; var td=document.createElement('td'); td.innerHTML=DOMPurify.sanitize(v||''); tr.appendChild(th); tr.appendChild(td); table.appendChild(tr); }
                 addRow('Name', app.name);
                 addRow('Email', app.email);
                 addRow('Phone', app.phone);
@@ -186,12 +184,12 @@
                     var ul=document.createElement('ul'); ul.className='attachments-list';
                     if (app.resume) {
                         var li=document.createElement('li'); li.textContent=(app.resume.name||'Resume')+' ';
-                        var btn=document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.innerHTML='<i class="fa fas fa-download" aria-hidden="true"></i> Download';
+                        var btn=document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.innerHTML=DOMPurify.sanitize('<i class="fa fas fa-download" aria-hidden="true"></i> Download');
                         btn.addEventListener('click', function(){ downloadCareerAttachment(app.id, 'resume', 0); });
                         li.appendChild(btn); ul.appendChild(li);
                     }
                     if (app.certificates && app.certificates.length) {
-                        app.certificates.forEach(function(cert, idx){ var li=document.createElement('li'); li.textContent=(cert.name||('Certificate '+(idx+1)))+' '; var btn=document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.innerHTML='<i class="fa fas fa-download" aria-hidden="true"></i> Download'; btn.addEventListener('click', function(){ downloadCareerAttachment(app.id, 'certificate', idx); }); li.appendChild(btn); ul.appendChild(li); });
+                        app.certificates.forEach(function(cert, idx){ var li=document.createElement('li'); li.textContent=(cert.name||('Certificate '+(idx+1)))+' '; var btn=document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.innerHTML=DOMPurify.sanitize('<i class="fa fas fa-download" aria-hidden="true"></i> Download'); btn.addEventListener('click', function(){ downloadCareerAttachment(app.id, 'certificate', idx); }); li.appendChild(btn); ul.appendChild(li); });
                     }
                     content.appendChild(ul);
                 }
