@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (html.indexOf('mailto:') === -1) {
                 html = html.replace(
-                    /(aisconceptsltd@gmail\.com)/gi,
+                    /(info@aisconcepts\.com)/gi,
                     '<a href="mailto:$1" class="footer-contact-link">$1</a>'
                 );
             }
