@@ -650,19 +650,17 @@ section {
 
 .hero .typewriter-title,
 .hero .typewriter-title.typed {
-    border-right-color: rgba(255, 255, 255, 0.9);
+    border-right-color: transparent;
     text-align: center;
     display: block;
     width: 100%;
-    white-space: nowrap;
 }
 
 .hero .typewriter-text {
-    border-right-color: rgba(255, 255, 255, 0.9);
+    border-right-color: transparent;
     text-align: center;
     display: block;
     width: 100%;
-    white-space: normal;
 }
 
 .hero .typewriter-text.typed {

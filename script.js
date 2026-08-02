@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const heroVideo = document.querySelector('.hero-video');
 
         if (videoPlayBtn && heroVideo) {
+            // Force mute for iOS autoplay
+            heroVideo.muted = true;
+
             // Try to autoplay immediately (may be blocked)
             heroVideo.play().then(() => {
                 // Autoplay worked
@@ -21,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Add click listener for manual play
                 videoPlayBtn.addEventListener('click', function() {
+                    heroVideo.muted = true;
                     heroVideo.play();
                     videoPlayBtn.style.display = 'none';
                 });
@@ -37,6 +41,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     videoPlayBtn.style.display = 'flex';
                 }
             });
+
+            // iOS-specific: Try to play on first interaction
+            document.addEventListener('touchstart', function playOnTouch() {
+                if (heroVideo.paused) {
+                    heroVideo.play().then(() => {
+                        videoPlayBtn.style.display = 'none';
+                    }).catch((e) => console.log('iOS play on touch failed:', e));
+                }
+                // Remove listener after first attempt
+                document.removeEventListener('touchstart', playOnTouch);
+            }, { once: true });
         }
     })();
 
