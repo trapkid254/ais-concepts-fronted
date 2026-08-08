@@ -186,6 +186,47 @@ section {
     height: 64px;
 }
 
+/* Left controls (theme + social) placed between menu and hamburger on desktop */
+.navbar-left-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 12px;
+    order: 4; /* desktop default position */
+    margin-left: auto; /* push icons to the right side on desktop */
+}
+
+.navbar-left-controls .theme-toggle {
+    color: var(--text-primary);
+    border-color: rgba(0,0,0,0.08);
+    background: transparent;
+}
+
+.navbar-left-controls .navbar-social-icons a {
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: transparent;
+}
+
+/* Dark theme override: icons stay light on dark backgrounds */
+[data-theme="dark"] .navbar-left-controls .theme-toggle,
+[data-theme="dark"] .navbar-left-controls .navbar-social-icons a {
+    color: #ffffff;
+    border-color: rgba(255,255,255,0.12);
+}
+
+/* Ensure social icons remain visible and white on both themes */
+.navbar .navbar-social-icons a,
+.navbar .navbar-social-left a {
+    color: #ffffff !important;
+}
+
 .theme-toggle {
     background: transparent;
     border: 1px solid var(--border-color);
@@ -266,8 +307,8 @@ section {
     list-style: none;
     margin: 0;
     padding: 0;
-    order: 3;
-    margin-left: auto;
+    order: 3; /* desktop: place menu before icons */
+    margin-left: 0;
 }
 
 .navbar .nav-links li {
@@ -439,6 +480,7 @@ section {
     z-index: 1001;
     position: relative;
 }
+.nav-toggle { order: 5; }
 
 /* ===== Navbar Dropdowns ===== */
 .nav-links li {
@@ -2089,6 +2131,13 @@ section {
     white-space: normal;
 }
 
+/* Ensure section headings using the typewriter classes stay block-level
+   so the subtitle appears below the main title (prevents inline overlap) */
+.section-title.typewriter-title,
+.section-subtitle.typewriter-text {
+    display: block;
+}
+
 /* ===== Navbar Social Links ===== */
 .navbar-social {
     background: rgba(15, 118, 110, 0.08);
@@ -2522,6 +2571,7 @@ section {
         position: absolute;
         top: 100%;
         right: 0;
+        order: 5;
         background: rgba(15, 23, 42, 0.12);
         backdrop-filter: blur(18px);
         flex-direction: column;
@@ -2539,6 +2589,17 @@ section {
         transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         box-sizing: border-box;
     }
+
+    /* Mobile: place icons between ticker and hamburger */
+    .navbar-left-controls {
+        order: 3;
+        margin-left: 12px;
+    }
+
+    .nav-toggle {
+        display: block;
+        order: 4;
+    }
     
     .navbar.open .nav-links {
         max-height: calc(100vh - 90px);
@@ -2546,6 +2607,12 @@ section {
         transform: translateY(0);
         padding: 12px;
         overflow: auto;
+    }
+
+    /* Force menu link colors to white on mobile when menu is open */
+    .navbar.open .nav-links a,
+    .navbar.open .nav-links .nav-dropdown a {
+        color: #ffffff !important;
     }
     
     .nav-links li {
@@ -2578,8 +2645,8 @@ section {
         margin: 4px 0;
         width: 100%;
         min-width: 0;
-        color: #374151;
-        border: 1px solid rgba(15, 118, 110, 0.22);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 14px;
         background: transparent;
         transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -2868,6 +2935,19 @@ section {
     .values-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* High-specificity overrides: ensure navbar-left icons are visible in light mode
+   and remain white in dark mode. Uses !important to override earlier platform colors. */
+.navbar .navbar-left-controls .navbar-social-icons a {
+    color: var(--text-primary) !important;
+    border-color: rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="dark"] .navbar .navbar-left-controls .navbar-social-icons a,
+[data-theme="dark"] .navbar .navbar-left-controls .theme-toggle {
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.12) !important;
 }
 
 /* ===== Portfolio filter wrap (mobile) ===== */
@@ -4228,32 +4308,10 @@ body.lightbox-open {
     position: absolute;
     bottom: 30px;
     left: 50%;
-    transform: translateX(-50%);
+    margin-left: 12px;
     display: flex;
     align-items: center;
-    gap: 20px;
-    z-index: 10;
-}
-
-.rotator-btn {
-    width: 48px;
-    height: 48px;
-    border: none;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    box-shadow: 0 4px 16px var(--shadow);
-}
-
-.rotator-btn:hover {
-    background: white;
-    transform: scale(1.1);
+    gap: 12px;
     box-shadow: 0 6px 20px var(--shadow);
 }
 

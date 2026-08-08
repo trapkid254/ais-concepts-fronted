@@ -49,8 +49,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         videoPlayBtn.style.display = 'none';
                     }).catch((e) => console.log('iOS play on touch failed:', e));
                 }
-                // Remove listener after first attempt
-                document.removeEventListener('touchstart', playOnTouch);
             }, { once: true });
         }
     })();
