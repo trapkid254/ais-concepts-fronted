@@ -468,6 +468,16 @@ section {
     border-bottom-color: transparent !important;
 }
 
+/* Show longer label on desktop, shorter label on mobile */
+.hiring-desktop { display: inline; }
+.hiring-mobile { display: none; }
+
+@media (max-width: 768px) {
+    .hiring-desktop { display: none; }
+    .hiring-mobile { display: inline; }
+    .hiring-btn { padding: 8px 12px !important; }
+}
+
 /* Nav Toggle Button */
 .nav-toggle {
     display: none;
@@ -2594,11 +2604,16 @@ section {
     .navbar-left-controls {
         order: 3;
         margin-left: 12px;
+        flex-shrink: 0;
     }
 
     .nav-toggle {
-        display: block;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
         order: 4;
+        flex-shrink: 0;
+        margin-left: 8px;
     }
     
     .navbar.open .nav-links {
