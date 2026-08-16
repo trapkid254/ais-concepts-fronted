@@ -437,10 +437,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<a href="tel:+254719548773" class="footer-contact-link">$1</a>'
                 );
             }
-            if (html.indexOf('mailto:') === -1) {
+            if (html.indexOf('mail.google.com') === -1) {
                 html = html.replace(
                     /(info@aisconcepts\.com)/gi,
-                    '<a href="mailto:$1" class="footer-contact-link">$1</a>'
+                    '<a href="https://mail.google.com/mail/?view=cm&fs=1&to=$1" class="footer-contact-link" target="_blank">$1</a>'
                 );
             }
             addr.innerHTML = html;
