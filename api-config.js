@@ -10,9 +10,9 @@
     return;
   }
   
-  // Production deployment URLs
+  // Production deployment URLs - use same-origin to avoid CORS
   if (h === 'aisconcepts.com' || h === 'www.aisconcepts.com') {
-    window.API_BASE = PRODUCTION_API_URL;
+    window.API_BASE = ''; // Use relative URL (same-origin)
     return;
   }
 
