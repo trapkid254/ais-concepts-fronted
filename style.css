@@ -196,6 +196,130 @@ section {
     margin-left: auto; /* push icons to the right side on desktop */
 }
 
+/* Mobile Socials Dropdown */
+.mobile-socials-dropdown {
+    display: none;
+    position: relative;
+}
+
+.mobile-socials-toggle {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.mobile-socials-toggle:hover {
+    background: var(--bg-tertiary);
+    transform: rotate(15deg);
+}
+
+[data-theme="dark"] .mobile-socials-toggle {
+    color: #ffffff;
+}
+
+.mobile-socials-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    gap: 8px;
+    box-shadow: 0 10px 30px var(--shadow);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1002;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.mobile-socials-dropdown.open .mobile-socials-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.mobile-socials-menu a {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.mobile-socials-menu a.instagram {
+    color: #E4405F;
+    border-color: rgba(228, 64, 95, 0.2);
+}
+
+.mobile-socials-menu a.facebook {
+    color: #1877F2;
+    border-color: rgba(24, 119, 242, 0.2);
+}
+
+.mobile-socials-menu a.tiktok {
+    color: #000000;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.mobile-socials-menu a.youtube {
+    color: #FF0000;
+    border-color: rgba(255, 0, 0, 0.2);
+}
+
+.mobile-socials-menu a.whatsapp {
+    color: #25D366;
+    border-color: rgba(37, 211, 102, 0.2);
+}
+
+.mobile-socials-menu a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.mobile-socials-menu a.instagram:hover {
+    background: #E4405F;
+    color: white;
+}
+
+.mobile-socials-menu a.facebook:hover {
+    background: #1877F2;
+    color: white;
+}
+
+.mobile-socials-menu a.tiktok:hover {
+    background: #000000;
+    color: white;
+}
+
+.mobile-socials-menu a.youtube:hover {
+    background: #FF0000;
+    color: white;
+}
+
+.mobile-socials-menu a.whatsapp:hover {
+    background: #25D366;
+    color: white;
+}
+
 .navbar-left-controls .theme-toggle {
     color: var(--text-primary);
     border-color: rgba(0,0,0,0.08);
@@ -826,13 +950,14 @@ section {
 }
 
 .hero-subtitle {
-    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    font-size: clamp(0.9rem, 2.5vw, 1.3rem);
     font-weight: 300;
     margin-bottom: 28px;
     opacity: 0.9;
     text-align: center;
     width: 100%;
     display: block;
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -2487,15 +2612,20 @@ section {
     }
     
     .hero-title {
-        font-size: clamp(1.1rem, 4.8vw, 1.75rem);
-        line-height: 1.1;
+        font-size: clamp(1rem, 4.2vw, 1.5rem);
+        line-height: 1.15;
         margin-bottom: 12px;
-        letter-spacing: -0.04em;
+        letter-spacing: -0.02em;
+        max-width: 100%;
+        white-space: nowrap;
     }
     
     .hero .section-subtitle {
-        font-size: 1rem;
+        font-size: 0.7rem;
         margin-bottom: 20px;
+        line-height: 1.4;
+        max-width: 100%;
+        white-space: nowrap;
     }
     
     .hero .btn-primary {
@@ -2558,17 +2688,29 @@ section {
     }
     
     .navbar-social-icons {
-        display: flex;
-        gap: 12px;
-        padding: 10px 0;
+        display: none; /* Hide regular social icons on mobile */
     }
     
-    .navbar-social-icons a {
-        width: 36px;
-        height: 36px;
-        font-size: 13px;
-        border-radius: 50% !important;
-        overflow: hidden;
+    .mobile-socials-dropdown {
+        display: block; /* Show dropdown on mobile */
+    }
+    
+    .mobile-socials-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .mobile-socials-menu {
+        min-width: 180px;
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .mobile-socials-menu a {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
     }
     
     .nav-social-item {
@@ -2603,7 +2745,7 @@ section {
     /* Mobile: place icons between ticker and hamburger */
     .navbar-left-controls {
         order: 3;
-        margin-left: 12px;
+        margin-left: 8px;
         flex-shrink: 0;
     }
 
@@ -2613,7 +2755,9 @@ section {
         justify-content: center;
         order: 4;
         flex-shrink: 0;
-        margin-left: 8px;
+        margin-left: 10px;
+        width: 36px;
+        height: 36px;
     }
     
     .navbar.open .nav-links {
@@ -4189,7 +4333,55 @@ body.lightbox-open {
     }
     
     .hero-title {
-        font-size: clamp(1rem, 4.2vw, 1.5rem);
+        font-size: clamp(0.95rem, 4.5vw, 1.4rem);
+        line-height: 1.2;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .hero .section-subtitle {
+        font-size: 0.65rem;
+        line-height: 1.4;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .navbar-social-icons {
+        gap: 6px;
+    }
+    
+    .navbar-social-icons a {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
+    
+    .mobile-socials-toggle {
+        width: 30px;
+        height: 30px;
+        font-size: 0.85rem;
+    }
+    
+    .mobile-socials-menu {
+        min-width: 160px;
+        padding: 5px;
+        gap: 5px;
+    }
+    
+    .mobile-socials-menu a {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+    
+    .navbar-left-controls {
+        margin-left: 6px;
+    }
+    
+    .nav-toggle {
+        margin-left: 8px;
+        width: 34px;
+        height: 34px;
     }
     
     .section-title {
@@ -4212,6 +4404,121 @@ body.lightbox-open {
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
         max-width: 240px;
+    }
+}
+
+/* ===== Extra Small Mobile (390px) ===== */
+@media (max-width: 390px) {
+    .hero-title {
+        font-size: clamp(0.9rem, 5vw, 1.3rem);
+        line-height: 1.25;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .hero .section-subtitle {
+        font-size: 0.6rem;
+        line-height: 1.5;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .navbar-social-icons {
+        gap: 5px;
+    }
+    
+    .navbar-social-icons a {
+        width: 24px;
+        height: 24px;
+        font-size: 9px;
+    }
+    
+    .mobile-socials-toggle {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+    
+    .mobile-socials-menu {
+        min-width: 150px;
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .mobile-socials-menu a {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+    
+    .navbar-left-controls {
+        margin-left: 4px;
+    }
+    
+    .nav-toggle {
+        margin-left: 6px;
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* ===== Ultra Small Mobile (320px) ===== */
+@media (max-width: 320px) {
+    .hero-title {
+        font-size: clamp(0.85rem, 5.5vw, 1.2rem);
+        line-height: 1.3;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .hero .section-subtitle {
+        font-size: 0.55rem;
+        line-height: 1.5;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+    
+    .navbar-social-icons {
+        gap: 4px;
+    }
+    
+    .navbar-social-icons a {
+        width: 22px;
+        height: 22px;
+        font-size: 8px;
+    }
+    
+    .mobile-socials-toggle {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+    }
+    
+    .mobile-socials-menu {
+        min-width: 140px;
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .mobile-socials-menu a {
+        width: 26px;
+        height: 26px;
+        font-size: 9px;
+    }
+    
+    .navbar-left-controls {
+        margin-left: 3px;
+    }
+    
+    .nav-toggle {
+        margin-left: 5px;
+        width: 30px;
+        height: 30px;
+    }
+    
+    .navbar .nav-ticker {
+        min-width: 120px;
+        font-size: 0.7rem;
     }
 }
 

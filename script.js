@@ -176,6 +176,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    /* ===== MOBILE SOCIALS DROPDOWN ===== */
+    (function() {
+        const mobileSocialsToggle = document.getElementById('mobileSocialsToggle');
+        const mobileSocialsDropdown = document.getElementById('mobileSocialsDropdown');
+        
+        if (mobileSocialsToggle && mobileSocialsDropdown) {
+            mobileSocialsToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                mobileSocialsDropdown.classList.toggle('open');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!mobileSocialsDropdown.contains(e.target)) {
+                    mobileSocialsDropdown.classList.remove('open');
+                }
+            });
+        }
+    })();
+
     /* ===== MOBILE DROPDOWN TOGGLES ===== */
     const hasDropdownItems = document.querySelectorAll('.has-dropdown');
 
