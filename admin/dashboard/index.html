@@ -48,6 +48,7 @@
                     <li><a href="#" data-section="admin-marketing"><i class="fas fa-bullhorn"></i> Marketing</a></li>
                     <li><a href="#" data-section="admin-assignments"><i class="fas fa-tasks"></i> Assignments</a></li>
                     <li><a href="#" data-section="admin-careers"><i class="fas fa-briefcase"></i> Careers</a></li>
+                    <li><a href="#" data-section="admin-support"><i class="fas fa-headset"></i> Client Support</a></li>
                     <li><a href="#" data-section="admin-analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                     <li><a href="#" data-section="admin-content"><i class="fas fa-database"></i> Content</a></li>
                     <li><a href="#" data-section="admin-faq"><i class="fas fa-question-circle"></i> FAQ Management</a></li>
@@ -515,6 +516,35 @@
                 </div>
             </section>
 
+            <!-- Client Support Tickets -->
+            <section id="admin-support" class="portal-section table-container" style="display: none;">
+                <div class="table-header">
+                    <h2>Client Support Tickets</h2>
+                    <span class="section-sub">Support requests from client portal</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminSupportTicketsBody"></tbody>
+                </table>
+                <!-- Modal to view full ticket details -->
+                <div class="modal" id="adminSupportViewModal">
+                    <div class="modal-content">
+                        <span class="close-modal" data-close="adminSupportViewModal">&times;</span>
+                        <h2>Support Ticket Details</h2>
+                        <div id="adminSupportViewContent"></div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Notifications & messages (merged) -->
             <section id="admin-notifications" class="portal-section admin-messages-wrap" style="display: none;">
                 <div class="table-container">
@@ -630,6 +660,27 @@
                 <div class="table-header">
                     <h2>System Settings</h2>
                     <span class="section-sub">Configure portal preferences, notifications, and system parameters</span>
+                </div>
+                <div class="card profile-form-login-style" style="max-width: 560px; margin-bottom: 28px;">
+                    <h3 style="margin-top: 0;">Email Recipients Configuration</h3>
+                    <p class="section-sub">View where different form submissions are sent</p>
+                    <div style="margin-top: 16px;">
+                        <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                            <strong>Contact Form:</strong> info@aisconcepts.com, ivan@aisconcepts.com, eugene01@aisconcepts.com
+                        </div>
+                        <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                            <strong>Projects Inquiry:</strong> info@aisconcepts.com, projects@aisconcepts.com
+                        </div>
+                        <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                            <strong>Services Inquiry:</strong> info@aisconcepts.com, designs@aisconcepts.com
+                        </div>
+                        <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                            <strong>Careers Application:</strong> careers@aisconcepts.com
+                        </div>
+                        <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                            <strong>Client Support:</strong> info@aisconcepts.com, support@aisconcepts.com
+                        </div>
+                    </div>
                 </div>
                 <div class="card profile-form-login-style" style="max-width: 560px;">
                     <form id="adminSettingsForm" class="portal-form-grid">
@@ -2555,5 +2606,6 @@
         <script src="../../blog-data.js"></script>
     <script src="../../portal-script.js"></script>
     <script src="./admin-careers-fix.js"></script>
+    <script src="./admin-support-fix.js"></script>
 </body>
 </html>

@@ -625,39 +625,39 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (path.includes('/client/')) {
         var supportForm = document.getElementById('clientSupportForm');
         if (supportForm) {
-            supportForm.addEventListener('submit', function (e) {
+            supportForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 var name = document.getElementById('supportName').value;
                 var email = document.getElementById('supportEmail').value;
                 var subject = document.getElementById('supportSubject').value;
                 var message = document.getElementById('supportMessage').value;
-                var tickets = getStored('clientSupportTickets', []);
-                tickets.push({
-                    name: name,
-                    email: email || (currentUser && currentUser.email) || '',
-                    subject: subject,
-                    message: message,
-                    date: new Date().toISOString()
-                });
-                setStored('clientSupportTickets', tickets);
-                // Notify admin via message channel
-                var messages = getStored('portalMessages', []);
-                messages.push({
-                    from: (email || (currentUser && currentUser.email) || '').toLowerCase(),
-                    to: 'admin',
-                    project: '',
-                    body: 'Support: ' + subject + '\n\n' + message,
-                    date: new Date().toISOString()
-                });
-                setStored('portalMessages', messages);
-                supportForm.reset();
-                if (currentUser) {
-                    var sn = document.getElementById('supportName');
-                    var se = document.getElementById('supportEmail');
-                    if (sn) sn.value = currentUser.name || '';
-                    if (se) se.value = currentUser.email || '';
+                
+                try {
+                    const API_BASE = window.API_BASE || '';
+                    const response = await fetch(`${API_BASE}/api/client-support`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, subject, message })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        supportForm.reset();
+                        if (currentUser) {
+                            var sn = document.getElementById('supportName');
+                            var se = document.getElementById('supportEmail');
+                            if (sn) sn.value = currentUser.name || '';
+                            if (se) se.value = currentUser.email || '';
+                        }
+                        alert(result.message || 'Thank you. Your support request has been submitted. We will get back to you shortly.');
+                    } else {
+                        alert(result.error || 'Failed to submit support request. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Support form error:', error);
+                    alert('Failed to submit support request. Please try again.');
                 }
-                alert('Thank you. Your support request has been submitted. We will get back to you shortly.');
             });
         }
         var clientNotificationBtn = document.getElementById('clientNotificationBtn');
