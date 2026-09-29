@@ -13,9 +13,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Primary SEO Meta Tags -->
-    <title>About AIS Concepts | Leading Architecture Firm in Kenya - Our Story & Team</title>
-    <meta name="description" content="Learn about AIS Concepts, a leading architecture and design firm in Kenya. Discover our story, mission, values, and the talented team behind our innovative architectural solutions.">
-    <meta name="keywords" content="about AIS Concepts, architecture firm Kenya, architectural team, design company profile, Nairobi architects, sustainable design philosophy, company history">
+    <title>About AIS Concepts Ltd | Architecture & Design | Art in Space</title>
+    <meta name="description" content="AIS Concepts Ltd is an architecture and built-environment practice focused on creating thoughtful, functional and distinctive spaces through architecture, interior design, planning and project management. Art in Space.">
+    <meta name="keywords" content="AIS Concepts, architecture firm Kenya, interior design, planning, project management, Art in Space, Nairobi architects, sustainable design">
     <meta name="author" content="AIS Concepts">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://aisconcepts.com/about/">
@@ -23,16 +23,16 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://aisconcepts.com/about/">
-    <meta property="og:title" content="About AIS Concepts | Leading Architecture Firm in Kenya">
-    <meta property="og:description" content="Learn about AIS Concepts, our story, mission, values, and the talented team behind our innovative architectural solutions.">
+    <meta property="og:title" content="About AIS Concepts Ltd | Architecture & Design | Art in Space">
+    <meta property="og:description" content="AIS Concepts Ltd is an architecture and built-environment practice focused on creating thoughtful, functional and distinctive spaces through architecture, interior design, planning and project management.">
     <meta property="og:image" content="https://aisconcepts.com/images/og-image.jpg?v=20240816">
     <meta property="og:site_name" content="AIS Concepts">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://aisconcepts.com/about/">
-    <meta property="twitter:title" content="About AIS Concepts | Leading Architecture Firm in Kenya">
-    <meta property="twitter:description" content="Learn about AIS Concepts, our story, mission, values, and the talented team behind our innovative architectural solutions.">
+    <meta property="twitter:title" content="About AIS Concepts Ltd | Architecture & Design | Art in Space">
+    <meta property="twitter:description" content="AIS Concepts Ltd is an architecture and built-environment practice focused on creating thoughtful, functional and distinctive spaces through architecture, interior design, planning and project management.">
     <meta property="twitter:image" content="https://aisconcepts.com/images/og-image.jpg?v=20240816">
     
     <!-- Google tag (gtag.js) -->
@@ -51,6 +51,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon.png">
     
     <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="about-page.css">
     <link rel="stylesheet" href="../vendor/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -159,148 +160,314 @@
     </div>
 
     <main class="about-page-main">
+        <!-- Hero Section -->
         <section class="about-hero">
-            <div class="container" style="text-align: center;">
-                <h1 class="section-title typewriter-title" data-typewriter="About AIS Concepts">About AIS Concepts</h1>
-                <p class="section-subtitle typewriter-text" data-typewriter="Shaping the future of architecture with innovation and sustainability">Shaping the future of architecture with innovation and sustainability</p>
+            <div class="hero-background">
+                <img src="../images/service1.jpg" alt="Architectural space" class="hero-image">
+                <div class="hero-overlay"></div>
+            </div>
+            <div class="hero-content">
+                <div class="container">
+                    <h1 class="hero-title">WE CREATE SPACES WITH PURPOSE.</h1>
+                    <p class="hero-subtitle">AIS Concepts Ltd is an architecture and built-environment practice focused on creating thoughtful, functional and distinctive spaces through architecture, interior design, planning and project management.</p>
+                    <div class="hero-cta">
+                        <a href="../projects/" class="btn btn-primary">VIEW OUR PROJECTS</a>
+                        <a href="../contact/" class="btn btn-secondary">START A PROJECT</a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-architectural-lines"></div>
+        </section>
+
+        <!-- Who We Are -->
+        <section class="who-we-are">
+            <div class="container">
+                <div class="who-grid">
+                    <div class="who-statement">
+                        <h2>Architecture is more than creating buildings. It is about shaping the way people experience space.</h2>
+                    </div>
+                    <div class="who-description">
+                        <p>AIS Concepts Ltd is a multidisciplinary architecture and design practice based in Kenya. We work across residential, commercial, hospitality, and institutional projects, bringing together architectural design, interior design, planning, and project management expertise.</p>
+                        <p>Our approach is rooted in the belief that great spaces emerge from understanding context, function, and human experience. We work closely with clients to develop solutions that are both practical and aspirational, creating environments that serve their intended purpose while leaving room for growth and adaptation.</p>
+                    </div>
+                </div>
+                <div class="who-image">
+                    <img src="../images/service2.jpg" alt="Architectural design process">
+                </div>
             </div>
         </section>
 
-        <!-- Stats -->
-        <section class="stats-section">
+        <!-- Our Team -->
+        <section class="our-team">
+            <div class="container">
+                <div class="section-header">
+                    <h2>OUR TEAM</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="team-grid" id="teamGrid">
+                    <!-- Team members will be loaded dynamically from API -->
+                    <div class="team-loading">Loading team information...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Art in Space Core Philosophy -->
+        <section class="art-in-space">
+            <div class="container">
+                <div class="art-header">
+                    <h2>ART IN SPACE</h2>
+                    <p class="art-statement">We believe architecture is more than construction. It is the art of shaping environments that influence how people live, work, interact and experience space.</p>
+                </div>
+                <div class="art-pillars">
+                    <div class="art-pillar">
+                        <div class="pillar-number">01</div>
+                        <h3>FUNCTION</h3>
+                        <p>Spaces designed around how people actually use them.</p>
+                    </div>
+                    <div class="art-pillar">
+                        <div class="pillar-number">02</div>
+                        <h3>IDENTITY</h3>
+                        <p>Architecture that reflects the character, aspirations and individuality of each client.</p>
+                    </div>
+                    <div class="art-pillar">
+                        <div class="pillar-number">03</div>
+                        <h3>EXPERIENCE</h3>
+                        <p>Thoughtful environments where proportion, light, materials, detail and movement come together.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- What We Do -->
+        <section class="what-we-do">
+            <div class="container">
+                <div class="section-header">
+                    <h2>WHAT WE DO</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="services-grid">
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-building"></i></div>
+                        <h3>Architecture</h3>
+                        <p>Comprehensive architectural design from concept to completion.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-couch"></i></div>
+                        <h3>Interior Design</h3>
+                        <p>Thoughtful interior spaces that complement architectural vision.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-map"></i></div>
+                        <h3>Master Planning</h3>
+                        <p>Strategic planning for developments and campus environments.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-search"></i></div>
+                        <h3>Feasibility Studies</h3>
+                        <p>Thorough analysis of project viability and requirements.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-tasks"></i></div>
+                        <h3>Project Management</h3>
+                        <p>Coordinated project delivery from design to handover.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-hard-hat"></i></div>
+                        <h3>Construction Supervision</h3>
+                        <p>On-site oversight to ensure design intent is realized.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-tools"></i></div>
+                        <h3>Renovation</h3>
+                        <p>Transformative updates to existing structures and spaces.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-cube"></i></div>
+                        <h3>3D Visualization</h3>
+                        <p>Immersive visualizations to explore design concepts.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-file-alt"></i></div>
+                        <h3>Authority Approvals</h3>
+                        <p>Navigating regulatory requirements and permitting processes.</p>
+                    </div>
+                    <div class="service-item">
+                        <div class="service-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <h3>Tender Documentation</h3>
+                        <p>Comprehensive documentation for procurement and construction.</p>
+                    </div>
+                </div>
+                <div class="services-cta">
+                    <a href="../services/" class="btn btn-secondary">EXPLORE OUR SERVICES</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Our Approach -->
+        <section class="our-approach">
+            <div class="container">
+                <div class="section-header">
+                    <h2>OUR APPROACH</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="approach-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-number">01</div>
+                        <div class="timeline-content">
+                            <h3>UNDERSTAND</h3>
+                            <p>We begin by understanding the client's needs, aspirations, site, budget and project objectives.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-number">02</div>
+                        <div class="timeline-content">
+                            <h3>EXPLORE</h3>
+                            <p>We investigate possibilities through research, site analysis, planning and design exploration.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-number">03</div>
+                        <div class="timeline-content">
+                            <h3>DESIGN</h3>
+                            <p>We transform ideas into architectural, interior and spatial solutions.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-number">04</div>
+                        <div class="timeline-content">
+                            <h3>DEVELOP</h3>
+                            <p>We coordinate design development, technical documentation, approvals, costing and project requirements.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-number">05</div>
+                        <div class="timeline-content">
+                            <h3>DELIVER</h3>
+                            <p>We support the project through construction supervision and project management to help bring the design into reality.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Multidisciplinary Expertise -->
+        <section class="multidisciplinary">
+            <div class="container">
+                <div class="section-header">
+                    <h2>MULTIDISCIPLINARY THINKING</h2>
+                    <div class="section-line"></div>
+                </div>
+                <p class="multidisciplinary-text">Great spaces require more than a single perspective. Our approach brings together architectural design, interior design, planning, project management and construction expertise to approach each project from both creative and technical perspectives.</p>
+                <div class="expertise-flow">
+                    <div class="expertise-step">ARCHITECTURE</div>
+                    <div class="expertise-arrow"></div>
+                    <div class="expertise-step">INTERIORS</div>
+                    <div class="expertise-arrow"></div>
+                    <div class="expertise-step">PLANNING</div>
+                    <div class="expertise-arrow"></div>
+                    <div class="expertise-step">PROJECT MANAGEMENT</div>
+                    <div class="expertise-arrow"></div>
+                    <div class="expertise-step">CONSTRUCTION</div>
+                    <div class="expertise-arrow"></div>
+                    <div class="expertise-step expertise-final">DELIVERY</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Selected Work -->
+        <section class="selected-work">
+            <div class="container">
+                <div class="section-header">
+                    <h2>SELECTED WORK</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="projects-editorial" id="selectedProjects">
+                    <!-- Projects will be loaded dynamically from API -->
+                    <div class="project-loading">Loading projects...</div>
+                </div>
+                <div class="work-cta">
+                    <a href="../projects/" class="btn btn-secondary">VIEW ALL PROJECTS</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why AIS Concepts -->
+        <section class="why-ais">
+            <div class="container">
+                <div class="section-header">
+                    <h2>WHY AIS CONCEPTS?</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="principles-grid">
+                    <div class="principle-item">
+                        <h3>DESIGN-LED THINKING</h3>
+                        <p>Every project begins with understanding the design problem and developing a considered response.</p>
+                    </div>
+                    <div class="principle-item">
+                        <h3>INTEGRATED SERVICES</h3>
+                        <p>Architecture, interiors, planning and project delivery can be coordinated as part of a connected process.</p>
+                    </div>
+                    <div class="principle-item">
+                        <h3>CLIENT-FOCUSED DESIGN</h3>
+                        <p>Solutions are developed around the client's requirements, aspirations, budget and project objectives.</p>
+                    </div>
+                    <div class="principle-item">
+                        <h3>ATTENTION TO DETAIL</h3>
+                        <p>From overall spatial planning to materials, documentation and execution, details shape the final experience.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Section (Only if API data is available) -->
+        <section class="about-statistics" id="statisticsSection" style="display: none;">
             <div class="container">
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <span class="stat-number" data-count="150">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Projects Done</p>
+                        <span class="stat-number" id="statProjects">0</span>
+                        <span class="stat-suffix">+</span>
+                        <p class="stat-label">PROJECTS</p>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" data-count="80">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Happy Clients</p>
+                        <span class="stat-number" id="statClients">0</span>
+                        <span class="stat-suffix">+</span>
+                        <p class="stat-label">CLIENTS</p>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" data-count="15">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Years Experience</p>
+                        <span class="stat-number" id="statLocations">0</span>
+                        <p class="stat-label">LOCATIONS</p>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" data-count="25">0</span><span class="stat-suffix">+</span>
-                        <p class="stat-label">Team Members</p>
+                        <span class="stat-number" id="statExperience">0</span>
+                        <span class="stat-suffix">+</span>
+                        <p class="stat-label">YEARS OF EXPERIENCE</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="about-content">
+        <!-- Our Commitment -->
+        <section class="our-commitment">
+            <div class="commitment-background">
+                <img src="../images/service3.jpg" alt="Architectural detail">
+                <div class="commitment-overlay"></div>
+            </div>
+            <div class="commitment-content">
+                <div class="container">
+                    <h2>WE DESIGN FOR THE LONG TERM.</h2>
+                    <p>Our goal is to create spaces that remain functional, relevant and meaningful beyond the moment they are completed.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="final-cta">
             <div class="container">
-                <div class="about-grid">
-                    <div class="about-text">
-                        <h2 class="typewriter-title" data-typewriter="Our Story">Our Story</h2>
-                        <p class="typewriter-text" data-typewriter="AIS Concepts was founded with a simple belief: great architecture balances innovation, sustainability, and human experience. Based in Kenya, we work locally and internationally to deliver design excellence across commercial, residential, cultural, and mixed-use projects.">AIS Concepts was founded with a simple belief: great architecture balances innovation, sustainability, and human experience. Based in Kenya, we work locally and internationally to deliver design excellence across commercial, residential, cultural, and mixed-use projects.</p>
-                        <p>From concept to construction, we create spaces that inspire and function. Our designs respond to context, climate, and culture—whether a high-rise tower, a net-zero residence, or a cultural landmark.</p>
-                    </div>
-                    <div class="about-image">
-                        <img src="../images/service1.jpg" alt="AIS Concepts studio" onerror="this.src='https://via.placeholder.com/600x400?text=AIS+Concepts'">
-                    </div>
-                </div>
-
-                <div class="about-values">
-                    <h2 class="typewriter-title" data-typewriter="Our Values">Our Values</h2>
-                    <div class="values-grid">
-                        <div class="value-card">
-                            <i class="fas fa-lightbulb"></i>
-                            <h3>Innovation</h3>
-                            <p>We push boundaries with design and technology to create forward-thinking solutions.</p>
-                        </div>
-                        <div class="value-card">
-                            <i class="fas fa-leaf"></i>
-                            <h3>Sustainability</h3>
-                            <p>Every project considers energy, materials, and long-term environmental impact.</p>
-                        </div>
-                        <div class="value-card">
-                            <i class="fas fa-handshake"></i>
-                            <h3>Collaboration</h3>
-                            <p>We work closely with clients, engineers, and communities to deliver shared success.</p>
-                        </div>
-                        <div class="value-card">
-                            <i class="fas fa-award"></i>
-                            <h3>Excellence</h3>
-                            <p>From detail to delivery, we uphold the highest standards of quality and craft.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <section class="studio-band">
-                    <h2 class="typewriter-title" data-typewriter="Founder story">Founder story</h2>
-                    <p style="max-width:800px;line-height:1.75;color:var(--text-secondary);margin-top:16px;">AIS Concepts grew from a notebook of sketches and site visits: a belief that architecture in East Africa could be both globally current and deeply local. Today we mentor young designers, invest in research, and keep the studio small enough to stay hands-on with every client.</p>
-                </section>
-
-                <section class="studio-band" style="padding-top:0;">
-                    <div class="studio-grid-2">
-                        <div>
-                            <h2 class="typewriter-title" data-typewriter="Design mission">Design mission</h2>
-                            <p style="line-height:1.75;color:var(--text-secondary);margin-top:16px;">We design buildings and places that improve everyday life—measuring success in daylight, quiet, durability, and delight. Sustainability and innovation are not add-ons; they are embedded from the first sketch.</p>
-                            <h3 style="margin-top:28px;font-size:1.1rem;color:#0f766e;">Studio culture</h3>
-                            <p style="line-height:1.75;color:var(--text-secondary);margin-top:8px;">Peer reviews every week, shared material libraries, and an open desk policy between architects and visualization artists. We protect focus time for deep work and celebrate craft—from model-making to on-site walks.</p>
-                        </div>
-                        <div class="studio-photo-grid">
-                            <img src="../images/service2.jpg" alt="Team at work">
-                            <img src="../images/service3.jpg" alt="Studio discussion">
-                            <img src="../images/service4.jpg" alt="Materials">
-                            <img src="../images/service1.jpg" alt="Presentation">
-                        </div>
-                    </div>
-                </section>
-
-                <section class="about-values">
-                    <h2 class="typewriter-title" data-typewriter="Awards & publications">Awards & publications</h2>
-                    <p class="section-subtitle" style="margin-bottom:24px;">Recognition and writing that reflect our curiosity and rigor</p>
-                    <div class="values-grid">
-                        <div class="value-card">
-                            <i class="fas fa-trophy"></i>
-                            <h3>Design excellence</h3>
-                            <p>Regional citations for sustainable high-rise and cultural work (placeholder — update with your awards).</p>
-                        </div>
-                        <div class="value-card">
-                            <i class="fas fa-book-open"></i>
-                            <h3>Publications</h3>
-                            <p>Essays on climate-responsive façades and African modernism in regional design journals.</p>
-                        </div>
-                        <div class="value-card">
-                            <i class="fas fa-star"></i>
-                            <h3>Featured concepts</h3>
-                            <p>Iconic competition entries and conceptual pavilions that inform built work.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="studio-process-wrap" style="padding-top:0;">
-                        <h2 class="typewriter-title" data-typewriter="Design process">Design process</h2>
-                        <div class="process-diagram">
-                            <p style="color:var(--text-secondary);line-height:1.6;">From first conversation to handing over keys, we align vision, budget, and programme through a clear sequence—so clients always know what happens next.</p>
-                            <div class="process-steps">
-                                <div class="process-step"><i class="fas fa-comments"></i> Discover &amp; brief</div>
-                                <div class="process-step"><i class="fas fa-pencil-ruler"></i> Concept &amp; options</div>
-                                <div class="process-step"><i class="fas fa-drafting-compass"></i> Design development</div>
-                                <div class="process-step"><i class="fas fa-hard-hat"></i> Construction support</div>
-                                <div class="process-step"><i class="fas fa-key"></i> Handover &amp; feedback</div>
-                            </div>
-                        </div>
-
-                        <h2 class="typewriter-title" style="margin-top:48px;" data-typewriter="Studio capabilities">Studio capabilities</h2>
-                        <p class="section-subtitle" data-typewriter="Tools we use with clients and collaborators">Tools we use with clients and collaborators</p>
-                        <div class="feature-strip">
-                            <div class="value-card"><i class="fas fa-chart-line"></i><h3>Live project progress</h3><p>Track milestones in the client portal alongside drawings and approvals.</p></div>
-                            <div class="value-card"><i class="fas fa-calculator"></i><h3>Design cost awareness</h3><p>Early budget ranges and options so design decisions stay realistic.</p></div>
-                            <div class="value-card"><i class="fas fa-map-marked-alt"></i><h3>Site analysis</h3><p>Context, access, and climate mapped before massing begins.</p></div>
-                            <div class="value-card"><i class="fas fa-cube"></i><h3>Virtual walk-throughs</h3><p>Spatial studies you can experience before construction.</p></div>
-                            <div class="value-card"><i class="fas fa-stream"></i><h3>Process timeline</h3><p>Clear phases from concept to site.</p></div>
-                            <div class="value-card"><i class="fas fa-layer-group"></i><h3>Material library</h3><p>Curated palettes for durability and local supply chains.</p></div>
-                        </div>
-                </div>
-
-                <div class="about-cta">
-                    <p>Ready to start your next project?</p>
-                    <a href="/contact/" class="btn-primary">Get in Touch</a>
+                <h2>HAVE A PROJECT IN MIND?</h2>
+                <p>Let's discuss how we can turn your ideas into a considered space.</p>
+                <div class="cta-buttons">
+                    <a href="../contact/" class="btn btn-primary">START A PROJECT</a>
+                    <a href="../contact/" class="btn btn-secondary">CONTACT AIS CONCEPTS</a>
                 </div>
             </div>
         </section>
@@ -338,7 +505,7 @@
                     <h4>Find Us</h4>
                     <div class="footer-map">
                         <iframe 
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d40207.47968005734!2d36.96456000855941!3d-1.0968304180171518!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f3fc955678a67%3A0xb42cac64d8e16dea!2sSpur%20Mall!5e0!3m2!1sen!2ske!4v1790405440760!5m2!1sen!2ske" 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d40207.47968005734!2d36.96456000855941!3d-1.0968304180171518!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f3fc955678a67%3A0xb42cac64d8e16dea!2sSpur%20Mall!5e0!3m2!1sen!2ske!4v1790405440760!5m2!1sen%2ske" 
                             width="100%" 
                             height="200" 
                             style="border:0; border-radius: 8px;" 
@@ -358,145 +525,263 @@
 
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
+    <script src="../projects-data.js"></script>
     <script src="../script.js"></script>
     <script>
-    // Simple typewriter animation function
-    function animateStats() {
-        const numbers = document.querySelectorAll('.stat-number, .hero-stat-number');
-        console.log('animateStats called, found', numbers.length, 'elements');
-        if (numbers.length > 0) {
-            numbers.forEach(function(target) {
-                const count = parseInt(target.getAttribute('data-count'));
-                const countStr = count.toString();
-                console.log('Animating:', target, 'with count:', count, 'as string:', countStr);
-                target.textContent = '0';
-                let i = 0;
-                const typeNumber = () => {
-                    if (i < countStr.length) {
-                        target.textContent = countStr.substring(0, i + 1);
-                        console.log('Setting textContent to:', countStr.substring(0, i + 1));
-                        i++;
-                        setTimeout(typeNumber, 100);
-                    } else {
-                        console.log('Animation complete for', target);
-                    }
-                };
-                typeNumber();
+    // Load team members function
+    function loadTeamMembers() {
+        var teamGrid = document.getElementById('teamGrid');
+        if (!teamGrid) return;
+        
+        // Try to load team from API first
+        fetch((window.API_BASE || '') + '/api/team')
+            .then(function(r) { 
+                if (!r.ok) throw new Error('Team API not available');
+                return r.json(); 
+            })
+            .then(function(teamData) {
+                if (teamData && teamData.length > 0) {
+                    displayTeamMembers(teamData);
+                } else {
+                    // Use fallback team if API returns empty
+                    displayFallbackTeam();
+                }
+            })
+            .catch(function() {
+                // Use fallback team if API fails
+                displayFallbackTeam();
             });
-        }
     }
     
-    (function() {
-        // Load statistics from API first, then run counter
+    function displayTeamMembers(teamData) {
+        var teamGrid = document.getElementById('teamGrid');
+        if (!teamGrid) return;
+        
+        var html = '';
+        teamData.forEach(function(member, index) {
+            var photoSrc = member.photo || member.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(member.name || 'Team Member') + '&background=20c4b4&color=fff&size=400';
+            var specialties = member.specialties || member.expertise || [];
+            
+            html += '<div class="team-member" style="transition-delay: ' + (index * 0.1) + 's">';
+            html += '<div class="team-photo">';
+            html += '<img src="' + photoSrc + '" alt="' + (member.name || 'Team Member') + '" loading="lazy">';
+            html += '</div>';
+            html += '<h3 class="team-name">' + (member.name || 'Team Member') + '</h3>';
+            html += '<p class="team-role">' + (member.role || member.position || 'Team Member') + '</p>';
+            if (member.bio) {
+                html += '<p class="team-bio">' + member.bio + '</p>';
+            }
+            if (specialties.length > 0) {
+                html += '<div class="team-specialties">';
+                specialties.forEach(function(specialty) {
+                    html += '<span class="team-specialty">' + specialty + '</span>';
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+        });
+        
+        teamGrid.innerHTML = html;
+        
+        // Trigger animations
+        setTimeout(function() {
+            var teamMembers = teamGrid.querySelectorAll('.team-member');
+            teamMembers.forEach(function(member) {
+                member.classList.add('visible');
+            });
+        }, 100);
+    }
+    
+    function displayFallbackTeam() {
+        var teamGrid = document.getElementById('teamGrid');
+        if (!teamGrid) return;
+        
+        // Fallback team structure if API is not available
+        // NOTE: Add your actual team members to the backend API endpoint /api/team
+        // Each team member should have: name, role, bio, photo, specialties
+        // This fallback represents key roles at AIS Concepts until individual team members are added
+        var fallbackTeam = [
+            {
+                name: 'AIS Concepts Leadership',
+                role: 'Principal Architect',
+                bio: 'Leading the architectural vision and design direction for AIS Concepts projects with extensive experience in residential and commercial design across Kenya.',
+                specialties: ['Architectural Design', 'Design Leadership', 'Project Vision']
+            },
+            {
+                name: 'Design Team',
+                role: 'Senior Architects & Designers',
+                bio: 'Our design team brings technical expertise and creative problem-solving to complex architectural projects and design challenges.',
+                specialties: ['Technical Design', 'Project Management', 'Client Relations']
+            },
+            {
+                name: 'Interior Design Team',
+                role: 'Interior Designers',
+                bio: 'Creating interior spaces that harmonize with architectural vision while enhancing functionality and user experience.',
+                specialties: ['Interior Design', 'Space Planning', 'Material Selection']
+            },
+            {
+                name: 'Project Team',
+                role: 'Project Managers & Coordinators',
+                bio: 'Coordinating project timelines, resources, and stakeholder communication to ensure successful project delivery from concept to completion.',
+                specialties: ['Project Coordination', 'Construction Supervision', 'Quality Control']
+            }
+        ];
+        
+        displayTeamMembers(fallbackTeam);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load team members
+        loadTeamMembers();
+        
+        // Load projects for Selected Work section
+        loadWebsiteProjects().then(function(projects) {
+            var selectedProjectsContainer = document.getElementById('selectedProjects');
+            if (selectedProjectsContainer && projects.length > 0) {
+                // Display up to 4 projects in editorial layout
+                var displayProjects = projects.slice(0, 4);
+                var html = '';
+                
+                displayProjects.forEach(function(project, index) {
+                    var sizeClass = index === 0 || index === 2 ? 'project-large' : 'project-small';
+                    var imageSrc = project.heroImage || project.image || '../images/project1.jpg';
+                    var projectUrl = '../projects/' + (project.slug ? '?slug=' + project.slug : '');
+                    
+                    html += '<div class="project-item ' + sizeClass + '">';
+                    html += '<a href="' + projectUrl + '" class="project-link">';
+                    html += '<div class="project-image-wrapper">';
+                    html += '<img src="' + imageSrc + '" alt="' + (project.title || 'Project') + '" loading="lazy">';
+                    html += '<div class="project-overlay"></div>';
+                    html += '</div>';
+                    html += '<div class="project-info">';
+                    html += '<h3>' + (project.title || 'Project') + '</h3>';
+                    html += '<p>' + (project.category || '') + '</p>';
+                    html += '</div>';
+                    html += '</a>';
+                    html += '</div>';
+                });
+                
+                selectedProjectsContainer.innerHTML = html;
+            } else {
+                selectedProjectsContainer.innerHTML = '<p class="no-projects">No projects available at the moment.</p>';
+            }
+        }).catch(function() {
+            var selectedProjectsContainer = document.getElementById('selectedProjects');
+            if (selectedProjectsContainer) {
+                selectedProjectsContainer.innerHTML = '<p class="no-projects">Unable to load projects at this time.</p>';
+            }
+        });
+
+        // Load statistics from API if available
         fetch((window.API_BASE || '') + '/api/statistics')
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                console.log('Statistics data received:', data);
-                if (data) {
-                    var stats = document.querySelectorAll('.stat-number');
-                    console.log('Stats elements found:', stats.length);
-                    if (stats.length >= 4) {
-                        stats[0].setAttribute('data-count', data.projectsDone || 150);
-                        stats[0].textContent = '0';
-                        stats[1].setAttribute('data-count', data.happyClients || 80);
-                        stats[1].textContent = '0';
-                        stats[2].setAttribute('data-count', data.yearsExperience || 15);
-                        stats[2].textContent = '0';
-                        stats[3].setAttribute('data-count', data.teamMembers || 25);
-                        stats[3].textContent = '0';
-                        console.log('Statistics updated');
+                if (data && (data.projectsDone || data.happyClients || data.yearsExperience)) {
+                    var statsSection = document.getElementById('statisticsSection');
+                    if (statsSection) {
+                        statsSection.style.display = 'block';
+                        
+                        if (data.projectsDone) {
+                            document.getElementById('statProjects').textContent = data.projectsDone;
+                        }
+                        if (data.happyClients) {
+                            document.getElementById('statClients').textContent = data.happyClients;
+                        }
+                        if (data.locations) {
+                            document.getElementById('statLocations').textContent = data.locations;
+                        }
+                        if (data.yearsExperience) {
+                            document.getElementById('statExperience').textContent = data.yearsExperience;
+                        }
                     }
                 }
-                // Run counter after data is loaded
-                console.log('About to call animateStats');
-                animateStats();
             })
             .catch(function(err) {
-                console.error('Error fetching statistics:', err);
-                // Run counter with default values on error
-                animateStats();
+                console.log('Statistics not available:', err);
             });
-    })();
-    // Search functionality
-    const searchToggle = document.getElementById('searchToggle');
-    const searchModal = document.getElementById('searchModal');
-    const searchClose = document.getElementById('searchClose');
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
 
-    if (searchToggle && searchModal) {
-        searchToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            searchModal.style.display = 'block';
-            searchInput.focus();
-        });
-    }
+        // Search functionality
+        const searchToggle = document.getElementById('searchToggle');
+        const searchModal = document.getElementById('searchModal');
+        const searchClose = document.getElementById('searchClose');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
 
-    if (searchClose && searchModal) {
-        searchClose.addEventListener('click', function() {
-            searchModal.style.display = 'none';
-            searchInput.value = '';
-            searchResults.innerHTML = '';
-        });
-    }
+        if (searchToggle && searchModal) {
+            searchToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                searchModal.style.display = 'block';
+                searchInput.focus();
+            });
+        }
 
-    if (searchModal) {
-        searchModal.addEventListener('click', function(e) {
-            if (e.target === searchModal) {
+        if (searchClose && searchModal) {
+            searchClose.addEventListener('click', function() {
                 searchModal.style.display = 'none';
                 searchInput.value = '';
                 searchResults.innerHTML = '';
-            }
-        });
-    }
-
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const query = searchInput.value.trim();
-            if (query) {
-                performSearch(query);
-            }
-        });
-    }
-
-    function performSearch(query) {
-        // Simulate search functionality
-        const mockResults = [
-            {
-                title: 'Modern Residential Architecture',
-                description: 'Contemporary home design with sustainable materials and energy-efficient features.',
-                url: 'projects.html?search=' + encodeURIComponent(query)
-            },
-            {
-                title: 'Commercial Complex Design',
-                description: 'Innovative commercial space planning with modern amenities.',
-                url: 'projects.html?search=' + encodeURIComponent(query)
-            },
-            {
-                title: 'Interior Design Services',
-                description: 'Complete interior design solutions for residential and commercial spaces.',
-                url: '#services'
-            }
-        ];
-
-        const filteredResults = mockResults.filter(item => 
-            item.title.toLowerCase().includes(query.toLowerCase()) || 
-            item.description.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (filteredResults.length > 0) {
-            searchResults.innerHTML = DOMPurify.sanitize(filteredResults.map(result => `
-                <div class="search-result-item">
-                    <div class="search-result-title">${DOMPurify.sanitize(result.title)}</div>
-                    <div class="search-result-description">${DOMPurify.sanitize(result.description)}</div>
-                </div>
-            `).join(''));
-        } else {
-            searchResults.innerHTML = DOMPurify.sanitize('<p>No results found for "' + DOMPurify.sanitize(query) + '". Try different keywords.</p>');
+            });
         }
-    }
+
+        if (searchModal) {
+            searchModal.addEventListener('click', function(e) {
+                if (e.target === searchModal) {
+                    searchModal.style.display = 'none';
+                    searchInput.value = '';
+                    searchResults.innerHTML = '';
+                }
+            });
+        }
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) {
+                    performSearch(query);
+                }
+            });
+        }
+
+        function performSearch(query) {
+            // Simulate search functionality
+            const mockResults = [
+                {
+                    title: 'Modern Residential Architecture',
+                    description: 'Contemporary home design with sustainable materials and energy-efficient features.',
+                    url: '../projects/?search=' + encodeURIComponent(query)
+                },
+                {
+                    title: 'Commercial Complex Design',
+                    description: 'Innovative commercial space planning with modern amenities.',
+                    url: '../projects/?search=' + encodeURIComponent(query)
+                },
+                {
+                    title: 'Interior Design Services',
+                    description: 'Complete interior design solutions for residential and commercial spaces.',
+                    url: '../services/'
+                }
+            ];
+
+            const filteredResults = mockResults.filter(item => 
+                item.title.toLowerCase().includes(query.toLowerCase()) || 
+                item.description.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filteredResults.length > 0) {
+                searchResults.innerHTML = filteredResults.map(result => `
+                    <div class="search-result-item">
+                        <div class="search-result-title">${result.title}</div>
+                        <div class="search-result-description">${result.description}</div>
+                        <a href="${result.url}" class="search-result-link">View</a>
+                    </div>
+                `).join('');
+            } else {
+                searchResults.innerHTML = '<p class="no-results">No results found for "' + query + '"</p>';
+            }
+        }
+    });
     </script>
 </body>
 </html>

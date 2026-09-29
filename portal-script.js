@@ -616,6 +616,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
                 window.scrollTo(0, 0);
                 if (sectionId === 'admin-analytics' && typeof initAdminCharts === 'function') initAdminCharts();
+                if (sectionId === 'admin-team') renderAdminTeamTable();
                 if (window.innerWidth <= 768) setMobileSidebarOpen(false);
             });
         });
@@ -900,6 +901,7 @@ function setupAdminInteractions(currentUser) {
 
     renderAdminClientsTable();
     renderAdminForemenTable();
+    renderAdminTeamTable();
 
     async function renderAdminClientsTable() {
         var tbody = adminClientsTableBody;
@@ -1040,6 +1042,169 @@ function setupAdminInteractions(currentUser) {
             alert('Failed to delete foreman. Please try again.');
         });
     };
+
+    // Team Management Functions
+    async function renderAdminTeamTable() {
+        var tbody = document.getElementById('adminTeamTableBody');
+        if (!tbody) return;
+        
+        var authToken = sessionStorage.getItem('authToken');
+        
+        try {
+            var response = await fetch(window.API_BASE + '/api/team', {
+                headers: { 'Authorization': 'Bearer ' + authToken }
+            });
+            
+            if (!response.ok) throw new Error('Failed to load team members');
+            
+            var teamMembers = await response.json();
+            
+            if (teamMembers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No team members found. Add your first team member to get started.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = teamMembers.map(function(member) {
+                var photoHtml = member.photo 
+                    ? '<img src="' + member.photo + '" alt="' + member.name + '" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">'
+                    : '<div style="width:50px;height:50px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:#6b7280;">' + member.name.charAt(0) + '</div>';
+                
+                var specialtiesHtml = Array.isArray(member.specialties) && member.specialties.length > 0
+                    ? member.specialties.map(function(s) { return '<span style="display:inline-block;padding:2px 8px;margin:2px;background:#e5e7eb;border-radius:12px;font-size:0.75rem;">' + s + '</span>'; }).join('')
+                    : '<span style="color:#9ca3af;font-size:0.875rem;">No specialties</span>';
+                
+                return '<tr>' +
+                    '<td>' + photoHtml + '</td>' +
+                    '<td>' + member.name + '</td>' +
+                    '<td>' + member.role + '</td>' +
+                    '<td>' + specialtiesHtml + '</td>' +
+                    '<td>' + member.order + '</td>' +
+                    '<td><span style="padding:4px 12px;border-radius:12px;font-size:0.75rem;background:' + (member.isActive ? '#dcfce7;color:#166534' : '#fee2e2;color:#991b1b') + ';">' + (member.isActive ? 'Active' : 'Inactive') + '</span></td>' +
+                    '<td>' +
+                        '<button class="btn btn-sm" onclick="editTeamMember(\'' + member._id + '\')" style="margin-right:4px;"><i class="fas fa-edit"></i></button>' +
+                        '<button class="btn btn-sm btn-danger" onclick="deleteTeamMember(\'' + member._id + '\')"><i class="fas fa-trash"></i></button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+            
+        } catch (error) {
+            console.error('Error loading team members:', error);
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">Failed to load team members. Please try again.</td></tr>';
+        }
+    }
+
+    window.editTeamMember = function(teamMemberId) {
+        var authToken = sessionStorage.getItem('authToken');
+        
+        fetch(window.API_BASE + '/api/team/' + teamMemberId, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function(response) {
+            if (!response.ok) throw new Error('Failed to load team member');
+            return response.json();
+        }).then(function(member) {
+            var newName = prompt('Name:', member.name);
+            var newRole = prompt('Role:', member.role);
+            var newBio = prompt('Bio:', member.bio);
+            var newPhoto = prompt('Photo URL (leave empty to keep current):', member.photo || '');
+            var newSpecialties = prompt('Specialties (comma-separated):', Array.isArray(member.specialties) ? member.specialties.join(', ') : '');
+            var newOrder = prompt('Display Order:', member.order);
+            
+            if (newName === null || newRole === null || newBio === null) return;
+            
+            var updateData = {
+                name: newName,
+                role: newRole,
+                bio: newBio,
+                specialties: newSpecialties ? newSpecialties.split(',').map(function(s) { return s.trim(); }) : [],
+                order: newOrder ? parseInt(newOrder) : member.order
+            };
+            
+            if (newPhoto) updateData.photo = newPhoto;
+            
+            return fetch(window.API_BASE + '/api/team/' + teamMemberId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                },
+                body: JSON.stringify(updateData)
+            });
+        }).then(function(response) {
+            if (!response.ok) throw new Error('Failed to update team member');
+            return response.json();
+        }).then(function() {
+            renderAdminTeamTable();
+            alert('Team member updated successfully!');
+        }).catch(function(error) {
+            console.error('Error updating team member:', error);
+            alert('Failed to update team member: ' + error.message);
+        });
+    };
+
+    window.deleteTeamMember = function(teamMemberId) {
+        if (!confirm('Are you sure you want to delete this team member?')) return;
+        
+        var authToken = sessionStorage.getItem('authToken');
+        
+        fetch(window.API_BASE + '/api/team/' + teamMemberId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        }).then(function(response) {
+            if (!response.ok) throw new Error('Failed to delete team member');
+            return response.json();
+        }).then(function() {
+            renderAdminTeamTable();
+            alert('Team member deleted successfully!');
+        }).catch(function(error) {
+            console.error('Error deleting team member:', error);
+            alert('Failed to delete team member: ' + error.message);
+        });
+    };
+
+    // Add Team Member button handler
+    var adminAddTeamMemberBtn = document.getElementById('adminAddTeamMemberBtn');
+    if (adminAddTeamMemberBtn) {
+        adminAddTeamMemberBtn.addEventListener('click', function() {
+            var authToken = sessionStorage.getItem('authToken');
+            
+            var name = prompt('Team Member Name:');
+            var role = prompt('Role/Position:');
+            var bio = prompt('Bio:');
+            var photo = prompt('Photo URL (optional):');
+            var specialties = prompt('Specialties (comma-separated, optional):');
+            
+            if (!name || !role || !bio) {
+                alert('Name, role, and bio are required.');
+                return;
+            }
+            
+            var teamMemberData = {
+                name: name,
+                role: role,
+                bio: bio,
+                photo: photo || '',
+                specialties: specialties ? specialties.split(',').map(function(s) { return s.trim(); }) : []
+            };
+            
+            fetch(window.API_BASE + '/api/team', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                },
+                body: JSON.stringify(teamMemberData)
+            }).then(function(response) {
+                if (!response.ok) throw new Error('Failed to create team member');
+                return response.json();
+            }).then(function() {
+                renderAdminTeamTable();
+                alert('Team member added successfully!');
+            }).catch(function(error) {
+                console.error('Error creating team member:', error);
+                alert('Failed to create team member: ' + error.message);
+            });
+        });
+    }
 
     // Invoices
     var newInvoiceBtn = document.getElementById('adminNewInvoiceBtn');

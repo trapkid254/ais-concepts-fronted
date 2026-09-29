@@ -34,6 +34,7 @@
                     <li><a href="#" data-section="admin-dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
                     <li><a href="#" data-section="admin-approvals"><i class="fas fa-user-check"></i> Pending approvals</a></li>
                     <li><a href="#" data-section="admin-users"><i class="fas fa-users"></i> User Management</a></li>
+                    <li><a href="#" data-section="admin-team"><i class="fas fa-user-tie"></i> Team Management</a></li>
                     <li><a href="#" data-section="admin-foremen"><i class="fas fa-hard-hat"></i> Foreman Management</a></li>
                     <li><a href="#" data-section="admin-clients"><i class="fas fa-handshake"></i> Client CRM</a></li>
                     <li><a href="#" data-section="admin-projects"><i class="fas fa-building"></i> Projects</a></li>
@@ -215,6 +216,32 @@
                     <tbody>
                         <!-- Users will be loaded dynamically -->
                     </tbody>
+                </table>
+            </section>
+            
+            <!-- Team Management -->
+            <section id="admin-team" class="table-container portal-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Team Management</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-primary" id="adminAddTeamMemberBtn">
+                            <i class="fas fa-user-plus"></i> Add Team Member
+                        </button>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Specialties</th>
+                            <th>Order</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTeamTableBody"></tbody>
                 </table>
             </section>
             
