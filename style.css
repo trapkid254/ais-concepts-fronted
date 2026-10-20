@@ -11,19 +11,19 @@
     --shadow: rgba(0, 0, 0, 0.1);
     --nav-bg: rgba(255, 255, 255, 0.95);
     --hero-overlay: linear-gradient(to top, rgba(12, 20, 28, 0.72) 0%, rgba(12, 20, 28, 0.38) 45%, rgba(12, 20, 28, 0.22) 100%);
-    --footer-bg: linear-gradient(180deg, #f9fafb 0%, #eef2f6 100%);
-    --footer-border-top: rgba(15, 118, 110, 0.2);
-    --footer-heading-color: var(--text-primary);
-    --footer-text-color: var(--text-secondary);
-    --footer-link-color: var(--text-tertiary);
-    --footer-link-hover: #0f766e;
-    --footer-divider: var(--border-color);
-    --footer-muted: var(--text-tertiary);
-    --footer-input-bg: #ffffff;
-    --footer-input-border: var(--border-color);
-    --footer-input-text: var(--text-primary);
-    --footer-social-bg: #f3f4f6;
-    --footer-social-color: var(--text-tertiary);
+    --footer-bg: linear-gradient(180deg, #0f766e 0%, #0d5f58 100%);
+    --footer-border-top: rgba(255, 255, 255, 0.1);
+    --footer-heading-color: #ffffff;
+    --footer-text-color: #e5e7eb;
+    --footer-link-color: #d1d5db;
+    --footer-link-hover: #ffffff;
+    --footer-divider: rgba(255, 255, 255, 0.2);
+    --footer-muted: #9ca3af;
+    --footer-input-bg: rgba(255, 255, 255, 0.1);
+    --footer-input-border: rgba(255, 255, 255, 0.2);
+    --footer-input-text: #ffffff;
+    --footer-social-bg: rgba(255, 255, 255, 0.1);
+    --footer-social-color: #ffffff;
     --portfolio-card-bg: #ffffff;
     --portfolio-image-bg: #f3f4f6;
 }
@@ -40,19 +40,19 @@
     --shadow: rgba(0, 0, 0, 0.3);
     --nav-bg: rgba(15, 23, 42, 0.95);
     --hero-overlay: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 45%, rgba(0, 0, 0, 0.3) 100%);
-    --footer-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
-    --footer-border-top: rgba(15, 118, 110, 0.35);
-    --footer-heading-color: #e5e7eb;
-    --footer-text-color: #9ca3af;
-    --footer-link-color: #9ca3af;
-    --footer-link-hover: #99f6e4;
-    --footer-divider: rgba(148, 163, 184, 0.2);
-    --footer-muted: #94a3b8;
-    --footer-input-bg: #020617;
-    --footer-input-border: #1f2937;
-    --footer-input-text: #e5e7eb;
-    --footer-social-bg: #1e293b;
-    --footer-social-color: #94a3b8;
+    --footer-bg: linear-gradient(180deg, #0f766e 0%, #0d5f58 100%);
+    --footer-border-top: rgba(255, 255, 255, 0.1);
+    --footer-heading-color: #ffffff;
+    --footer-text-color: #e5e7eb;
+    --footer-link-color: #d1d5db;
+    --footer-link-hover: #ffffff;
+    --footer-divider: rgba(255, 255, 255, 0.2);
+    --footer-muted: #9ca3af;
+    --footer-input-bg: rgba(255, 255, 255, 0.1);
+    --footer-input-border: rgba(255, 255, 255, 0.2);
+    --footer-input-text: #ffffff;
+    --footer-social-bg: rgba(255, 255, 255, 0.1);
+    --footer-social-color: #ffffff;
     --portfolio-card-bg: #1e293b;
     --portfolio-image-bg: #334155;
 }
@@ -1958,7 +1958,7 @@ section {
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 30px;
     margin-bottom: 20px;
 }
@@ -2176,6 +2176,60 @@ section {
 .footer-contact-link:hover {
     color: var(--footer-link-hover);
     text-decoration: underline;
+}
+
+/* Footer Vlogs */
+.footer-vlogs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-vlog-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--footer-text-color);
+}
+
+.footer-vlog-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.footer-vlog-thumbnail {
+    width: 60px;
+    height: 40px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.footer-vlog-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.footer-vlog-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--footer-heading-color);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.footer-vlog-category {
+    font-size: 0.75rem;
+    color: var(--footer-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .contact-form-wrap .form-control {

@@ -448,6 +448,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     })();
 
+    /* ===== Footer: Load VLogs ===== */
+    (function () {
+        var vlogsContainer = document.getElementById('footerVlogsContainer');
+        if (vlogsContainer) {
+            fetch((window.API_BASE || '') + '/api/vlogs')
+                .then(function(response) {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return [];
+                })
+                .then(function(vlogs) {
+                    if (vlogs.length === 0) {
+                        vlogsContainer.innerHTML = '<p style="color: var(--footer-muted); font-size: 0.9rem;">No vlogs available yet.</p>';
+                        return;
+                    }
+
+                    var vlogsHtml = '<div class="footer-vlogs">';
+                    vlogs.slice(0, 3).forEach(function(vlog) {
+                        var thumbnail = vlog.thumbnail || 'https://via.placeholder.com/60x40?text=VLog';
+                        vlogsHtml += '<a href="' + vlog.youtubeUrl + '" target="_blank" class="footer-vlog-item">';
+                        vlogsHtml += '<img src="' + thumbnail + '" alt="' + (vlog.title || 'VLog') + '" class="footer-vlog-thumbnail">';
+                        vlogsHtml += '<div class="footer-vlog-info">';
+                        vlogsHtml += '<div class="footer-vlog-title">' + (vlog.title || 'VLog') + '</div>';
+                        vlogsHtml += '<div class="footer-vlog-category">' + (vlog.category || 'Video') + '</div>';
+                        vlogsHtml += '</div>';
+                        vlogsHtml += '</a>';
+                    });
+                    vlogsHtml += '</div>';
+                    vlogsContainer.innerHTML = vlogsHtml;
+                })
+                .catch(function() {
+                    vlogsContainer.innerHTML = '<p style="color: var(--footer-muted); font-size: 0.9rem;">Unable to load vlogs.</p>';
+                });
+        }
+    })();
+
     /* ===== Contact page form → API + email ===== */
     (function () {
         var form = document.getElementById('contactForm');

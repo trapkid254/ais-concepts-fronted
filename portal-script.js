@@ -4186,10 +4186,10 @@ window.editBlogPost = function(id) {
 
 window.deleteBlogPost = function(id) {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
-    
+
     var list = typeof getWebsiteBlogPosts === 'function' ? getWebsiteBlogPosts() : [];
     list = list.filter(function(p) { return String(p.id) !== String(id); });
-    
+
     if (typeof setWebsiteBlogPosts === 'function') {
         setWebsiteBlogPosts(list).then(function() {
             renderAdminBlogPosts();
@@ -4197,6 +4197,82 @@ window.deleteBlogPost = function(id) {
             alert('Could not delete blog post.');
         });
     }
+};
+
+async function renderAdminVlogs() {
+    var tbody = document.getElementById('adminVlogsBody');
+    if (!tbody) return;
+    var vlogs = [];
+    try {
+        var response = await fetch((window.API_BASE || '') + '/api/vlogs');
+        if (response.ok) {
+            vlogs = await response.json();
+        }
+    } catch (e) { vlogs = []; }
+    tbody.innerHTML = vlogs.length ? vlogs.map(function (v) {
+        var optimizedImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(v.thumbnail || '', 'THUMBNAIL') : (v.thumbnail || '');
+        return '<tr>' +
+            '<td><img src="' + escapeHtml(optimizedImg) + '" alt="' + escapeHtml(v.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(v.title || '') + '</td>' +
+            '<td>' + escapeHtml(v.category || '') + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editVlog(\'' + escapeAttr(String(v._id)) + '\')" title="Edit vlog"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteVlog(\'' + escapeAttr(String(v._id)) + '\')" title="Delete vlog"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:40px;">No vlogs yet. Click "Add VLog" to get started.</td></tr>';
+}
+
+window.editVlog = function(id) {
+    fetch((window.API_BASE || '') + '/api/vlogs')
+        .then(function(r) { return r.json(); })
+        .then(function(vlogs) {
+            var vlog = vlogs.find(function(v) { return String(v._id) === String(id); });
+            if (!vlog) return;
+
+            var vlogModal = document.getElementById('adminVlogModal');
+            var vlogForm = document.getElementById('adminVlogForm');
+            var editIdField = document.getElementById('vlogEditId');
+            var modalTitle = vlogModal.querySelector('h2');
+
+            if (document.getElementById('vlogTitle')) document.getElementById('vlogTitle').value = vlog.title || '';
+            if (document.getElementById('vlogYoutubeUrl')) document.getElementById('vlogYoutubeUrl').value = vlog.youtubeUrl || '';
+            if (document.getElementById('vlogCategory')) document.getElementById('vlogCategory').value = vlog.category || '';
+            if (document.getElementById('vlogDescription')) document.getElementById('vlogDescription').value = vlog.description || '';
+            if (editIdField) editIdField.value = String(vlog._id);
+            if (modalTitle) modalTitle.textContent = 'Edit VLog';
+
+            if (vlogModal) vlogModal.classList.add('open');
+        });
+};
+
+window.deleteVlog = function(id) {
+    if (!confirm('Are you sure you want to delete this vlog?')) return;
+
+    fetch((window.API_BASE || '') + '/api/vlogs')
+        .then(function(r) { return r.json(); })
+        .then(function(vlogs) {
+            vlogs = vlogs.filter(function(v) { return String(v._id) !== String(id); });
+
+            var token = sessionStorage.getItem('authToken');
+            return fetch((window.API_BASE || '') + '/api/admin/vlogs', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(vlogs)
+            });
+        })
+        .then(function(response) {
+            if (response.ok) {
+                renderAdminVlogs();
+            } else {
+                alert('Could not delete vlog.');
+            }
+        })
+        .catch(function() {
+            alert('Could not delete vlog.');
+        });
 };
 
 async function renderAdminWebsiteServices() {
@@ -4491,6 +4567,7 @@ async function loadAdminDashboard() {
     await renderAdminWebsiteServices();
     await renderAdminFAQsInContent();
     await renderAdminBlogPosts();
+    await renderAdminVlogs();
 
     // Website project/service modals
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');
@@ -4765,6 +4842,86 @@ async function loadAdminDashboard() {
                 savePost(existing ? existing.image : 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(title));
             } else {
                 savePost('https://via.placeholder.com/400x300?text=' + encodeURIComponent(title));
+            }
+        });
+    }
+
+    // Vlog modal
+    var addVlogBtn = document.getElementById('adminAddVlogBtn');
+    var vlogModal = document.getElementById('adminVlogModal');
+    var vlogForm = document.getElementById('adminVlogForm');
+    if (addVlogBtn && vlogModal) addVlogBtn.addEventListener('click', function () {
+        if (vlogForm) vlogForm.reset();
+        vlogModal.classList.add('open');
+    });
+    document.querySelectorAll('[data-close="adminVlogModal"]').forEach(function (el) { el.addEventListener('click', function () { if (vlogModal) vlogModal.classList.remove('open'); }); });
+    if (vlogModal) vlogModal.addEventListener('click', function (e) { if (e.target === vlogModal) vlogModal.classList.remove('open'); });
+    if (vlogForm) {
+        vlogForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var title = document.getElementById('vlogTitle').value;
+            var youtubeUrl = document.getElementById('vlogYoutubeUrl').value;
+            var category = document.getElementById('vlogCategory').value;
+            var description = document.getElementById('vlogDescription').value;
+            var fileInput = document.getElementById('vlogThumbnail');
+            var file = fileInput && fileInput.files[0];
+            var editIdField = document.getElementById('vlogEditId');
+            var editId = editIdField ? editIdField.value : null;
+            var modalTitle = vlogModal.querySelector('h2');
+
+            function saveVlog(thumbnail) {
+                fetch((window.API_BASE || '') + '/api/vlogs')
+                    .then(function(r) { return r.json(); })
+                    .then(function(vlogs) {
+                        if (editId) {
+                            // Edit existing vlog
+                            var index = vlogs.findIndex(function(v) { return String(v._id) === String(editId); });
+                            if (index !== -1) {
+                                vlogs[index] = Object.assign({}, vlogs[index], { title: title, youtubeUrl: youtubeUrl, category: category, description: description, thumbnail: thumbnail });
+                            }
+                        } else {
+                            // Create new vlog
+                            vlogs.push({ title: title, youtubeUrl: youtubeUrl, category: category, description: description, thumbnail: thumbnail });
+                        }
+
+                        var token = sessionStorage.getItem('authToken');
+                        return fetch((window.API_BASE || '') + '/api/admin/vlogs', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify(vlogs)
+                        });
+                    })
+                    .then(function(response) {
+                        if (response.ok) {
+                            vlogForm.reset();
+                            if (editIdField) editIdField.value = '';
+                            if (modalTitle) modalTitle.textContent = 'Add VLog';
+                            vlogModal.classList.remove('open');
+                            renderAdminVlogs();
+                        } else {
+                            alert('Could not save vlog.');
+                        }
+                    })
+                    .catch(function() { alert('Could not save vlog.'); });
+            }
+
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function() { saveVlog(reader.result); };
+                reader.readAsDataURL(file);
+            } else if (editId) {
+                // Keep existing thumbnail if editing and no new file
+                fetch((window.API_BASE || '') + '/api/vlogs')
+                    .then(function(r) { return r.json(); })
+                    .then(function(vlogs) {
+                        var existing = vlogs.find(function(v) { return String(v._id) === String(editId); });
+                        saveVlog(existing ? existing.thumbnail : '');
+                    });
+            } else {
+                saveVlog('');
             }
         });
     }

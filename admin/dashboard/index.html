@@ -798,6 +798,18 @@
                 </div>
 
                 <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">VLogs (YouTube Videos)</h3>
+                <p class="section-sub">Add or delete YouTube vlogs shown in the footer.</p>
+                <button type="button" class="btn btn-primary" id="adminAddVlogBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add VLog</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Thumbnail</th><th>Title</th><th>Category</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminVlogsBody"></tbody>
+                </table>
+                </div>
+
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
                 <h3 style="margin-top: 0;">Frequently Asked Questions (FAQs)</h3>
                 <p class="section-sub">Manage FAQs shown on the frontend FAQ page.</p>
                 <button type="button" class="btn btn-primary" id="adminAddFAQInContentBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add FAQ</button>
@@ -1431,6 +1443,38 @@
                             <input type="file" id="blogPostImage" accept="image/*">
                         </div>
                         <button type="submit" class="btn btn-primary">Add Post</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add VLog Modal -->
+            <div class="modal" id="adminVlogModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminVlogModal">&times;</span>
+                    <h2>Add VLog</h2>
+                    <form id="adminVlogForm">
+                        <input type="hidden" id="vlogEditId">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="vlogTitle" placeholder="VLog title">
+                        </div>
+                        <div class="form-group">
+                            <label>YouTube URL</label>
+                            <input type="text" id="vlogYoutubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <input type="text" id="vlogCategory" placeholder="e.g., Residential, Commercial">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="vlogDescription" rows="3" placeholder="Short description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Thumbnail Image</label>
+                            <input type="file" id="vlogThumbnail" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add VLog</button>
                     </form>
                 </div>
             </div>
