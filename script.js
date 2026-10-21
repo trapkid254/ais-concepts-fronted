@@ -3,53 +3,236 @@
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
 
-    /* ===== HERO VIDEO AUTOPLAY WITH USER INTERACTION ===== */
+    /* ===== HERO CAROUSEL ===== */
     (function() {
-        const videoPlayBtn = document.getElementById('videoPlayBtn');
-        const heroVideo = document.querySelector('.hero-video');
+        const carousel = document.getElementById('heroCarousel');
+        if (!carousel) return;
 
-        if (videoPlayBtn && heroVideo) {
-            // Force mute for iOS autoplay
-            heroVideo.muted = true;
+        // Load carousel items from API
+        fetch((window.API_BASE || '') + '/api/hero-carousel')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API error');
+                }
+                return response.json();
+            })
+            .then(carouselItems => {
+                if (carouselItems.length === 0) {
+                    // Fallback to default images if no carousel items
+                    carousel.innerHTML = `
+                        <div class="carousel-slides-container">
+                            <div class="carousel-slide">
+                                <img src="images/project1.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/project3.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/service1.jpg" alt="AIS Concepts Interior Design" class="carousel-image">
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/service2.jpg" alt="AIS Concepts Planning" class="carousel-image">
+                            </div>
+                        </div>
+                        <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
+                        <div class="carousel-indicators">
+                            <button class="carousel-indicator active" data-slide="0" aria-label="Slide 1"></button>
+                            <button class="carousel-indicator" data-slide="1" aria-label="Slide 2"></button>
+                            <button class="carousel-indicator" data-slide="2" aria-label="Slide 3"></button>
+                            <button class="carousel-indicator" data-slide="3" aria-label="Slide 4"></button>
+                        </div>
+                    `;
+                } else {
+                    // Build carousel from API data
+                    let slidesHtml = '<div class="carousel-slides-container">';
+                    let indicatorsHtml = '<div class="carousel-indicators">';
 
-            // Try to autoplay immediately (may be blocked)
-            heroVideo.play().then(() => {
-                // Autoplay worked
-                videoPlayBtn.style.display = 'none';
-                console.log('Video autoplay successful');
-            }).catch((error) => {
-                // Autoplay blocked - show play button
-                console.log('Video autoplay blocked:', error);
-                videoPlayBtn.style.display = 'flex';
+                    carouselItems.forEach((item, index) => {
+                        const altText = item.title || 'AIS Concepts Project';
+                        slidesHtml += `
+                            <div class="carousel-slide">
+                                <img src="${item.image}" alt="${altText}" class="carousel-image">
+                            </div>
+                        `;
+                        indicatorsHtml += `
+                            <button class="carousel-indicator ${index === 0 ? 'active' : ''}" data-slide="${index}" aria-label="Slide ${index + 1}"></button>
+                        `;
+                    });
 
-                // Add click listener for manual play
-                videoPlayBtn.addEventListener('click', function() {
-                    heroVideo.muted = true;
-                    heroVideo.play();
-                    videoPlayBtn.style.display = 'none';
+                    slidesHtml += '</div>';
+                    indicatorsHtml += '</div>';
+                    carousel.innerHTML = slidesHtml + `
+                        <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
+                    ` + indicatorsHtml;
+                }
+
+                // Initialize carousel functionality
+                initCarousel();
+            })
+            .catch(error => {
+                console.error('Error loading hero carousel:', error);
+                // Fallback to default images on error
+                carousel.innerHTML = `
+                    <div class="carousel-slides-container">
+                        <div class="carousel-slide">
+                            <img src="images/project1.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/project3.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/service1.jpg" alt="AIS Concepts Interior Design" class="carousel-image">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/service2.jpg" alt="AIS Concepts Planning" class="carousel-image">
+                        </div>
+                    </div>
+                    <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
+                    <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
+                    <div class="carousel-indicators">
+                        <button class="carousel-indicator active" data-slide="0" aria-label="Slide 1"></button>
+                        <button class="carousel-indicator" data-slide="1" aria-label="Slide 2"></button>
+                        <button class="carousel-indicator" data-slide="2" aria-label="Slide 3"></button>
+                        <button class="carousel-indicator" data-slide="3" aria-label="Slide 4"></button>
+                    </div>
+                `;
+                initCarousel();
+            });
+
+        function initCarousel() {
+            const slidesContainer = carousel.querySelector('.carousel-slides-container');
+            const slides = carousel.querySelectorAll('.carousel-slide');
+            const indicators = carousel.querySelectorAll('.carousel-indicator');
+            const prevBtn = carousel.querySelector('.carousel-nav-arrow.prev');
+            const nextBtn = carousel.querySelector('.carousel-nav-arrow.next');
+            
+            if (!slidesContainer || slides.length === 0) return;
+            
+            let currentSlide = 0;
+            const interval = 5000; // 5 seconds per slide
+            let isAnimating = false;
+
+            function updateCarousel() {
+                const translateX = -(currentSlide * 100);
+                slidesContainer.style.transform = `translateX(${translateX}%)`;
+                
+                // Update indicators
+                indicators.forEach((indicator, index) => {
+                    indicator.classList.toggle('active', index === currentSlide);
+                });
+            }
+
+            function nextSlide() {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                currentSlide = (currentSlide + 1) % slides.length;
+                updateCarousel();
+                
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 600); // Match transition duration
+            }
+
+            function prevSlide() {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                updateCarousel();
+                
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 600); // Match transition duration
+            }
+
+            function goToSlide(index) {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                currentSlide = index;
+                updateCarousel();
+                
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 600); // Match transition duration
+            }
+
+            // Auto-advance slides
+            let carouselInterval = setInterval(nextSlide, interval);
+
+            // Navigation arrows
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearInterval(carouselInterval);
+                    prevSlide();
+                    carouselInterval = setInterval(nextSlide, interval);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearInterval(carouselInterval);
+                    nextSlide();
+                    carouselInterval = setInterval(nextSlide, interval);
+                });
+            }
+
+            // Click handlers for indicators
+            indicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearInterval(carouselInterval);
+                    goToSlide(index);
+                    carouselInterval = setInterval(nextSlide, interval);
                 });
             });
 
-            // Hide play button when video starts playing
-            heroVideo.addEventListener('play', function() {
-                videoPlayBtn.style.display = 'none';
+            // Pause on hover
+            carousel.addEventListener('mouseenter', () => {
+                clearInterval(carouselInterval);
             });
 
-            // Show play button when video is paused
-            heroVideo.addEventListener('pause', function() {
-                if (!heroVideo.ended) {
-                    videoPlayBtn.style.display = 'flex';
-                }
+            carousel.addEventListener('mouseleave', () => {
+                carouselInterval = setInterval(nextSlide, interval);
             });
 
-            // iOS-specific: Try to play on first interaction
-            document.addEventListener('touchstart', function playOnTouch() {
-                if (heroVideo.paused) {
-                    heroVideo.play().then(() => {
-                        videoPlayBtn.style.display = 'none';
-                    }).catch((e) => console.log('iOS play on touch failed:', e));
+            // Touch/swipe support for mobile
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            carousel.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            carousel.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                const diff = touchStartX - touchEndX;
+                
+                if (diff > swipeThreshold) {
+                    // Swipe left - go to next
+                    clearInterval(carouselInterval);
+                    nextSlide();
+                    carouselInterval = setInterval(nextSlide, interval);
+                } else if (diff < -swipeThreshold) {
+                    // Swipe right - go to previous
+                    clearInterval(carouselInterval);
+                    prevSlide();
+                    carouselInterval = setInterval(nextSlide, interval);
                 }
-            }, { once: true });
+            }
         }
     })();
 

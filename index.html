@@ -47,8 +47,9 @@
       gtag('config', 'G-HWW9C52T68');
     </script>
     
-    <!-- Preload hero video poster image for LCP optimization -->
-    <link rel="preload" href="images/hero-poster.jpg" as="image" fetchpriority="high">
+    <!-- Preload hero carousel images for LCP optimization -->
+    <link rel="preload" href="images/project1.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="images/project3.jpg" as="image">
     
     <!-- Additional SEO -->
     <meta name="theme-color" content="#ffffff">
@@ -248,20 +249,16 @@
     <div class="hero-fixed-wrap" id="heroFixedWrap">
     <section id="home" class="hero">
         <div class="hero-media-wrap" aria-hidden="true">
-            <video class="hero-video" autoplay muted loop playsinline preload="auto" webkit-playsinline poster="images/hero-poster.jpg" muted>
-                <source src="videos/hero-background.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+            <div class="hero-carousel" id="heroCarousel">
+                <div class="carousel-loading">Loading...</div>
+            </div>
             <div class="hero-overlay"></div>
-            <button class="video-play-btn" id="videoPlayBtn" aria-label="Play background video" style="display: none;">
-                <i class="fas fa-play"></i>
-            </button>
         </div>
         <div class="hero-inner">
         <div class="hero-content">
             <h1 class="hero-title"><span class="typewriter-title" data-typewriter="Shaping the Future of Architecture">Shaping the Future of Architecture</span></h1>
             <p class="hero-subtitle"><span class="typewriter-text" data-typewriter="Innovative design solutions for a sustainable tomorrow">Innovative design solutions for a sustainable tomorrow</span></p>
-            
+
             <!-- Stats Section in Hero -->
             <div class="hero-stats">
                 <div class="hero-stats-grid">

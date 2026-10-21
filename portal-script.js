@@ -4275,6 +4275,78 @@ window.deleteVlog = function(id) {
         });
 };
 
+// Hero Carousel Management
+async function renderAdminCarousel() {
+    var tbody = document.getElementById('adminCarouselBody');
+    if (!tbody) return;
+    var carouselItems = [];
+    try {
+        var response = await fetch((window.API_BASE || '') + '/api/hero-carousel');
+        if (response.ok) {
+            carouselItems = await response.json();
+        }
+    } catch (e) { carouselItems = []; }
+    tbody.innerHTML = carouselItems.length ? carouselItems.map(function (item) {
+        var optimizedImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(item.image || '', 'THUMBNAIL') : (item.image || '');
+        return '<tr>' +
+            '<td><img src="' + escapeHtml(optimizedImg) + '" alt="' + escapeHtml(item.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(item.title || '') + '</td>' +
+            '<td>' + escapeHtml((item.description || '').substring(0, 80) + (item.description && item.description.length > 80 ? '...' : '')) + '</td>' +
+            '<td>' + escapeHtml(String(item.sortOrder || 0)) + '</td>' +
+            '<td>' + (item.isActive ? '<span style="color:#20c4b4;">Active</span>' : '<span style="color:#ef4444;">Inactive</span>') + '</td>' +
+            '<td>' +
+            '<button class="btn-icon" onclick="editCarouselItem(\'' + escapeAttr(String(item._id)) + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
+            '<button class="btn-icon" onclick="deleteCarouselItem(\'' + escapeAttr(String(item._id)) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;">No carousel images yet. Click "Add Image" to get started.</td></tr>';
+}
+
+window.editCarouselItem = function(id) {
+    fetch((window.API_BASE || '') + '/api/hero-carousel')
+        .then(function(r) { return r.json(); })
+        .then(function(items) {
+            var item = items.find(function(i) { return String(i._id) === String(id); });
+            if (!item) return;
+
+            var carouselModal = document.getElementById('adminCarouselModal');
+            var carouselForm = document.getElementById('adminCarouselForm');
+            var editIdField = document.getElementById('carouselEditId');
+            var modalTitle = carouselModal.querySelector('h2');
+
+            if (document.getElementById('carouselImage')) document.getElementById('carouselImage').value = item.image || '';
+            if (document.getElementById('carouselTitle')) document.getElementById('carouselTitle').value = item.title || '';
+            if (document.getElementById('carouselDescription')) document.getElementById('carouselDescription').value = item.description || '';
+            if (document.getElementById('carouselProjectId')) document.getElementById('carouselProjectId').value = item.projectId || '';
+            if (document.getElementById('carouselSortOrder')) document.getElementById('carouselSortOrder').value = item.sortOrder || 0;
+            if (document.getElementById('carouselIsActive')) document.getElementById('carouselIsActive').checked = item.isActive;
+            if (editIdField) editIdField.value = String(item._id);
+            if (modalTitle) modalTitle.textContent = 'Edit Carousel Image';
+
+            if (carouselModal) carouselModal.classList.add('open');
+        });
+};
+
+window.deleteCarouselItem = function(id) {
+    if (!confirm('Are you sure you want to delete this carousel image?')) return;
+    var token = sessionStorage.getItem('token');
+    fetch((window.API_BASE || '') + '/api/admin/hero-carousel/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(function(response) {
+        if (response.ok) {
+            renderAdminCarousel();
+        } else {
+            alert('Could not delete carousel image.');
+        }
+    })
+    .catch(function() {
+        alert('Could not delete carousel image.');
+    });
+};
+
 async function renderAdminWebsiteServices() {
     var tbody = document.getElementById('adminWebsiteServicesBody');
     if (!tbody) return;
@@ -4568,6 +4640,7 @@ async function loadAdminDashboard() {
     await renderAdminFAQsInContent();
     await renderAdminBlogPosts();
     await renderAdminVlogs();
+    await renderAdminCarousel();
 
     // Website project/service modals
     var addWebProjBtn = document.getElementById('adminAddWebsiteProjectBtn');
@@ -4923,6 +4996,65 @@ async function loadAdminDashboard() {
             } else {
                 saveVlog('');
             }
+        });
+    }
+
+    // Carousel modal
+    var addCarouselBtn = document.getElementById('adminAddCarouselBtn');
+    var carouselModal = document.getElementById('adminCarouselModal');
+    var carouselForm = document.getElementById('adminCarouselForm');
+    if (addCarouselBtn && carouselModal) addCarouselBtn.addEventListener('click', function () {
+        if (carouselForm) carouselForm.reset();
+        carouselModal.classList.add('open');
+    });
+    document.querySelectorAll('[data-close="adminCarouselModal"]').forEach(function (el) { el.addEventListener('click', function () { if (carouselModal) carouselModal.classList.remove('open'); }); });
+    if (carouselModal) carouselModal.addEventListener('click', function (e) { if (e.target === carouselModal) carouselModal.classList.remove('open'); });
+    if (carouselForm) {
+        carouselForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var image = document.getElementById('carouselImage').value;
+            var title = document.getElementById('carouselTitle').value;
+            var description = document.getElementById('carouselDescription').value;
+            var projectId = document.getElementById('carouselProjectId').value;
+            var sortOrder = parseInt(document.getElementById('carouselSortOrder').value) || 0;
+            var isActive = document.getElementById('carouselIsActive').checked;
+            var editIdField = document.getElementById('carouselEditId');
+            var editId = editIdField ? editIdField.value : null;
+            var modalTitle = carouselModal.querySelector('h2');
+            var token = sessionStorage.getItem('authToken');
+
+            var data = {
+                image: image,
+                title: title,
+                description: description,
+                projectId: projectId || null,
+                sortOrder: sortOrder,
+                isActive: isActive
+            };
+
+            var url = editId ? (window.API_BASE || '') + '/api/admin/hero-carousel/' + editId : (window.API_BASE || '') + '/api/admin/hero-carousel';
+            var method = editId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(data)
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    carouselForm.reset();
+                    if (editIdField) editIdField.value = '';
+                    if (modalTitle) modalTitle.textContent = 'Add Carousel Image';
+                    carouselModal.classList.remove('open');
+                    renderAdminCarousel();
+                } else {
+                    alert('Could not save carousel image.');
+                }
+            })
+            .catch(function() { alert('Could not save carousel image.'); });
         });
     }
 

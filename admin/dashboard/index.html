@@ -810,6 +810,18 @@
                 </div>
 
                 <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
+                <h3 style="margin-top: 0;">Hero Carousel</h3>
+                <p class="section-sub">Manage images shown in the homepage hero carousel.</p>
+                <button type="button" class="btn btn-primary" id="adminAddCarouselBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Image</button>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Image</th><th>Title</th><th>Description</th><th>Order</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminCarouselBody"></tbody>
+                </table>
+                </div>
+
+                <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
                 <h3 style="margin-top: 0;">Frequently Asked Questions (FAQs)</h3>
                 <p class="section-sub">Manage FAQs shown on the frontend FAQ page.</p>
                 <button type="button" class="btn btn-primary" id="adminAddFAQInContentBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add FAQ</button>
@@ -1475,6 +1487,44 @@
                             <input type="file" id="vlogThumbnail" accept="image/*">
                         </div>
                         <button type="submit" class="btn btn-primary">Add VLog</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Hero Carousel Modal -->
+            <div class="modal" id="adminCarouselModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminCarouselModal">&times;</span>
+                    <h2>Add Carousel Image</h2>
+                    <form id="adminCarouselForm">
+                        <input type="hidden" id="carouselEditId">
+                        <div class="form-group">
+                            <label>Image URL</label>
+                            <input type="text" id="carouselImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label>Title (Optional)</label>
+                            <input type="text" id="carouselTitle" placeholder="Image title">
+                        </div>
+                        <div class="form-group">
+                            <label>Description (Optional)</label>
+                            <textarea id="carouselDescription" rows="3" placeholder="Short description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Project ID (Optional)</label>
+                            <input type="text" id="carouselProjectId" placeholder="Link to a project">
+                        </div>
+                        <div class="form-group">
+                            <label>Sort Order</label>
+                            <input type="number" id="carouselSortOrder" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="carouselIsActive" checked>
+                                Active
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Image</button>
                     </form>
                 </div>
             </div>
