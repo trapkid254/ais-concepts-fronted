@@ -13,8 +13,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Primary SEO Meta Tags -->
-    <title>Our Services | AIS Concepts - Architectural Design & Construction Services</title>
-    <meta name="description" content="Explore AIS Concepts' comprehensive architectural services including architectural design, interior design, master planning, feasibility studies, project management, construction supervision, and more.">
+    <title>Our Services | AIS Concepts - Art in Space</title>
+    <meta name="description" content="Explore architectural design, interiors, planning, technical documentation and project delivery services from AIS Concepts.">
     <meta name="keywords" content="architectural services Kenya, interior design, master planning, feasibility study, project management, construction supervision, renovation, 3D visualization, authority approvals, tender documentation">
     <meta name="author" content="AIS Concepts">
     <meta name="robots" content="index, follow">
@@ -23,16 +23,16 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://aisconcepts.com/services/">
-    <meta property="og:title" content="Our Services | AIS Concepts - Architectural Design & Construction Services">
-    <meta property="og:description" content="Explore AIS Concepts' comprehensive architectural services including design, planning, project management, and construction supervision.">
+    <meta property="og:title" content="Our Services | AIS Concepts - Art in Space">
+    <meta property="og:description" content="Explore architectural design, interiors, planning, technical documentation and project delivery services from AIS Concepts.">
     <meta property="og:image" content="https://aisconcepts.com/images/og-image.jpg?v=20240816">
     <meta property="og:site_name" content="AIS Concepts">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://aisconcepts.com/services/">
-    <meta property="twitter:title" content="Our Services | AIS Concepts - Architectural Design & Construction Services">
-    <meta property="twitter:description" content="Explore AIS Concepts' comprehensive architectural services including design, planning, project management, and construction supervision.">
+    <meta property="twitter:title" content="Our Services | AIS Concepts - Art in Space">
+    <meta property="twitter:description" content="Explore architectural design, interiors, planning, technical documentation and project delivery services from AIS Concepts.">
     <meta property="twitter:image" content="https://aisconcepts.com/images/og-image.jpg?v=20240816">
     
     <!-- Google tag (gtag.js) -->
@@ -282,6 +282,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="../services-page.css">
 </head>
 <body>
     <!-- Google Tag Manager (noscript) -->
@@ -371,16 +372,86 @@
         </ul>
     </nav>
 
-    <section class="services-section">
-        <div class="container" style="text-align: center;">
-            <h2 class="section-title typewriter-title" data-typewriter="Our Services">Our Services</h2>
-            <p class="section-subtitle typewriter-text" data-typewriter="Comprehensive architectural and construction solutions">Comprehensive architectural and construction solutions</p>
-            
-            <div class="service-filters" id="serviceFilters"></div>
-            
-            <div class="services-grid" id="servicesGrid"></div>
-        </div>
-    </section>
+    <main class="services-page">
+        <section class="services-hero" id="servicesHero" aria-labelledby="servicesTitle">
+            <div class="services-hero-copy">
+                <p class="services-eyebrow">Our expertise / AIS Concepts Ltd</p>
+                <h1 id="servicesTitle">Spaces Designed With Purpose. <span>Built With Vision.</span></h1>
+                <p>From architectural concepts and interior environments to spatial planning and project delivery, AIS Concepts transforms ideas into thoughtful, functional and inspiring spaces.</p>
+                <div class="services-hero-actions">
+                    <a class="services-button" href="#servicesCatalogue">Explore our services <span aria-hidden="true">↓</span></a>
+                    <a class="services-button services-button-secondary" href="../contact/">Discuss your project <span aria-hidden="true">-&gt;</span></a>
+                </div>
+            </div>
+            <div class="services-hero-visual" id="servicesHeroDrawing"></div>
+        </section>
+
+        <section class="services-catalogue" id="servicesCatalogue" aria-labelledby="servicesCatalogueTitle">
+            <div class="services-section-heading">
+                <div>
+                    <p class="section-kicker">What we do</p>
+                    <h2 id="servicesCatalogueTitle">Integrated Design &amp;<br>Project Solutions</h2>
+                </div>
+                <p>Thoughtful design, technical coordination and project expertise to help bring spaces and ideas to life.</p>
+            </div>
+            <div id="servicesCatalogueContent"></div>
+        </section>
+
+        <section class="service-detail" id="serviceDetail" aria-live="polite" hidden></section>
+
+        <section class="services-approach" id="servicesApproach" aria-labelledby="approachTitle">
+            <div class="approach-heading">
+                <p class="section-kicker">Our approach</p>
+                <h2 id="approachTitle">From First Idea to Real-World Space</h2>
+                <p>Each engagement is shaped around the project's needs and the services agreed with the client. These stages offer a considered way to move an idea forward.</p>
+            </div>
+            <div class="approach-steps">
+                <article class="approach-step">
+                    <span>01 / DISCOVER</span>
+                    <h3>Understand</h3>
+                    <p>Clarify objectives, requirements, site conditions and project constraints.</p>
+                </article>
+                <article class="approach-step">
+                    <span>02 / DESIGN</span>
+                    <h3>Explore</h3>
+                    <p>Consider concepts, spatial possibilities and directions appropriate to the project.</p>
+                </article>
+                <article class="approach-step">
+                    <span>03 / DEVELOP</span>
+                    <h3>Coordinate</h3>
+                    <p>Refine the selected direction and coordinate the required technical information.</p>
+                </article>
+                <article class="approach-step">
+                    <span>04 / DELIVER</span>
+                    <h3>Support</h3>
+                    <p>Support implementation through the services included in the agreed engagement.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="services-principles" id="servicesPrinciples" aria-labelledby="principlesTitle">
+            <div class="principles-copy">
+                <p class="section-kicker">A considered way of working</p>
+                <h2 id="principlesTitle">Design that starts with the people and place.</h2>
+                <p>Good spaces respond to their context and the people who use them. Our work brings design intent, spatial function and project requirements into the same conversation.</p>
+            </div>
+            <div class="principles-list">
+                <article class="principle"><span>01</span><h3>Purpose before form</h3></article>
+                <article class="principle"><span>02</span><h3>Care for function and detail</h3></article>
+                <article class="principle"><span>03</span><h3>Respect for context and constraints</h3></article>
+                <article class="principle"><span>04</span><h3>Collaboration through the process</h3></article>
+            </div>
+        </section>
+
+        <section class="services-cta" id="servicesCta" aria-labelledby="servicesCtaTitle">
+            <div class="services-cta-copy">
+                <p class="section-kicker">Start a conversation</p>
+                <h2 id="servicesCtaTitle">Let's Create Something Meaningful.</h2>
+                <p>Every successful project begins with a conversation. Tell us about your vision, and let's explore how AIS Concepts can help bring it to life.</p>
+            </div>
+            <a class="services-button services-button-gold" href="../contact/">Discuss your project <span aria-hidden="true">-&gt;</span></a>
+        </section>
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
@@ -447,220 +518,8 @@
     <script src="../api-config.js"></script>
     <script src="../api-client.js"></script>
     <script src="../services-data.js"></script>
+    <script src="../projects-data.js"></script>
     <script src="../script.js"></script>
-    <script>
-    (function() {
-        var params = new URLSearchParams(window.location.search);
-        var initialFilter = params.get('filter') || 'all';
-        
-        var serviceDetails = typeof getAllServiceDetails === 'function' ? getAllServiceDetails() : {};
-        var serviceCategories = typeof SERVICE_CATEGORIES !== 'undefined' ? SERVICE_CATEGORIES : Object.keys(serviceDetails);
-        
-        console.log('Service categories:', serviceCategories);
-        console.log('Service details keys:', Object.keys(serviceDetails));
-        
-        function renderFilterButtons() {
-            var container = document.getElementById('serviceFilters');
-            if (!container) return;
-            
-            var html = '<button type="button" class="filter-btn' + (initialFilter === 'all' ? ' active' : '') + '" data-filter="all">All Services</button>';
-            
-            serviceCategories.forEach(function(cat) {
-                var slug = cat.toLowerCase();
-                var active = initialFilter === slug ? ' active' : '';
-                html += '<button type="button" class="filter-btn' + active + '" data-filter="' + slug + '">' + cat + '</button>';
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        function renderServices(filter) {
-            var container = document.getElementById('servicesGrid');
-            if (!container) return;
-            
-            if (filter === 'all' || !filter) {
-                renderAllServices();
-            } else {
-                renderSingleService(filter);
-            }
-        }
-        
-        function renderAllServices() {
-            var container = document.getElementById('servicesGrid');
-            if (!container) return;
-            
-            container.classList.remove('single-view');
-            
-            if (serviceCategories.length === 0) {
-                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>No services found.</p></div>';
-                return;
-            }
-            
-            container.innerHTML = serviceCategories.map(function(cat) {
-                var key = cat.toLowerCase();
-                var details = serviceDetails[key];
-                
-                if (!details) {
-                    return '';
-                }
-                
-                return '<div class="service-card" onclick="selectService(\'' + key + '\')">' +
-                    '<div class="service-card-header">' +
-                    '<h3>' + details.title + '</h3>' +
-                    '</div>' +
-                    '<div class="service-card-body">' +
-                    '<p class="service-tagline">' + details.tagline + '</p>' +
-                    '<p class="service-description">' + details.description + '</p>' +
-                    '</div>' +
-                    '</div>';
-            }).join('');
-        }
-        
-        function renderSingleService(filter) {
-            var container = document.getElementById('servicesGrid');
-            if (!container) return;
-            
-            container.classList.add('single-view');
-            
-            var filterLower = filter.toLowerCase();
-            var matched = serviceCategories.find(function(cat) {
-                return cat.toLowerCase() === filterLower;
-            });
-            
-            if (!matched) {
-                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>Service not found.</p></div>';
-                return;
-            }
-            
-            var key = matched.toLowerCase();
-            var details = serviceDetails[key];
-            
-            if (!details) {
-                container.innerHTML = '<div class="no-service"><i class="fas fa-exclamation-circle"></i><p>Service details not found.</p></div>';
-                return;
-            }
-            
-            var deliverablesHtml = details.deliverables && details.deliverables.length 
-                ? '<div class="service-deliverables">' +
-                  '<h3>What we deliver</h3>' +
-                  '<ul class="deliverables-list">' +
-                  details.deliverables.map(function(item) {
-                      return '<li>' + item + '</li>';
-                  }).join('') +
-                  '</ul></div>'
-                : '';
-            
-            container.innerHTML = '<div class="service-detail-container">' +
-                '<div class="service-detail-header">' +
-                '<h2>' + details.title + '</h2>' +
-                '<p class="service-tagline">' + details.tagline + '</p>' +
-                '</div>' +
-                '<div class="service-detail-body">' +
-                '<p class="service-description">' + details.description + '</p>' +
-                deliverablesHtml +
-                '</div>' +
-                '</div>' +
-                '<div class="contact-form-wrap" style="max-width: 700px; margin: 40px auto 0;">' +
-                '<h3 style="text-align: center; margin-bottom: 30px;">Inquire About This Service</h3>' +
-                '<form id="serviceInquiryForm">' +
-                '<div class="form-group">' +
-                '<input type="text" id="serviceInquiryName" name="name" placeholder="Your Name" class="form-control" required>' +
-                '</div>' +
-                '<div class="form-group">' +
-                '<input type="email" id="serviceInquiryEmail" name="email" placeholder="Your Email" class="form-control" required>' +
-                '</div>' +
-                '<div class="form-group">' +
-                '<input type="tel" id="serviceInquiryPhone" name="phone" placeholder="Your Phone" class="form-control">' +
-                '</div>' +
-                '<div class="form-group">' +
-                '<textarea id="serviceInquiryMessage" name="message" placeholder="Your Message" rows="5" class="form-control" required></textarea>' +
-                '</div>' +
-                '<button type="submit" class="btn-primary" style="width: 100%;">Send Inquiry</button>' +
-                '</form>' +
-                '<div id="serviceInquirySuccess" style="display: none; text-align: center; padding: 20px; background: #d1fae5; border-radius: 8px; margin-top: 20px;">' +
-                '<p style="color: #065f46; margin: 0;">Thank you for your inquiry! We will get back to you soon.</p>' +
-                '</div>' +
-                '</div>';
-        }
-        
-        function selectService(key) {
-            var url = new URL(window.location);
-            url.searchParams.set('filter', key);
-            window.history.pushState({}, '', url);
-            
-            var buttons = document.querySelectorAll('#serviceFilters .filter-btn');
-            buttons.forEach(function(b) { b.classList.remove('active'); });
-            
-            var targetBtn = document.querySelector('#serviceFilters .filter-btn[data-filter="' + key + '"]');
-            if (targetBtn) {
-                targetBtn.classList.add('active');
-            }
-            
-            renderSingleService(key);
-        }
-        
-        function setupFilterButtons() {
-            var buttons = document.querySelectorAll('#serviceFilters .filter-btn');
-            buttons.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    buttons.forEach(function(b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                    
-                    var filter = btn.getAttribute('data-filter');
-                    renderServices(filter);
-                    
-                    var url = new URL(window.location);
-                    if (filter === 'all') {
-                        url.searchParams.delete('filter');
-                    } else {
-                        url.searchParams.set('filter', filter);
-                    }
-                    window.history.replaceState({}, '', url);
-                });
-            });
-        }
-        
-        renderFilterButtons();
-        renderServices(initialFilter);
-        setupFilterButtons();
-        
-        // Service inquiry form handling
-        function setupServiceInquiryForm() {
-            var form = document.getElementById('serviceInquiryForm');
-            if (!form) return;
-            
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                var name = document.getElementById('serviceInquiryName').value;
-                var email = document.getElementById('serviceInquiryEmail').value;
-                var phone = document.getElementById('serviceInquiryPhone').value;
-                var message = document.getElementById('serviceInquiryMessage').value;
-                
-                // Get service title from page
-                var serviceTitle = document.querySelector('.service-detail-header h2') ? document.querySelector('.service-detail-header h2').textContent : 'Unknown Service';
-
-                var subject = 'Service Inquiry: ' + serviceTitle;
-                var body = 'Name: ' + name + '\n' +
-                           'Email: ' + email + '\n' +
-                           'Phone: ' + (phone || 'Not provided') + '\n' +
-                           'Service: ' + serviceTitle + '\n\n' +
-                           'Message:\n' + message;
-
-                var mailtoLink = 'https://mail.google.com/mail/?view=cm&fs=1&to=info@aisconcepts.com,designs@aisconcepts.com&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-                window.location.href = mailtoLink;
-                
-                // Show success message
-                document.getElementById('serviceInquirySuccess').style.display = 'block';
-                form.reset();
-            });
-        }
-        
-        // Setup form after rendering
-        setTimeout(setupServiceInquiryForm, 100);
-        
-        window.selectService = selectService;
-    })();
-    </script>
+    <script src="../services-page.js"></script>
 </body>
 </html>
