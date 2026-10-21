@@ -3898,10 +3898,43 @@ window.deleteProjectEnquiry = async function (id) {
 };
 
 var webProjectImageEditState = { designed: [], built: [] };
+var webProjectGalleryEditState = [];
 
 function resetWebProjectImageEditState(designed, built) {
     webProjectImageEditState.designed = (designed || []).filter(Boolean).slice();
     webProjectImageEditState.built = (built || []).filter(Boolean).slice();
+}
+
+function renderWebProjectShowcaseSections(sections) {
+    var container = document.getElementById('webProjectShowcaseSections');
+    if (!container) return;
+    var items = Array.isArray(sections) ? sections : [];
+    container.innerHTML = items.map(function (section, index) {
+        var image = section.image || '';
+        return '<article class="admin-showcase-item" data-showcase-item>' +
+            '<div class="admin-showcase-item-heading"><strong>Section ' + (index + 1) + '</strong>' +
+            '<button type="button" class="admin-project-image-remove" data-showcase-action="up" aria-label="Move section up"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="admin-project-image-remove" data-showcase-action="down" aria-label="Move section down"' + (index === items.length - 1 ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" class="admin-project-image-remove" data-showcase-action="remove" aria-label="Remove section">&times;</button></div>' +
+            '<label>Image URL<input type="url" data-showcase-url value="' + escapeAttr(image) + '" placeholder="Upload an image or paste an image URL"></label>' +
+            '<label>Upload replacement image<input type="file" accept="image/*" data-showcase-file></label>' +
+            (image ? '<img class="admin-showcase-image-preview" src="' + escapeAttr(image) + '" alt="Showcase image preview">' : '<div class="admin-showcase-image-preview admin-showcase-image-empty">Image preview</div>') +
+            '<label>Explanation<textarea rows="3" data-showcase-explanation>' + escapeHtml(section.explanation || '') + '</textarea></label>' +
+            '</article>';
+    }).join('');
+}
+
+function renderWebProjectGalleryImages() {
+    var container = document.getElementById('webProjectGalleryPreview');
+    if (!container) return;
+    container.innerHTML = webProjectGalleryEditState.map(function (url, index) {
+        return '<div class="admin-project-image-item">' +
+            '<img src="' + escapeAttr(url) + '" alt="Project gallery image ' + (index + 1) + '" width="400" height="300" loading="lazy">' +
+            '<button type="button" class="admin-project-image-remove" data-gallery-action="up" data-index="' + index + '" aria-label="Move image up"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="admin-project-image-remove" data-gallery-action="down" data-index="' + index + '" aria-label="Move image down"' + (index === webProjectGalleryEditState.length - 1 ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" class="admin-project-image-remove" data-gallery-action="remove" data-index="' + index + '" aria-label="Remove gallery image">&times;</button>' +
+            '</div>';
+    }).join('');
 }
 
 function renderWebProjectSavedImageGalleries() {
@@ -3993,7 +4026,7 @@ async function renderAdminWebsiteProjects() {
     try {
         // Always fetch fresh data from the API
         if (typeof loadWebsiteProjects === 'function') {
-            list = await loadWebsiteProjects();
+            list = await loadWebsiteProjects(true);
         } else {
             // Fallback to cache if loadWebsiteProjects is not available
             if (typeof getWebsiteProjects === 'function') {
@@ -4290,6 +4323,7 @@ async function renderAdminCarousel() {
         var optimizedImg = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(item.image || '', 'THUMBNAIL') : (item.image || '');
         return '<tr>' +
             '<td><img src="' + escapeHtml(optimizedImg) + '" alt="' + escapeHtml(item.title || '') + '" width="60" height="40" loading="lazy" style="width:60px;height:40px;object-fit:cover;border-radius:4px;"></td>' +
+            '<td>' + escapeHtml(item.category || '') + '</td>' +
             '<td>' + escapeHtml(item.title || '') + '</td>' +
             '<td>' + escapeHtml((item.description || '').substring(0, 80) + (item.description && item.description.length > 80 ? '...' : '')) + '</td>' +
             '<td>' + escapeHtml(String(item.sortOrder || 0)) + '</td>' +
@@ -4298,7 +4332,7 @@ async function renderAdminCarousel() {
             '<button class="btn-icon" onclick="editCarouselItem(\'' + escapeAttr(String(item._id)) + '\')" title="Edit"><i class="fas fa-edit"></i></button> ' +
             '<button class="btn-icon" onclick="deleteCarouselItem(\'' + escapeAttr(String(item._id)) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
             '</td></tr>';
-    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;">No carousel images yet. Click "Add Image" to get started.</td></tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:40px;">No carousel images yet. Click "Add Image" to get started.</td></tr>';
 }
 
 window.editCarouselItem = function(id) {
@@ -4314,6 +4348,7 @@ window.editCarouselItem = function(id) {
             var modalTitle = carouselModal.querySelector('h2');
 
             if (document.getElementById('carouselImage')) document.getElementById('carouselImage').value = item.image || '';
+            if (document.getElementById('carouselCategory')) document.getElementById('carouselCategory').value = item.category || '';
             if (document.getElementById('carouselTitle')) document.getElementById('carouselTitle').value = item.title || '';
             if (document.getElementById('carouselDescription')) document.getElementById('carouselDescription').value = item.description || '';
             if (document.getElementById('carouselProjectId')) document.getElementById('carouselProjectId').value = item.projectId || '';
@@ -4454,6 +4489,27 @@ window.editWebsiteProject = function(id) {
     }
     if (document.getElementById('webProjectCategorySecondary')) document.getElementById('webProjectCategorySecondary').value = project.categorySecondary || '';
     if (document.getElementById('webProjectDescription')) document.getElementById('webProjectDescription').value = project.description || '';
+    if (document.getElementById('webProjectLocation')) document.getElementById('webProjectLocation').value = project.location || '';
+    if (document.getElementById('webProjectCost')) document.getElementById('webProjectCost').value = project.projectCost || project.cost || project.budget || '';
+    if (document.getElementById('webProjectArea')) document.getElementById('webProjectArea').value = project.area || '';
+    if (document.getElementById('webProjectCompletionDate')) document.getElementById('webProjectCompletionDate').value = project.completionDate || '';
+    if (document.getElementById('webProjectIsPublished')) document.getElementById('webProjectIsPublished').checked = project.isPublished !== false;
+    var legacyShowcaseImage = project.heroImage || project.image ||
+        (project.asDesignedImages && project.asDesignedImages[0]) ||
+        (project.projectImages && project.projectImages[0]) ||
+        (project.asBuiltImages && project.asBuiltImages[0]);
+    var editorShowcaseSections = project.showcaseSections && project.showcaseSections.length
+        ? project.showcaseSections
+        : (legacyShowcaseImage ? [{ image: legacyShowcaseImage, explanation: project.description || '' }] : []);
+    renderWebProjectShowcaseSections(editorShowcaseSections);
+    webProjectGalleryEditState = (project.galleryImages || []).filter(Boolean).slice();
+    renderWebProjectGalleryImages();
+    var galleryInput = document.getElementById('webProjectGalleryImages');
+    if (galleryInput) galleryInput.value = '';
+    var galleryPendingPreview = document.getElementById('webProjectGalleryPendingPreview');
+    if (galleryPendingPreview) galleryPendingPreview.innerHTML = '';
+    var showcaseFileInputs = document.querySelectorAll('#webProjectShowcaseSections [data-showcase-file]');
+    showcaseFileInputs.forEach(function (input) { input.value = ''; });
     
     // Load metrics if they exist
     if (project.metrics) {
@@ -4495,6 +4551,185 @@ window.deleteWebsiteProject = function(id) {
     }
 };
 
+function setupAboutPageContentAdmin() {
+    var form = document.getElementById('adminAboutContentForm');
+    var roster = document.getElementById('adminAboutTeamRoster');
+    if (!form || form._wired) return;
+    form._wired = true;
+    var token = sessionStorage.getItem('authToken');
+    var aboutState = {
+        philosophy: { image: '', explanation: '' },
+        approach: { image: '', explanation: '' }
+    };
+    var defaultCopy = {
+        philosophy: 'We believe architecture is more than construction. It is the art of shaping environments that influence how people live, work, interact and experience space. Every project should express its purpose, respond to its context and make daily life better.',
+        approach: "We begin by listening and understanding each client's aspirations, site, budget and objectives. Through research and design exploration, we develop practical, considered solutions, then coordinate the technical work, approvals, costing and delivery to carry the design through to completion."
+    };
+
+    function setAboutImagePreview(key, url) {
+        var preview = document.getElementById('about' + (key === 'philosophy' ? 'Philosophy' : 'Approach') + 'ImagePreview');
+        if (!preview) return;
+        if (url) {
+            preview.src = url;
+            preview.hidden = false;
+        } else {
+            preview.removeAttribute('src');
+            preview.hidden = true;
+        }
+    }
+
+    fetch((window.API_BASE || '') + '/api/site/about')
+        .then(function (response) {
+            if (!response.ok) throw new Error('Could not load About page content');
+            return response.json();
+        })
+        .then(function (data) {
+            ['philosophy', 'approach'].forEach(function (key) {
+                aboutState[key] = Object.assign(aboutState[key], data[key] || {});
+                var copy = document.getElementById(key === 'philosophy' ? 'aboutPhilosophyExplanation' : 'aboutApproachExplanation');
+                if (copy) copy.value = aboutState[key].explanation || defaultCopy[key];
+                setAboutImagePreview(key, aboutState[key].image);
+            });
+        })
+        .catch(function (error) {
+            console.error('Failed to load About page content:', error);
+            alert('Could not load About page content: ' + error.message);
+        });
+
+    ['philosophy', 'approach'].forEach(function (key) {
+        var input = document.getElementById(key === 'philosophy' ? 'aboutPhilosophyImageFile' : 'aboutApproachImageFile');
+        if (input) input.addEventListener('change', function () {
+            if (input.files && input.files[0]) setAboutImagePreview(key, URL.createObjectURL(input.files[0]));
+        });
+    });
+
+    function uploadAboutImage(file) {
+        var data = new FormData();
+        data.append('image', file);
+        return fetch((window.API_BASE || '') + '/api/upload-image', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + token },
+            body: data
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok) throw new Error(body.details || body.error || 'Image upload failed');
+                if (!body.url) throw new Error('Image upload completed without returning a URL');
+                return body.url;
+            });
+        });
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var philosophyCopy = document.getElementById('aboutPhilosophyExplanation').value.trim();
+        var approachCopy = document.getElementById('aboutApproachExplanation').value.trim();
+        var philosophyFile = document.getElementById('aboutPhilosophyImageFile').files[0];
+        var approachFile = document.getElementById('aboutApproachImageFile').files[0];
+        var uploads = [
+            philosophyFile ? uploadAboutImage(philosophyFile) : Promise.resolve(aboutState.philosophy.image),
+            approachFile ? uploadAboutImage(approachFile) : Promise.resolve(aboutState.approach.image)
+        ];
+        Promise.all(uploads).then(function (urls) {
+            return fetch((window.API_BASE || '') + '/api/admin/site/about', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify({
+                    philosophy: { image: urls[0], explanation: philosophyCopy },
+                    approach: { image: urls[1], explanation: approachCopy }
+                })
+            }).then(function (response) {
+                return response.json().then(function (body) {
+                    if (!response.ok) throw new Error(body.error || 'Could not save About page content');
+                    aboutState = { philosophy: body.philosophy, approach: body.approach };
+                    setAboutImagePreview('philosophy', urls[0]);
+                    setAboutImagePreview('approach', urls[1]);
+                    document.getElementById('aboutPhilosophyImageFile').value = '';
+                    document.getElementById('aboutApproachImageFile').value = '';
+                    alert('About page sections saved.');
+                });
+            });
+        }).catch(function (error) {
+            alert('Could not save About page sections: ' + error.message);
+        });
+    });
+
+    function renderRoster(members) {
+        if (!roster) return;
+        roster.innerHTML = members.map(function (member) {
+            var photo = member.photo || '';
+            return '<div class="about-admin-team-member" data-team-id="' + escapeAttr(String(member._id)) + '">' +
+                '<img class="about-admin-team-preview" src="' + escapeAttr(photo) + '" alt=""' + (photo ? '' : ' hidden') + '>' +
+                '<div class="about-admin-team-fields">' +
+                '<label>Name<input type="text" data-team-name value="' + escapeAttr(member.name || '') + '" required></label>' +
+                '<p class="about-admin-team-role">' + escapeHtml(member.role || '') + '</p>' +
+                '<label>Photo<input type="file" data-team-photo accept="image/*"></label>' +
+                '<button type="button" class="btn btn-primary" data-team-save>Save member</button>' +
+                '</div></div>';
+        }).join('');
+    }
+
+    function loadAboutRoster() {
+        if (!roster) return Promise.resolve();
+        return fetch((window.API_BASE || '') + '/api/admin/about/team', {
+            headers: { Authorization: 'Bearer ' + token }
+        }).then(function (response) {
+            return response.json().then(function (members) {
+                if (!response.ok) throw new Error(members.error || 'Could not load the team roster');
+                renderRoster(members);
+            });
+        }).catch(function (error) {
+            roster.innerHTML = '<p class="error-message">Could not load About page team roster.</p>';
+            console.error(error);
+        });
+    }
+
+    if (roster) {
+        roster.addEventListener('change', function (event) {
+            if (!event.target.matches('[data-team-photo]') || !event.target.files[0]) return;
+            var preview = event.target.closest('.about-admin-team-member').querySelector('.about-admin-team-preview');
+            preview.src = URL.createObjectURL(event.target.files[0]);
+            preview.hidden = false;
+        });
+        roster.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-team-save]');
+            if (!button) return;
+            var card = button.closest('.about-admin-team-member');
+            var fileInput = card.querySelector('[data-team-photo]');
+            var file = fileInput.files[0];
+            if (file && file.size > 50 * 1024 * 1024) {
+                alert('Team image is too large (max 50MB).');
+                return;
+            }
+            button.disabled = true;
+            var imagePromise = file ? uploadAboutImage(file) : Promise.resolve(null);
+            imagePromise.then(function (photo) {
+                var update = {
+                    name: card.querySelector('[data-team-name]').value.trim()
+                };
+                if (!update.name) throw new Error('Name is required.');
+                if (photo) update.photo = photo;
+                return fetch((window.API_BASE || '') + '/api/team/' + encodeURIComponent(card.getAttribute('data-team-id')), {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify(update)
+                }).then(function (response) {
+                    return response.json().then(function (body) {
+                        if (!response.ok) throw new Error(body.error || 'Could not save team member');
+                        return loadAboutRoster();
+                    });
+                });
+            }).then(function () {
+                alert('Team member updated.');
+            }).catch(function (error) {
+                alert('Could not save team member: ' + error.message);
+            }).finally(function () {
+                button.disabled = false;
+            });
+        });
+        loadAboutRoster();
+    }
+}
+
 async function loadAdminDashboard() {
     // First, refresh data from backend to clear stale localStorage
     var token = sessionStorage.getItem('authToken');
@@ -4517,7 +4752,7 @@ async function loadAdminDashboard() {
     }
 
     try {
-        if (typeof loadWebsiteProjects === 'function') await loadWebsiteProjects();
+        if (typeof loadWebsiteProjects === 'function') await loadWebsiteProjects(true);
         if (typeof loadWebsiteServices === 'function') await loadWebsiteServices();
         if (typeof loadWebsiteBlogPosts === 'function') await loadWebsiteBlogPosts();
     } catch (e) { console.warn(e); }
@@ -4661,6 +4896,11 @@ async function loadAdminDashboard() {
         if (builtInput) builtInput.value = '';
         resetWebProjectImageEditState([], []);
         renderWebProjectSavedImageGalleries();
+        renderWebProjectShowcaseSections([]);
+        webProjectGalleryEditState = [];
+        renderWebProjectGalleryImages();
+        var pendingGalleryPreview = document.getElementById('webProjectGalleryPendingPreview');
+        if (pendingGalleryPreview) pendingGalleryPreview.innerHTML = '';
         var modalTitle = webProjModal.querySelector('h2');
         if (modalTitle) modalTitle.textContent = 'Add Website Project';
         if (typeof renderCategorySelectOptions === 'function') {
@@ -4675,6 +4915,118 @@ async function loadAdminDashboard() {
     if (webProjModal) webProjModal.addEventListener('click', function (e) { if (e.target === webProjModal) webProjModal.classList.remove('open'); });
     if (webServModal) webServModal.addEventListener('click', function (e) { if (e.target === webServModal) webServModal.classList.remove('open'); });
 
+    var showcaseContainer = document.getElementById('webProjectShowcaseSections');
+    var addShowcaseButton = document.getElementById('webProjectAddShowcaseSection');
+    var previewShowcaseButton = document.getElementById('webProjectPreviewShowcase');
+    if (addShowcaseButton && showcaseContainer) {
+        addShowcaseButton.addEventListener('click', function () {
+            var index = showcaseContainer.querySelectorAll('[data-showcase-item]').length;
+            showcaseContainer.insertAdjacentHTML('beforeend',
+                '<article class="admin-showcase-item" data-showcase-item>' +
+                '<div class="admin-showcase-item-heading"><strong>Section ' + (index + 1) + '</strong>' +
+                '<button type="button" class="admin-project-image-remove" data-showcase-action="up" aria-label="Move section up"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+                '<button type="button" class="admin-project-image-remove" data-showcase-action="down" aria-label="Move section down" disabled>↓</button>' +
+                '<button type="button" class="admin-project-image-remove" data-showcase-action="remove" aria-label="Remove section">&times;</button></div>' +
+                '<label>Image URL<input type="url" data-showcase-url placeholder="Upload an image or paste an image URL"></label>' +
+                '<label>Upload replacement image<input type="file" accept="image/*" data-showcase-file></label>' +
+                '<div class="admin-showcase-image-preview admin-showcase-image-empty">Image preview</div>' +
+                '<label>Explanation<textarea rows="3" data-showcase-explanation></textarea></label></article>');
+            var rows = showcaseContainer.querySelectorAll('[data-showcase-item]');
+            if (rows.length > 1) rows[rows.length - 2].querySelector('[data-showcase-action="down"]').disabled = false;
+        });
+        showcaseContainer.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-showcase-action]');
+            if (!button) return;
+            var item = button.closest('[data-showcase-item]');
+            var action = button.getAttribute('data-showcase-action');
+            if (action === 'remove') {
+                item.remove();
+            } else if (action === 'up' && item.previousElementSibling) {
+                showcaseContainer.insertBefore(item, item.previousElementSibling);
+            } else if (action === 'down' && item.nextElementSibling) {
+                showcaseContainer.insertBefore(item.nextElementSibling, item);
+            }
+            Array.prototype.forEach.call(showcaseContainer.querySelectorAll('[data-showcase-item]'), function (row, index, rows) {
+                row.querySelector('strong').textContent = 'Section ' + (index + 1);
+                row.querySelector('[data-showcase-action="up"]').disabled = index === 0;
+                row.querySelector('[data-showcase-action="down"]').disabled = index === rows.length - 1;
+            });
+        });
+        showcaseContainer.addEventListener('change', function (event) {
+            var item = event.target.closest('[data-showcase-item]');
+            if (!item) return;
+            var preview = item.querySelector('.admin-showcase-image-preview');
+            if (event.target.matches('[data-showcase-url]')) {
+                var fileInput = item.querySelector('[data-showcase-file]');
+                if (fileInput.files && fileInput.files.length) return;
+                if (!event.target.value.trim()) {
+                    preview.outerHTML = '<div class="admin-showcase-image-preview admin-showcase-image-empty">Image preview</div>';
+                } else {
+                    if (preview.tagName !== 'IMG') {
+                        preview = document.createElement('img');
+                        preview.className = 'admin-showcase-image-preview';
+                        item.insertBefore(preview, item.querySelector('[data-showcase-explanation]').parentNode);
+                    }
+                    preview.src = event.target.value.trim();
+                }
+                return;
+            }
+            if (!event.target.matches('[data-showcase-file]') || !event.target.files[0]) return;
+            if (preview.tagName !== 'IMG') {
+                preview = document.createElement('img');
+                preview.className = 'admin-showcase-image-preview';
+                item.insertBefore(preview, item.querySelector('[data-showcase-explanation]').parentNode);
+            }
+            preview.src = URL.createObjectURL(event.target.files[0]);
+        });
+    }
+    var galleryInput = document.getElementById('webProjectGalleryImages');
+    var galleryPreview = document.getElementById('webProjectGalleryPreview');
+    var galleryPendingPreview = document.getElementById('webProjectGalleryPendingPreview');
+    if (galleryInput && galleryPendingPreview) {
+        galleryInput.addEventListener('change', function () {
+            galleryPendingPreview.innerHTML = Array.prototype.map.call(galleryInput.files || [], function (file) {
+                return '<div class="admin-project-image-item"><img src="' + escapeAttr(URL.createObjectURL(file)) +
+                    '" alt="New gallery image preview" width="400" height="300"></div>';
+            }).join('');
+        });
+    }
+    if (galleryPreview) {
+        galleryPreview.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-gallery-action]');
+            if (!button) return;
+            var index = Number(button.getAttribute('data-index'));
+            var action = button.getAttribute('data-gallery-action');
+            if (action === 'remove') webProjectGalleryEditState.splice(index, 1);
+            if (action === 'up' && index > 0) {
+                var previous = webProjectGalleryEditState[index - 1];
+                webProjectGalleryEditState[index - 1] = webProjectGalleryEditState[index];
+                webProjectGalleryEditState[index] = previous;
+            }
+            if (action === 'down' && index < webProjectGalleryEditState.length - 1) {
+                var next = webProjectGalleryEditState[index + 1];
+                webProjectGalleryEditState[index + 1] = webProjectGalleryEditState[index];
+                webProjectGalleryEditState[index] = next;
+            }
+            renderWebProjectGalleryImages();
+        });
+    }
+    if (previewShowcaseButton) previewShowcaseButton.addEventListener('click', function () {
+        var items = showcaseContainer ? Array.prototype.slice.call(showcaseContainer.querySelectorAll('[data-showcase-item]')) : [];
+        var preview = document.getElementById('webProjectShowcasePreview');
+        if (!preview) return;
+        preview.innerHTML = items.map(function (item, index) {
+            var url = item.querySelector('[data-showcase-url]').value.trim();
+            var file = item.querySelector('[data-showcase-file]').files[0];
+            var explanation = item.querySelector('[data-showcase-explanation]').value;
+            if (file) url = URL.createObjectURL(file);
+            return '<div class="admin-showcase-preview-row' + (index % 2 ? ' is-reversed' : '') + '">' +
+                (url ? '<img src="' + escapeAttr(url) + '" alt="Showcase preview">' : '<div class="admin-showcase-image-empty">Add an image</div>') +
+                '<p>' + escapeHtml(explanation) + '</p></div>';
+        }).join('');
+        preview.hidden = false;
+    });
+
     if (webProjForm && typeof getWebsiteProjects === 'function') {
         webProjForm.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -4683,6 +5035,11 @@ async function loadAdminDashboard() {
             var category = document.getElementById('webProjectCategory').value;
             var categorySecondary = document.getElementById('webProjectCategorySecondary') ? document.getElementById('webProjectCategorySecondary').value : '';
             var description = document.getElementById('webProjectDescription').value;
+            var location = document.getElementById('webProjectLocation') ? document.getElementById('webProjectLocation').value.trim() : '';
+            var projectCost = document.getElementById('webProjectCost') ? document.getElementById('webProjectCost').value.trim() : '';
+            var area = document.getElementById('webProjectArea') ? document.getElementById('webProjectArea').value.trim() : '';
+            var completionDate = document.getElementById('webProjectCompletionDate') ? document.getElementById('webProjectCompletionDate').value.trim() : '';
+            var isPublished = !document.getElementById('webProjectIsPublished') || document.getElementById('webProjectIsPublished').checked;
 
             if (!title || !title.trim()) {
                 alert('Project title is required');
@@ -4701,8 +5058,22 @@ async function loadAdminDashboard() {
             var asBuiltInput = document.getElementById('webProjectAsBuiltImages');
             var asDesignedFiles = asDesignedInput && asDesignedInput.files ? Array.prototype.slice.call(asDesignedInput.files) : [];
             var asBuiltFiles = asBuiltInput && asBuiltInput.files ? Array.prototype.slice.call(asBuiltInput.files) : [];
+            var showcaseRows = showcaseContainer ? Array.prototype.slice.call(showcaseContainer.querySelectorAll('[data-showcase-item]')) : [];
+            var showcaseFiles = showcaseRows.map(function (row) {
+                var input = row.querySelector('[data-showcase-file]');
+                return input && input.files ? input.files[0] || null : null;
+            });
+            var showcaseSections = showcaseRows.map(function (row, index) {
+                return {
+                    image: row.querySelector('[data-showcase-url]').value.trim(),
+                    explanation: row.querySelector('[data-showcase-explanation]').value.trim(),
+                    fileIndex: showcaseFiles[index] ? index : -1
+                };
+            });
+            var galleryInput = document.getElementById('webProjectGalleryImages');
+            var galleryFiles = galleryInput && galleryInput.files ? Array.prototype.slice.call(galleryInput.files) : [];
             var maxSize = 50 * 1024 * 1024;
-            var allNewFiles = asDesignedFiles.concat(asBuiltFiles);
+            var allNewFiles = asDesignedFiles.concat(asBuiltFiles, showcaseFiles.filter(Boolean), galleryFiles);
 
             for (var i = 0; i < allNewFiles.length; i++) {
                 if (allNewFiles[i].size > maxSize) {
@@ -4710,27 +5081,19 @@ async function loadAdminDashboard() {
                     return;
                 }
             }
+            if (showcaseSections.some(function (section) { return !section.image && section.fileIndex < 0; })) {
+                alert('Each showcase section needs an image URL or an uploaded image.');
+                return;
+            }
 
             var editIdField = document.getElementById('webProjectEditId');
             var editId = editIdField ? editIdField.value : null;
             var modalTitle = webProjModal.querySelector('h2');
-            var existingProject = null;
-
-            if (editId) {
-                var currentList = getWebsiteProjects();
-                existingProject = currentList.find(function (p) { return String(p.id) === String(editId); });
-            }
-
             var savedDesigned = (webProjectImageEditState.designed || []).slice();
             var savedBuilt = (webProjectImageEditState.built || []).slice();
-
-            if (!editId && !asDesignedFiles.length && !asBuiltFiles.length && !savedDesigned.length && !savedBuilt.length) {
-                alert('Please add at least one image under As Designed or As Built.');
-                return;
-            }
-
-            if (editId && !asDesignedFiles.length && !asBuiltFiles.length && !savedDesigned.length && !savedBuilt.length) {
-                alert('Please add at least one image under As Designed or As Built.');
+            if (!asDesignedFiles.length && !asBuiltFiles.length && !savedDesigned.length && !savedBuilt.length &&
+                !showcaseSections.length && !webProjectGalleryEditState.length && !galleryFiles.length) {
+                alert('Please add at least one image to the legacy gallery, showcase, or project gallery.');
                 return;
             }
 
@@ -4758,11 +5121,21 @@ async function loadAdminDashboard() {
                 return Promise.all(promises);
             }
 
-            function saveWebProj(newDesignedUrls, newBuiltUrls) {
+            function saveWebProj(newDesignedUrls, newBuiltUrls, newShowcaseUrls, newGalleryUrls) {
                 var list = getWebsiteProjects().slice();
                 var projectSlug = slug || String(title || 'project').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                 var finalDesigned = savedDesigned.concat(newDesignedUrls || []);
                 var finalBuilt = savedBuilt.concat(newBuiltUrls || []);
+                var finalShowcaseSections = showcaseSections.map(function (section) {
+                    return {
+                        image: section.fileIndex >= 0 ? newShowcaseUrls[section.fileIndex] : section.image,
+                        explanation: section.explanation
+                    };
+                });
+                var finalGalleryImages = webProjectGalleryEditState.concat(newGalleryUrls || []);
+                var featuredImage = finalDesigned[0] || finalBuilt[0] ||
+                    (finalShowcaseSections[0] && finalShowcaseSections[0].image) ||
+                    finalGalleryImages[0] || '';
 
                 var newProject = {
                     id: editId ? editId : Date.now(),
@@ -4773,8 +5146,15 @@ async function loadAdminDashboard() {
                     asDesignedImages: finalDesigned,
                     asBuiltImages: finalBuilt,
                     projectImages: finalDesigned.length ? finalDesigned : finalBuilt,
-                    image: finalDesigned[0] || finalBuilt[0] || '',
+                    image: featuredImage,
                     description: description,
+                    location: location,
+                    projectCost: projectCost,
+                    area: area,
+                    completionDate: completionDate,
+                    isPublished: isPublished,
+                    showcaseSections: finalShowcaseSections,
+                    galleryImages: finalGalleryImages,
                     metrics: {
                         costEfficiency: metricCost,
                         sustainability: metricSustainability,
@@ -4802,16 +5182,20 @@ async function loadAdminDashboard() {
                 }).then(function (response) {
                     return response.json().then(function (data) {
                         if (response.ok) {
-                            setWebsiteProjects(list).then(function () {
+                            loadWebsiteProjects(true).then(function () {
                                 webProjForm.reset();
                                 if (editIdField) editIdField.value = '';
                                 resetWebProjectImageEditState([], []);
                                 renderWebProjectSavedImageGalleries();
+                                renderWebProjectShowcaseSections([]);
+                                webProjectGalleryEditState = [];
+                                renderWebProjectGalleryImages();
+                                if (galleryPendingPreview) galleryPendingPreview.innerHTML = '';
                                 if (modalTitle) modalTitle.textContent = 'Add Website Project';
                                 webProjModal.classList.remove('open');
                                 renderAdminWebsiteProjects();
                                 alert('Website project saved successfully!');
-                            }).catch(function () { alert('Could not save project locally.'); });
+                            }).catch(function (err) { alert('Project was saved, but the admin list could not be refreshed: ' + err.message); });
                         } else {
                             alert('Failed to save project to server: ' + (data.details || data.error || 'Unknown error'));
                         }
@@ -4823,9 +5207,16 @@ async function loadAdminDashboard() {
 
             Promise.all([
                 uploadFilesToCloudinary(asDesignedFiles),
-                uploadFilesToCloudinary(asBuiltFiles)
+                uploadFilesToCloudinary(asBuiltFiles),
+                uploadFilesToCloudinary(showcaseFiles.filter(Boolean)),
+                uploadFilesToCloudinary(galleryFiles)
             ]).then(function (results) {
-                saveWebProj(results[0], results[1]);
+                var showcaseUrls = [];
+                var urlCursor = 0;
+                showcaseFiles.forEach(function (file, index) {
+                    if (file) showcaseUrls[index] = results[2][urlCursor++];
+                });
+                saveWebProj(results[0], results[1], showcaseUrls, results[3]);
             }).catch(function (err) {
                 alert('Image upload failed: ' + err.message);
             });
@@ -5013,6 +5404,7 @@ async function loadAdminDashboard() {
         carouselForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var image = document.getElementById('carouselImage').value;
+            var category = document.getElementById('carouselCategory').value;
             var title = document.getElementById('carouselTitle').value;
             var description = document.getElementById('carouselDescription').value;
             var projectId = document.getElementById('carouselProjectId').value;
@@ -5025,6 +5417,7 @@ async function loadAdminDashboard() {
 
             var data = {
                 image: image,
+                category: category,
                 title: title,
                 description: description,
                 projectId: projectId || null,
@@ -5140,6 +5533,7 @@ async function loadAdminDashboard() {
         });
     }
 
+    setupAboutPageContentAdmin();
     setupCommunicationHub();
 }
 

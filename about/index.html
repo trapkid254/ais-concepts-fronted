@@ -160,42 +160,41 @@
     </div>
 
     <main class="about-page-main">
-        <!-- Hero Section -->
-        <section class="about-hero">
-            <div class="hero-background">
-                <img src="../images/project3.jpg" alt="AIS Concepts architectural project" class="hero-image">
-                <div class="hero-overlay"></div>
-            </div>
-            <div class="hero-content">
-                <h1 class="hero-title">WE CREATE SPACES WITH PURPOSE.</h1>
-                <p class="hero-subtitle">AIS Concepts Ltd is an architecture and built-environment practice focused on creating thoughtful, functional and distinctive spaces through architecture, interior design, planning and project management.</p>
-                <div class="hero-cta">
-                    <a href="../projects/" class="btn btn-primary">VIEW OUR PROJECTS</a>
-                    <a href="../contact/" class="btn btn-secondary">START A PROJECT</a>
-                </div>
-            </div>
-            <div class="hero-architectural-lines"></div>
-        </section>
-
-        <!-- Who We Are -->
-        <section class="who-we-are">
+        <!-- Our Philosophy -->
+        <section class="about-editorial-section about-philosophy">
             <div class="container">
-                <div class="who-grid">
-                    <div class="who-statement">
-                        <h2>Architecture is more than creating buildings. It is about shaping the way people experience space.</h2>
-                    </div>
-                    <div class="who-description">
-                        <p>AIS Concepts Ltd is a multidisciplinary architecture and design practice based in Kenya. We work across residential, commercial, hospitality, and institutional projects, bringing together architectural design, interior design, planning, and project management expertise.</p>
-                        <p>Our approach is rooted in the belief that great spaces emerge from understanding context, function, and human experience. We work closely with clients to develop solutions that are both practical and aspirational, creating environments that serve their intended purpose while leaving room for growth and adaptation.</p>
-                    </div>
+                <div class="section-header">
+                    <h2>OUR PHILOSOPHY</h2>
+                    <div class="section-line"></div>
                 </div>
-                <div class="who-image">
-                    <img src="../images/service2.jpg" alt="Architectural design process">
+                <div class="about-editorial-row" id="aboutPhilosophy">
+                    <div class="about-editorial-image">
+                        <img src="../images/service2.jpg" alt="AIS Concepts design philosophy">
+                    </div>
+                    <div class="about-editorial-copy">
+                        <p>We believe architecture is more than construction. It is the art of shaping environments that influence how people live, work, interact and experience space. Every project should express its purpose, respond to its context and make daily life better.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Our Team -->
+        <section class="our-approach about-editorial-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>OUR APPROACH</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="about-editorial-row is-reversed" id="aboutApproach">
+                    <div class="about-editorial-image">
+                        <img src="../images/project3.jpg" alt="AIS Concepts project approach">
+                    </div>
+                    <div class="about-editorial-copy">
+                        <p>We begin by listening and understanding each client's aspirations, site, budget and objectives. Through research and design exploration, we develop practical, considered solutions, then coordinate the technical work, approvals, costing and delivery to carry the design through to completion.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="our-team">
             <div class="container">
                 <div class="section-header">
@@ -203,7 +202,6 @@
                     <div class="section-line"></div>
                 </div>
                 <div class="team-grid" id="teamGrid">
-                    <!-- Team members will be loaded dynamically from API -->
                     <div class="team-loading">Loading team information...</div>
                 </div>
             </div>
@@ -297,53 +295,6 @@
                 </div>
                 <div class="services-cta">
                     <a href="../services/" class="btn btn-secondary">EXPLORE OUR SERVICES</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Our Approach -->
-        <section class="our-approach">
-            <div class="container">
-                <div class="section-header">
-                    <h2>OUR APPROACH</h2>
-                    <div class="section-line"></div>
-                </div>
-                <div class="approach-timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-number">01</div>
-                        <div class="timeline-content">
-                            <h3>UNDERSTAND</h3>
-                            <p>We begin by understanding the client's needs, aspirations, site, budget and project objectives.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-number">02</div>
-                        <div class="timeline-content">
-                            <h3>EXPLORE</h3>
-                            <p>We investigate possibilities through research, site analysis, planning and design exploration.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-number">03</div>
-                        <div class="timeline-content">
-                            <h3>DESIGN</h3>
-                            <p>We transform ideas into architectural, interior and spatial solutions.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-number">04</div>
-                        <div class="timeline-content">
-                            <h3>DEVELOP</h3>
-                            <p>We coordinate design development, technical documentation, approvals, costing and project requirements.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-number">05</div>
-                        <div class="timeline-content">
-                            <h3>DELIVER</h3>
-                            <p>We support the project through construction supervision and project management to help bring the design into reality.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
@@ -534,6 +485,33 @@
     <script src="../projects-data.js"></script>
     <script src="../script.js"></script>
     <script>
+    function aboutEscape(value) {
+        return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function loadAboutSections() {
+        fetch((window.API_BASE || '') + '/api/site/about')
+            .then(function(response) {
+                if (!response.ok) throw new Error('Could not load About page content');
+                return response.json();
+            })
+            .then(function(content) {
+                ['philosophy', 'approach'].forEach(function(key) {
+                    var row = document.getElementById(key === 'philosophy' ? 'aboutPhilosophy' : 'aboutApproach');
+                    var section = content[key] || {};
+                    if (!row) return;
+                    var image = row.querySelector('img');
+                    var explanation = row.querySelector('.about-editorial-copy p');
+                    if (section.image) image.src = section.image;
+                    if (section.explanation) explanation.textContent = section.explanation;
+                });
+            })
+            .catch(function(error) {
+                console.error('Failed to load About page content:', error);
+            });
+    }
+
     // Load team members function
     function loadTeamMembers() {
         var teamGrid = document.getElementById('teamGrid');
@@ -546,15 +524,26 @@
                 return r.json(); 
             })
             .then(function(teamData) {
-                if (teamData && teamData.length > 0) {
-                    displayTeamMembers(teamData);
-                } else {
-                    // Use fallback team if API returns empty
-                    displayFallbackTeam();
-                }
+                var roleOrder = [
+                    'Lead Architect',
+                    'Design/Project Management Lead',
+                    'Costing Lead',
+                    'Landscape Design Lead',
+                    'Engineering Lead',
+                    'Interior Designer',
+                    'IT/Support',
+                    'Socials and Visuals'
+                ];
+                teamData = teamData.filter(function(member) {
+                    return roleOrder.indexOf(member.role) !== -1;
+                });
+                teamData.sort(function(a, b) {
+                    return roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role);
+                });
+                displayTeamMembers(teamData.length ? teamData : fallbackTeam());
             })
-            .catch(function() {
-                // Use fallback team if API fails
+            .catch(function(error) {
+                console.error('Failed to load team members:', error);
                 displayFallbackTeam();
             });
     }
@@ -562,28 +551,36 @@
     function displayTeamMembers(teamData) {
         var teamGrid = document.getElementById('teamGrid');
         if (!teamGrid) return;
+        var expectedNames = {
+            'Lead Architect': 'Arch Ivan Machanule',
+            'Design/Project Management Lead': 'Eugene Muchangi',
+            'Costing Lead': 'Cosmas Meli',
+            'Landscape Design Lead': 'Eng. Kennedy Kithia',
+            'Engineering Lead': 'Kepha Simon',
+            'Interior Designer': 'Delvin Alemba',
+            'IT/Support': 'Griffins',
+            'Socials and Visuals': 'Team Member'
+        };
+        if (!teamData.length || teamData[0].aboutRosterInitialized !== true) {
+            teamData = teamData.map(function(member) {
+                return Object.assign({}, member, {
+                    name: expectedNames[member.role] || member.name
+                });
+            });
+        }
         
         var html = '';
         teamData.forEach(function(member, index) {
-            var photoSrc = member.photo || member.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(member.name || 'Team Member') + '&background=20c4b4&color=fff&size=400';
-            var specialties = member.specialties || member.expertise || [];
+            var photoSrc = member.photo || member.avatar || '';
             
             html += '<div class="team-member" style="transition-delay: ' + (index * 0.1) + 's">';
             html += '<div class="team-photo">';
-            html += '<img src="' + photoSrc + '" alt="' + (member.name || 'Team Member') + '" loading="lazy">';
+            html += photoSrc
+                ? '<img src="' + aboutEscape(photoSrc) + '" alt="' + aboutEscape(member.name || 'Team Member') + '" loading="lazy">'
+                : '<div class="team-photo-placeholder" aria-hidden="true"><i class="fas fa-user"></i></div>';
             html += '</div>';
-            html += '<h3 class="team-name">' + (member.name || 'Team Member') + '</h3>';
-            html += '<p class="team-role">' + (member.role || member.position || 'Team Member') + '</p>';
-            if (member.bio) {
-                html += '<p class="team-bio">' + member.bio + '</p>';
-            }
-            if (specialties.length > 0) {
-                html += '<div class="team-specialties">';
-                specialties.forEach(function(specialty) {
-                    html += '<span class="team-specialty">' + specialty + '</span>';
-                });
-                html += '</div>';
-            }
+            html += '<h3 class="team-name">' + aboutEscape(member.name || 'Team Member') + '</h3>';
+            html += '<p class="team-role">' + aboutEscape(member.role || member.position || 'Team Member') + '</p>';
             html += '</div>';
         });
         
@@ -598,45 +595,25 @@
         }, 100);
     }
     
-    function displayFallbackTeam() {
-        var teamGrid = document.getElementById('teamGrid');
-        if (!teamGrid) return;
-        
-        // Fallback team structure if API is not available
-        // NOTE: Add your actual team members to the backend API endpoint /api/team
-        // Each team member should have: name, role, bio, photo, specialties
-        // This fallback represents key roles at AIS Concepts until individual team members are added
-        var fallbackTeam = [
-            {
-                name: 'AIS Concepts Leadership',
-                role: 'Principal Architect',
-                bio: 'Leading the architectural vision and design direction for AIS Concepts projects with extensive experience in residential and commercial design across Kenya.',
-                specialties: ['Architectural Design', 'Design Leadership', 'Project Vision']
-            },
-            {
-                name: 'Design Team',
-                role: 'Senior Architects & Designers',
-                bio: 'Our design team brings technical expertise and creative problem-solving to complex architectural projects and design challenges.',
-                specialties: ['Technical Design', 'Project Management', 'Client Relations']
-            },
-            {
-                name: 'Interior Design Team',
-                role: 'Interior Designers',
-                bio: 'Creating interior spaces that harmonize with architectural vision while enhancing functionality and user experience.',
-                specialties: ['Interior Design', 'Space Planning', 'Material Selection']
-            },
-            {
-                name: 'Project Team',
-                role: 'Project Managers & Coordinators',
-                bio: 'Coordinating project timelines, resources, and stakeholder communication to ensure successful project delivery from concept to completion.',
-                specialties: ['Project Coordination', 'Construction Supervision', 'Quality Control']
-            }
+    function fallbackTeam() {
+        return [
+            { name: 'Arch. Ivan Machanule', role: 'Lead Architect' },
+            { name: 'Eugene Muchangi', role: 'Design/Project Management Lead' },
+            { name: 'Cosmas Meli', role: 'Costing Lead' },
+            { name: 'Kennedy Kithia', role: 'Landscape Design Lead' },
+            { name: 'Eng. Cyrus', role: 'Engineering Lead' },
+            { name: 'Kepha Simon', role: 'Interior Designer' },
+            { name: 'Delvin Alemba', role: 'IT/Support' },
+            { name: 'Griffins', role: 'Socials and Visuals' }
         ];
-        
-        displayTeamMembers(fallbackTeam);
+    }
+
+    function displayFallbackTeam() {
+        displayTeamMembers(fallbackTeam());
     }
     
     document.addEventListener('DOMContentLoaded', function() {
+        loadAboutSections();
         // Load team members
         loadTeamMembers();
         

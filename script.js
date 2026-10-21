@@ -8,7 +8,82 @@ document.addEventListener('DOMContentLoaded', function() {
         const carousel = document.getElementById('heroCarousel');
         if (!carousel) return;
 
-        // Load carousel items from API
+        const defaultSlides = [
+            {
+                image: 'images/project1.jpg',
+                category: 'Product Design',
+                title: 'Objects built with intention',
+                description: 'Custom furniture, fittings, and bespoke objects designed to complete the built environment with the same rigour as the architecture.'
+            },
+            {
+                image: 'images/project3.jpg',
+                category: 'Residential',
+                title: 'Homes made for living',
+                description: 'Thoughtful homes shaped around the people who live in them, balancing comfort, character, and a lasting connection to place.'
+            },
+            {
+                image: 'images/service1.jpg',
+                category: 'Commercial',
+                title: 'Spaces for work that matters',
+                description: 'Purposeful commercial environments that bring people together and help businesses do their best work.'
+            },
+            {
+                image: 'images/service2.jpg',
+                category: 'Residential',
+                title: 'A better way to live',
+                description: 'Considered residential design that makes everyday life feel more comfortable, connected, and inspiring.'
+            }
+        ];
+
+        function renderCarousel(carouselItems, projects) {
+            const projectList = Array.isArray(projects) ? projects : [];
+            const slides = (carouselItems.length ? carouselItems : defaultSlides).map((item, index) => {
+                const projectId = item.projectId && typeof item.projectId === 'object'
+                    ? item.projectId._id || item.projectId.id
+                    : item.projectId;
+                const linkedProject = projectList.find(project => String(project.id) === String(projectId));
+                const defaults = defaultSlides[index % defaultSlides.length];
+                const category = item.category || defaults.category;
+                const hasConfiguredCategory = Boolean(item.category);
+                const categoryDefaults = defaultSlides.find(slide => slide.category === category) || defaults;
+
+                return {
+                    image: item.image || defaults.image,
+                    category,
+                    title: hasConfiguredCategory ? item.title || categoryDefaults.title : defaults.title,
+                    description: hasConfiguredCategory ? item.description || categoryDefaults.description : defaults.description,
+                    href: linkedProject && linkedProject.slug
+                        ? `project-detail.html?slug=${encodeURIComponent(linkedProject.slug)}`
+                        : 'projects/'
+                };
+            });
+            const slidesContainer = document.createElement('div');
+            slidesContainer.className = 'carousel-slides-container';
+            const indicatorsContainer = document.createElement('div');
+            indicatorsContainer.className = 'carousel-indicators';
+
+            slides.forEach((slide, index) => {
+                const slideElement = document.createElement('div');
+                slideElement.className = 'carousel-slide';
+                const image = document.createElement('img');
+                image.src = slide.image;
+                image.alt = `${slide.category}: ${slide.title.replace(/\n/g, ' ')}`;
+                image.className = 'carousel-image';
+                slideElement.appendChild(image);
+                slidesContainer.appendChild(slideElement);
+
+                const indicator = document.createElement('button');
+                indicator.type = 'button';
+                indicator.className = `carousel-indicator${index === 0 ? ' active' : ''}`;
+                indicator.dataset.slide = String(index);
+                indicator.setAttribute('aria-label', `Slide ${index + 1}`);
+                indicatorsContainer.appendChild(indicator);
+            });
+
+            carousel.replaceChildren(slidesContainer, indicatorsContainer);
+            initCarousel(slides);
+        }
+
         fetch((window.API_BASE || '') + '/api/hero-carousel')
             .then(response => {
                 if (!response.ok) {
@@ -17,135 +92,145 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(carouselItems => {
-                if (carouselItems.length === 0) {
-                    // Fallback to default images if no carousel items
-                    carousel.innerHTML = `
-                        <div class="carousel-slides-container">
-                            <div class="carousel-slide">
-                                <img src="images/project1.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
-                            </div>
-                            <div class="carousel-slide">
-                                <img src="images/project3.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
-                            </div>
-                            <div class="carousel-slide">
-                                <img src="images/service1.jpg" alt="AIS Concepts Interior Design" class="carousel-image">
-                            </div>
-                            <div class="carousel-slide">
-                                <img src="images/service2.jpg" alt="AIS Concepts Planning" class="carousel-image">
-                            </div>
-                        </div>
-                        <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
-                        <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
-                        <div class="carousel-indicators">
-                            <button class="carousel-indicator active" data-slide="0" aria-label="Slide 1"></button>
-                            <button class="carousel-indicator" data-slide="1" aria-label="Slide 2"></button>
-                            <button class="carousel-indicator" data-slide="2" aria-label="Slide 3"></button>
-                            <button class="carousel-indicator" data-slide="3" aria-label="Slide 4"></button>
-                        </div>
-                    `;
-                } else {
-                    // Build carousel from API data
-                    let slidesHtml = '<div class="carousel-slides-container">';
-                    let indicatorsHtml = '<div class="carousel-indicators">';
-
-                    carouselItems.forEach((item, index) => {
-                        const altText = item.title || 'AIS Concepts Project';
-                        slidesHtml += `
-                            <div class="carousel-slide">
-                                <img src="${item.image}" alt="${altText}" class="carousel-image">
-                            </div>
-                        `;
-                        indicatorsHtml += `
-                            <button class="carousel-indicator ${index === 0 ? 'active' : ''}" data-slide="${index}" aria-label="Slide ${index + 1}"></button>
-                        `;
-                    });
-
-                    slidesHtml += '</div>';
-                    indicatorsHtml += '</div>';
-                    carousel.innerHTML = slidesHtml + `
-                        <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
-                        <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
-                    ` + indicatorsHtml;
+                if (!Array.isArray(carouselItems)) {
+                    throw new Error('Invalid hero carousel response');
                 }
-
-                // Initialize carousel functionality
-                initCarousel();
+                if (carouselItems.length === 0) {
+                    renderCarousel([], []);
+                    return;
+                }
+                return fetch((window.API_BASE || '') + '/api/projects')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Project API error');
+                        return response.json();
+                    })
+                    .then(projects => renderCarousel(carouselItems, projects))
+                    .catch(error => {
+                        console.error('Error loading linked hero projects:', error);
+                        renderCarousel(carouselItems, []);
+                    });
             })
             .catch(error => {
                 console.error('Error loading hero carousel:', error);
-                // Fallback to default images on error
-                carousel.innerHTML = `
-                    <div class="carousel-slides-container">
-                        <div class="carousel-slide">
-                            <img src="images/project1.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="images/project3.jpg" alt="AIS Concepts Architecture Project" class="carousel-image">
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="images/service1.jpg" alt="AIS Concepts Interior Design" class="carousel-image">
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="images/service2.jpg" alt="AIS Concepts Planning" class="carousel-image">
-                        </div>
-                    </div>
-                    <button class="carousel-nav-arrow prev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
-                    <button class="carousel-nav-arrow next" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
-                    <div class="carousel-indicators">
-                        <button class="carousel-indicator active" data-slide="0" aria-label="Slide 1"></button>
-                        <button class="carousel-indicator" data-slide="1" aria-label="Slide 2"></button>
-                        <button class="carousel-indicator" data-slide="2" aria-label="Slide 3"></button>
-                        <button class="carousel-indicator" data-slide="3" aria-label="Slide 4"></button>
-                    </div>
-                `;
-                initCarousel();
+                renderCarousel([], []);
             });
 
-        function initCarousel() {
+        function initCarousel(slideContent) {
             const slidesContainer = carousel.querySelector('.carousel-slides-container');
             const slides = carousel.querySelectorAll('.carousel-slide');
             const indicators = carousel.querySelectorAll('.carousel-indicator');
-            const prevBtn = carousel.querySelector('.carousel-nav-arrow.prev');
-            const nextBtn = carousel.querySelector('.carousel-nav-arrow.next');
+            const progress = document.getElementById('heroSlideProgress');
+            const slideDots = document.getElementById('heroSlideDots');
+            const heroCategory = document.getElementById('heroProjectCategory');
+            const heroTitle = document.getElementById('heroProjectTitle');
+            const heroDescription = document.getElementById('heroProjectDescription');
+            const heroProjectLink = document.getElementById('heroProjectLink');
+            const prevBtn = document.getElementById('heroCarouselPrev');
+            const nextBtn = document.getElementById('heroCarouselNext');
+
+            console.log('Carousel init:', { slidesContainer, slides, indicators, prevBtn, nextBtn });
             
-            if (!slidesContainer || slides.length === 0) return;
+            if (!slidesContainer || slides.length === 0) {
+                console.log('Carousel init skipped: no slides container or slides');
+                return;
+            }
             
             let currentSlide = 0;
-            const interval = 5000; // 5 seconds per slide
+            const interval = 10000; // 10 seconds per slide
             let isAnimating = false;
 
-            function updateCarousel() {
+            if (slideDots) {
+                slideDots.replaceChildren(...Array.from(slides, (_, index) => {
+                    const dot = document.createElement('span');
+                    dot.className = `hero-slide-dot${index === 0 ? ' active' : ''}`;
+                    return dot;
+                }));
+            }
+
+            function startProgress() {
+                if (!progress) return;
+                progress.style.transition = 'none';
+                progress.style.width = '0';
+                progress.offsetWidth;
+                progress.style.transition = `width ${interval}ms linear`;
+                progress.style.width = '100%';
+            }
+
+            // Clone first slide and append to end for infinite loop
+            const firstSlideClone = slides[0].cloneNode(true);
+            slidesContainer.appendChild(firstSlideClone);
+
+            // Update slides NodeList after cloning
+            const allSlides = carousel.querySelectorAll('.carousel-slide');
+            const totalSlides = allSlides.length;
+
+            function updateCarousel(instant = false) {
                 const translateX = -(currentSlide * 100);
+                slidesContainer.style.transition = instant ? 'none' : 'transform 0.6s ease-in-out';
                 slidesContainer.style.transform = `translateX(${translateX}%)`;
+                console.log('Carousel updated to slide:', currentSlide);
                 
-                // Update indicators
+                // Update indicators (only for real slides, not the clone)
+                const realSlideIndex = currentSlide % slides.length;
                 indicators.forEach((indicator, index) => {
-                    indicator.classList.toggle('active', index === currentSlide);
+                    indicator.classList.toggle('active', index === realSlideIndex);
                 });
+                const content = slideContent[realSlideIndex];
+                if (content) {
+                    if (heroCategory) heroCategory.textContent = `-${content.category}-`;
+                    if (heroTitle) heroTitle.textContent = content.title;
+                    if (heroDescription) heroDescription.textContent = content.description;
+                    if (heroProjectLink) heroProjectLink.href = content.href;
+                }
+                if (slideDots) {
+                    slideDots.querySelectorAll('.hero-slide-dot').forEach((dot, index) => {
+                        dot.classList.toggle('active', index === realSlideIndex);
+                    });
+                }
             }
 
             function nextSlide() {
                 if (isAnimating) return;
                 isAnimating = true;
                 
-                currentSlide = (currentSlide + 1) % slides.length;
+                currentSlide++;
+                startProgress();
                 updateCarousel();
                 
-                setTimeout(() => {
-                    isAnimating = false;
-                }, 600); // Match transition duration
+                // If we've reached the cloned first slide, reset to real first slide after animation
+                if (currentSlide >= totalSlides - 1) {
+                    setTimeout(() => {
+                        currentSlide = 0;
+                        updateCarousel(true);
+                        isAnimating = false;
+                    }, 600);
+                } else {
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 600);
+                }
             }
 
             function prevSlide() {
                 if (isAnimating) return;
                 isAnimating = true;
                 
-                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                currentSlide--;
+                startProgress();
                 updateCarousel();
                 
-                setTimeout(() => {
-                    isAnimating = false;
-                }, 600); // Match transition duration
+                // If we've gone before the first slide, jump to the cloned slide then reset
+                if (currentSlide < 0) {
+                    setTimeout(() => {
+                        currentSlide = totalSlides - 2;
+                        updateCarousel(true);
+                        isAnimating = false;
+                    }, 600);
+                } else {
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 600);
+                }
             }
 
             function goToSlide(index) {
@@ -153,35 +238,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 isAnimating = true;
                 
                 currentSlide = index;
+                startProgress();
                 updateCarousel();
                 
                 setTimeout(() => {
                     isAnimating = false;
-                }, 600); // Match transition duration
+                }, 600);
             }
 
             // Auto-advance slides
+            updateCarousel(true);
             let carouselInterval = setInterval(nextSlide, interval);
+            startProgress();
 
             // Navigation arrows
             if (prevBtn) {
+                console.log('Adding prev button listener');
                 prevBtn.addEventListener('click', (e) => {
+                    console.log('Prev button clicked, event:', e);
                     e.preventDefault();
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
                     clearInterval(carouselInterval);
                     prevSlide();
                     carouselInterval = setInterval(nextSlide, interval);
                 });
+            } else {
+                console.log('Prev button not found');
             }
 
             if (nextBtn) {
+                console.log('Adding next button listener');
                 nextBtn.addEventListener('click', (e) => {
+                    console.log('Next button clicked, event:', e);
                     e.preventDefault();
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
                     clearInterval(carouselInterval);
                     nextSlide();
                     carouselInterval = setInterval(nextSlide, interval);
                 });
+            } else {
+                console.log('Next button not found');
             }
 
             // Click handlers for indicators
@@ -198,9 +296,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Pause on hover
             carousel.addEventListener('mouseenter', () => {
                 clearInterval(carouselInterval);
+                if (progress) {
+                    progress.style.transition = 'none';
+                    progress.style.width = getComputedStyle(progress).width;
+                }
             });
 
             carousel.addEventListener('mouseleave', () => {
+                startProgress();
                 carouselInterval = setInterval(nextSlide, interval);
             });
 

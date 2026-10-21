@@ -17,7 +17,14 @@
       projectImages: p.projectImages || [],
       asDesignedImages: p.asDesignedImages || p.projectImages || [],
       asBuiltImages: p.asBuiltImages || [],
+      showcaseSections: Array.isArray(p.showcaseSections) ? p.showcaseSections : [],
+      galleryImages: Array.isArray(p.galleryImages) ? p.galleryImages : [],
       description: p.description || '',
+      location: p.location || '',
+      projectCost: p.projectCost || p.cost || p.budget || '',
+      area: p.area || '',
+      completionDate: p.completionDate || '',
+      isPublished: p.isPublished !== false,
       conceptSketches: p.conceptSketches || [],
       siteAnalysis: p.siteAnalysis || [],
       floorPlans: p.floorPlans || [],
@@ -80,8 +87,14 @@
       String(projectId).replace(/'/g, "\\'") + '\', this.value)">' + opts + '</select>';
   };
 
-  global.loadWebsiteProjects = function () {
-    return fetch(API_BASE + '/api/projects')
+  global.loadWebsiteProjects = function (forAdmin) {
+    var endpoint = forAdmin ? '/api/admin/projects' : '/api/projects';
+    var headers = {};
+    if (forAdmin) {
+      var token = global.sessionStorage && global.sessionStorage.getItem('authToken');
+      headers.Authorization = 'Bearer ' + (token || '');
+    }
+    return fetch(API_BASE + endpoint, { headers: headers })
       .then(function (r) {
         if (!r.ok) throw new Error('bad response');
         return r.json();
@@ -91,6 +104,7 @@
         return __projects;
       })
       .catch(function () {
+        if (forAdmin) throw new Error('Could not load website projects for administration.');
         __projects = defaultProjects();
         return __projects;
       });

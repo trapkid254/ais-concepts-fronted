@@ -761,6 +761,36 @@
                 </form>
                 </div>
 
+                <div class="card profile-form-login-style about-cms-card" style="margin-bottom: 28px; padding: 20px;">
+                    <h3 style="margin-top: 0;">About Page — Philosophy &amp; Approach</h3>
+                    <p class="section-sub">Edit the paired image-and-explanation sections shown on the About page.</p>
+                    <form id="adminAboutContentForm">
+                        <div class="about-cms-section-editor">
+                            <h4>Our Philosophy</h4>
+                            <label for="aboutPhilosophyExplanation">Explanation</label>
+                            <textarea id="aboutPhilosophyExplanation" rows="4" required>We believe architecture is more than construction. It is the art of shaping environments that influence how people live, work, interact and experience space. Every project should express its purpose, respond to its context and make daily life better.</textarea>
+                            <label for="aboutPhilosophyImageFile">Section image</label>
+                            <input type="file" id="aboutPhilosophyImageFile" accept="image/*">
+                            <img id="aboutPhilosophyImagePreview" class="about-cms-image-preview" alt="Philosophy image preview" hidden>
+                        </div>
+                        <div class="about-cms-section-editor">
+                            <h4>Our Approach</h4>
+                            <label for="aboutApproachExplanation">Explanation</label>
+                            <textarea id="aboutApproachExplanation" rows="4" required>We begin by listening and understanding each client's aspirations, site, budget and objectives. Through research and design exploration, we develop practical, considered solutions, then coordinate the technical work, approvals, costing and delivery to carry the design through to completion.</textarea>
+                            <label for="aboutApproachImageFile">Section image</label>
+                            <input type="file" id="aboutApproachImageFile" accept="image/*">
+                            <img id="aboutApproachImagePreview" class="about-cms-image-preview" alt="Approach image preview" hidden>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save About Sections</button>
+                    </form>
+                </div>
+
+                <div class="card profile-form-login-style about-cms-card" style="margin-bottom: 28px; padding: 20px;">
+                    <h3 style="margin-top: 0;">About Page — Team Roster</h3>
+                    <p class="section-sub">Update team names, roles and photos. Use the save button on each member after making changes.</p>
+                    <div id="adminAboutTeamRoster"><p>Loading About page team roster...</p></div>
+                </div>
+
                 <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
                 <h3 style="margin-top: 0;">Website Services (Services Page)</h3>
                 <p class="section-sub">Add or edit services shown on the frontend services page.</p>
@@ -811,11 +841,11 @@
 
                 <div class="card profile-form-login-style" style="margin-bottom: 28px; padding: 20px;">
                 <h3 style="margin-top: 0;">Hero Carousel</h3>
-                <p class="section-sub">Manage images shown in the homepage hero carousel.</p>
+                <p class="section-sub">Manage each hero image and its category, headline, description, and project link.</p>
                 <button type="button" class="btn btn-primary" id="adminAddCarouselBtn" style="margin-bottom: 12px;"><i class="fas fa-plus"></i> Add Image</button>
                 <table class="data-table">
                     <thead>
-                        <tr><th>Image</th><th>Title</th><th>Description</th><th>Order</th><th>Status</th><th>Actions</th></tr>
+                        <tr><th>Image</th><th>Category</th><th>Headline</th><th>Description</th><th>Order</th><th>Status</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="adminCarouselBody"></tbody>
                 </table>
@@ -1343,6 +1373,47 @@
                             <label>Project Description</label>
                             <textarea id="webProjectDescription" rows="4" placeholder="Describe the project, its purpose, and key features..." required></textarea>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="webProjectLocation">Location</label>
+                                <input type="text" id="webProjectLocation">
+                            </div>
+                            <div class="form-group">
+                                <label for="webProjectCompletionDate">Completion Date</label>
+                                <input type="text" id="webProjectCompletionDate" placeholder="e.g. 2024">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="webProjectCost">Project Cost</label>
+                                <input type="text" id="webProjectCost" placeholder="e.g. KSh 12 million">
+                            </div>
+                            <div class="form-group">
+                                <label for="webProjectArea">Project Area</label>
+                                <input type="text" id="webProjectArea" placeholder="e.g. 450 m²">
+                            </div>
+                        </div>
+                        <label class="form-checkbox-label">
+                            <input type="checkbox" id="webProjectIsPublished" checked>
+                            Published (visible on the public Projects page)
+                        </label>
+                        <section class="admin-showcase-editor" aria-labelledby="webProjectShowcaseHeading">
+                            <h3 id="webProjectShowcaseHeading">Showcase Sections</h3>
+                            <p class="section-sub">Add image-and-explanation pairs. Use the arrows to set their display order.</p>
+                            <div id="webProjectShowcaseSections"></div>
+                            <div class="admin-showcase-actions">
+                                <button type="button" class="btn btn-secondary" id="webProjectAddShowcaseSection">Add Showcase Section</button>
+                                <button type="button" class="btn btn-secondary" id="webProjectPreviewShowcase">Preview Showcase</button>
+                            </div>
+                            <div id="webProjectShowcasePreview" class="admin-showcase-preview" hidden></div>
+                        </section>
+                        <section class="admin-showcase-editor" aria-labelledby="webProjectGalleryHeading">
+                            <h3 id="webProjectGalleryHeading">Project Gallery</h3>
+                            <p class="section-sub">Upload additional gallery images separately from showcase sections.</p>
+                            <input type="file" id="webProjectGalleryImages" accept="image/*" multiple>
+                            <div id="webProjectGalleryPreview" class="admin-project-image-gallery"></div>
+                            <div id="webProjectGalleryPendingPreview" class="admin-project-image-gallery"></div>
+                        </section>
                         <div class="form-group">
                             <label>As Designed Images</label>
                             <div class="file-input-wrapper">
@@ -1503,8 +1574,12 @@
                             <input type="text" id="carouselImage" placeholder="https://example.com/image.jpg">
                         </div>
                         <div class="form-group">
-                            <label>Title (Optional)</label>
-                            <input type="text" id="carouselTitle" placeholder="Image title">
+                            <label>Project Category</label>
+                            <input type="text" id="carouselCategory" placeholder="e.g. Product Design">
+                        </div>
+                        <div class="form-group">
+                            <label>Headline (Optional)</label>
+                            <textarea id="carouselTitle" rows="2" placeholder="Objects built&#10;with intention"></textarea>
                         </div>
                         <div class="form-group">
                             <label>Description (Optional)</label>

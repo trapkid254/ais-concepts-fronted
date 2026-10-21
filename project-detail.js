@@ -5,6 +5,7 @@
     var loading = document.getElementById('projectDetailLoading');
     var err = document.getElementById('projectDetailError');
     var galleryImages = [];
+    var showcaseLightboxImages = [];
     var lightboxIndex = 0;
 
     var lightbox = document.getElementById('projectLightbox');
@@ -77,6 +78,50 @@
 
         h += '</div></section>';
         return h;
+    }
+
+    function buildShowcase(sections) {
+        if (!Array.isArray(sections) || !sections.length) return '';
+        var h = '<section class="project-detail-section project-showcase"><h2>Project Story</h2>';
+        sections.forEach(function (section, index) {
+            var src = section && section.image;
+            if (!src) return;
+            var lightboxIndex = showcaseLightboxImages.length;
+            showcaseLightboxImages.push(src);
+            var optimizedSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(src, 'HERO') : src;
+            h += '<article class="project-showcase-row' + (index % 2 === 0 ? ' is-reversed' : '') + '">' +
+                '<button type="button" class="project-showcase-image gallery-thumb" data-showcase-lightbox="' + lightboxIndex + '" aria-label="Enlarge project image ' + (index + 1) + '">' +
+                '<img src="' + escAttrUrl(optimizedSrc) + '" alt="' + escHtml(section.explanation || 'Project showcase image') + '" width="1200" height="900" loading="lazy"></button>' +
+                '<div class="project-showcase-copy"><p>' + escHtml(section.explanation || '') + '</p></div></article>';
+        });
+        return h + '</section>';
+    }
+
+    function legacyShowcase(project) {
+        if (Array.isArray(project.showcaseSections) && project.showcaseSections.length) {
+            return project.showcaseSections;
+        }
+        var legacyImage = project.heroImage || project.image ||
+            (Array.isArray(project.asDesignedImages) && project.asDesignedImages[0]) ||
+            (Array.isArray(project.projectImages) && project.projectImages[0]) ||
+            (Array.isArray(project.asBuiltImages) && project.asBuiltImages[0]);
+        return legacyImage ? [{ image: legacyImage, explanation: project.description || '' }] : [];
+    }
+
+    function buildIndependentGallery(images) {
+        if (!Array.isArray(images) || !images.length) return '';
+        var h = '<section class="project-detail-section project-gallery-section project-independent-gallery"><h2>Additional Gallery</h2>' +
+            '<p class="project-gallery-hint"><i class="fas fa-search-plus"></i> Tap any image to enlarge</p><div class="project-gallery-grid">';
+        images.forEach(function (src, index) {
+            if (!src) return;
+            var lightboxIndex = showcaseLightboxImages.length;
+            showcaseLightboxImages.push(src);
+            var optimizedSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(src, 'THUMBNAIL') : src;
+            h += '<button type="button" class="gallery-thumb" data-showcase-lightbox="' + lightboxIndex + '" aria-label="View additional image ' + (index + 1) + '">' +
+                '<img src="' + escAttrUrl(optimizedSrc) + '" alt="" width="400" height="300" loading="lazy">' +
+                '<span class="gallery-thumb-zoom" aria-hidden="true"><i class="fas fa-expand"></i></span></button>';
+        });
+        return h + '</div></section>';
     }
 
     var galleryByCategory = { designed: [], built: [] };
@@ -157,6 +202,13 @@
         if (!root) return;
 
         root.addEventListener('click', function (e) {
+            var showcaseThumb = e.target.closest('[data-showcase-lightbox]');
+            if (showcaseThumb) {
+                e.preventDefault();
+                galleryImages = showcaseLightboxImages.slice();
+                openLightbox(Number(showcaseThumb.getAttribute('data-showcase-lightbox')));
+                return;
+            }
             var thumb = e.target.closest('.gallery-thumb');
             if (thumb) {
                 if (!thumb.closest('.project-gallery-panel.is-active')) return;
@@ -232,6 +284,7 @@
             document.title = (p.title || 'Project') + ' | AIS Concepts';
 
             galleryImages = [];
+            showcaseLightboxImages = [];
             galleryByCategory = { designed: [], built: [] };
             var asDesignedImages = [];
             var asBuiltImages = [];
@@ -271,17 +324,27 @@
             var cat = p.categorySecondary ? p.category + ' · ' + p.categorySecondary : p.category;
 
             var tabbedGallery = buildTabbedGallery(asDesignedImages, asBuiltImages);
+            var showcaseSections = legacyShowcase(p);
+            var isLegacyShowcase = (!Array.isArray(p.showcaseSections) || !p.showcaseSections.length) && showcaseSections.length > 0;
+            var showcase = buildShowcase(showcaseSections);
+            var independentGallery = buildIndependentGallery(p.galleryImages || []);
             var optimizedHero = hero ? (typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(hero, 'HERO') : hero) : '';
 
             root.innerHTML =
                 '<h1 class="section-title project-detail-title">' + escHtml(p.title || '') + '</h1>' +
                 '<p class="section-subtitle project-detail-category">' + escHtml(cat) + '</p>' +
-                (optimizedHero ? '<img class="project-hero-img" src="' + escAttrUrl(optimizedHero) + '" alt="' + escHtml(p.title || 'Project') + '" width="1600" height="900">' : '') +
-                '<div class="project-detail-description-wrap">' +
+                showcase +
+                (!showcase ? (optimizedHero ? '<img class="project-hero-img" src="' + escAttrUrl(optimizedHero) + '" alt="' + escHtml(p.title || 'Project') + '" width="1600" height="900">' : '') : '') +
+                (!isLegacyShowcase ? '<div class="project-detail-description-wrap">' +
                 '<h2 class="project-detail-about-heading">About this project</h2>' +
                 '<div class="project-detail-description">' + escHtml(p.description || '') + '</div>' +
-                '</div>' +
+                '</div>' : '') +
+                ((p.location || p.completionDate) ? '<p class="project-detail-meta">' +
+                    (p.location ? '<span><strong>Location</strong> ' + escHtml(p.location) + '</span>' : '') +
+                    (p.completionDate ? '<span><strong>Completed</strong> ' + escHtml(p.completionDate) + '</span>' : '') +
+                    '</p>' : '') +
                 metricsSection +
+                independentGallery +
                 tabbedGallery +
                 '<p class="project-detail-back"><a href="projects/" class="btn-primary">Back to portfolio</a></p>';
 

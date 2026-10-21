@@ -247,6 +247,10 @@
         var grid = document.getElementById('projectsPageGrid');
         var emptyMsg = document.getElementById('portfolioEmptyMessage');
         var filterBtns;
+        function escapeProjectText(value) {
+            return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
         if (typeof renderCategoryFilterButtons === 'function') {
             renderCategoryFilterButtons(document.getElementById('portfolioFilters'), initialFilter);
         }
@@ -270,16 +274,22 @@
                 var optimizedImgSrc = typeof ImageOptimizer !== 'undefined' && ImageOptimizer.optimizeImageUrl ? ImageOptimizer.optimizeImageUrl(imgSrc, 'PORTFOLIO_CARD') : imgSrc;
                 var slug = p.slug || '';
                 var detailHref = slug ? ('../project-detail.html?slug=' + encodeURIComponent(slug)) : '/';
+                var projectCost = p.projectCost || p.cost || '';
+                var projectArea = p.area || '';
                 var el = document.createElement('div');
-                el.className = 'portfolio-item';
-                el.innerHTML = '<div class="portfolio-card-inner">' +
-                    '<div class="portfolio-front"><div class="portfolio-image"><img src="' + optimizedImgSrc + '" alt="' + (p.title || '') + '" width="800" height="600" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'' + fallback + '\'}else{this.onerror=null}"></div></div>' +
-                    '<div class="portfolio-back">' +
-                    '<h3>' + (p.title || '') + '</h3>' +
-                    '<p class="portfolio-category">' + catText + '</p>' +
-                    '<p class="portfolio-description">' + (p.description || '') + '</p>' +
-                    '<a href="' + detailHref + '" class="btn-primary" style="margin-top:12px;display:inline-block;">View project</a>' +
-                    '</div></div>';
+                el.className = 'portfolio-item project-listing-item';
+                el.innerHTML = '<article class="portfolio-card-inner project-listing-card">' +
+                    '<div class="portfolio-front"><div class="portfolio-image"><img src="' + escapeProjectText(optimizedImgSrc) + '" alt="' + escapeProjectText(p.title || '') + '" width="800" height="600" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'' + fallback + '\'}else{this.onerror=null}"></div></div>' +
+                    '<div class="portfolio-back project-listing-info">' +
+                    '<p class="portfolio-category">' + escapeProjectText(catText) + '</p>' +
+                    '<h3>' + escapeProjectText(p.title || '') + '</h3>' +
+                    '<dl class="project-listing-details">' +
+                    '<div><dt>Location</dt><dd>' + escapeProjectText(p.location || 'Not listed') + '</dd></div>' +
+                    '<div><dt>Cost</dt><dd>' + escapeProjectText(projectCost || 'Not listed') + '</dd></div>' +
+                    '<div><dt>Area</dt><dd>' + escapeProjectText(projectArea || 'Not listed') + '</dd></div>' +
+                    '</dl>' +
+                    '<a href="' + escapeProjectText(detailHref) + '" class="btn-primary project-listing-link">View Project</a>' +
+                    '</div></article>';
                 grid.appendChild(el);
             });
         }

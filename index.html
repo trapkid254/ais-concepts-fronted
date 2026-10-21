@@ -248,18 +248,24 @@
     <!-- Hero: fixed layer — fades & lifts as you scroll (SOM-style); spacer below drives scroll distance -->
     <div class="hero-fixed-wrap" id="heroFixedWrap">
     <section id="home" class="hero">
+        <div class="hero-slide-progress" aria-hidden="true">
+            <div class="hero-slide-progress-fill" id="heroSlideProgress"></div>
+        </div>
+        <div class="hero-slide-dots" id="heroSlideDots" aria-hidden="true"></div>
         <div class="hero-media-wrap" aria-hidden="true">
             <div class="hero-carousel" id="heroCarousel">
                 <div class="carousel-loading">Loading...</div>
             </div>
             <div class="hero-overlay"></div>
         </div>
+        <button class="carousel-nav-arrow prev" id="heroCarouselPrev" aria-label="Previous slide"><i class="fas fa-chevron-left"></i></button>
+        <button class="carousel-nav-arrow next" id="heroCarouselNext" aria-label="Next slide"><i class="fas fa-chevron-right"></i></button>
         <div class="hero-inner">
         <div class="hero-content">
-            <h1 class="hero-title"><span class="typewriter-title" data-typewriter="Shaping the Future of Architecture">Shaping the Future of Architecture</span></h1>
-            <p class="hero-subtitle"><span class="typewriter-text" data-typewriter="Innovative design solutions for a sustainable tomorrow">Innovative design solutions for a sustainable tomorrow</span></p>
-
-            <!-- Stats Section in Hero -->
+            <p class="hero-project-category" id="heroProjectCategory">-Product Design-</p>
+            <h1 class="hero-project-title" id="heroProjectTitle">Objects built
+with intention</h1>
+            <p class="hero-project-description" id="heroProjectDescription">Custom furniture, fittings, and bespoke objects designed to complete the built environment with the same rigour as the architecture.</p>
             <div class="hero-stats">
                 <div class="hero-stats-grid">
                     <div class="hero-stat-item">
@@ -280,6 +286,7 @@
                     </div>
                 </div>
             </div>
+            <a class="hero-project-link" id="heroProjectLink" href="projects/">View this Project</a>
         </div>
         </div>
     </section>
