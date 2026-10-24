@@ -1274,8 +1274,9 @@ function setupAdminInteractions(currentUser) {
                     if (!uploadResponse.ok) {
                         var uploadError = await uploadResponse.json();
                         var errorMsg = uploadError.error || 'Failed to upload image';
+                        var errorDetails = uploadError.details ? '\n\nDetails: ' + uploadError.details : '';
                         var suggestion = '\n\nTip: You can paste an image URL directly in the "Photo URL" field below the file upload instead.';
-                        throw new Error(errorMsg + suggestion);
+                        throw new Error(errorMsg + errorDetails + suggestion);
                     }
 
                     var uploadResult = await uploadResponse.json();
