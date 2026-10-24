@@ -1642,6 +1642,53 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Team Member Modal -->
+            <div class="modal" id="adminTeamMemberModal">
+                <div class="modal-content">
+                    <span class="close-modal" data-close="adminTeamMemberModal">&times;</span>
+                    <h2 id="teamMemberModalTitle">Add Team Member</h2>
+                    <form id="adminTeamMemberForm">
+                        <input type="hidden" id="teamMemberEditId">
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="teamMemberName" required placeholder="Team member name">
+                        </div>
+                        <div class="form-group">
+                            <label>Role/Position *</label>
+                            <input type="text" id="teamMemberRole" required placeholder="e.g., Lead Architect">
+                        </div>
+                        <div class="form-group">
+                            <label>Bio *</label>
+                            <textarea id="teamMemberBio" rows="3" required placeholder="Brief bio description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Photo</label>
+                            <input type="file" id="teamMemberPhoto" accept="image/*">
+                            <input type="hidden" id="teamMemberPhotoUrl">
+                            <div id="teamMemberPhotoPreview" style="margin-top: 10px; display: none;">
+                                <img id="teamMemberPhotoPreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 50%; object-fit: cover;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Specialties (comma-separated)</label>
+                            <input type="text" id="teamMemberSpecialties" placeholder="e.g., Architecture, Design, Project Management">
+                        </div>
+                        <div class="form-group">
+                            <label>Display Order</label>
+                            <input type="number" id="teamMemberOrder" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="teamMemberIsActive" checked>
+                                Active
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Team Member</button>
+                    </form>
+                </div>
+            </div>
+
         <!-- Client CRM Section -->
             <section id="admin-clients" class="table-container portal-section" style="display: none;">
                 <div class="table-header">
