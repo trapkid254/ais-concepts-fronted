@@ -1109,6 +1109,7 @@ function setupAdminInteractions(currentUser) {
             document.getElementById('teamMemberRole').value = member.role || '';
             document.getElementById('teamMemberBio').value = member.bio || '';
             document.getElementById('teamMemberPhotoUrl').value = member.photo || '';
+            document.getElementById('teamMemberPhotoUrlInput').value = member.photo || '';
             document.getElementById('teamMemberSpecialties').value = Array.isArray(member.specialties) ? member.specialties.join(', ') : '';
             document.getElementById('teamMemberOrder').value = member.order || 0;
             document.getElementById('teamMemberIsActive').checked = member.isActive !== false;
@@ -1163,6 +1164,7 @@ function setupAdminInteractions(currentUser) {
             document.getElementById('teamMemberBio').value = '';
             document.getElementById('teamMemberPhoto').value = '';
             document.getElementById('teamMemberPhotoUrl').value = '';
+            document.getElementById('teamMemberPhotoUrlInput').value = '';
             document.getElementById('teamMemberSpecialties').value = '';
             document.getElementById('teamMemberOrder').value = '0';
             document.getElementById('teamMemberIsActive').checked = true;
@@ -1191,6 +1193,7 @@ function setupAdminInteractions(currentUser) {
 
     // Team Member photo preview
     var teamMemberPhotoInput = document.getElementById('teamMemberPhoto');
+    var teamMemberPhotoUrlInput = document.getElementById('teamMemberPhotoUrlInput');
     if (teamMemberPhotoInput) {
         teamMemberPhotoInput.addEventListener('change', function(e) {
             var file = e.target.files[0];
@@ -1201,6 +1204,19 @@ function setupAdminInteractions(currentUser) {
                     document.getElementById('teamMemberPhotoPreview').style.display = 'block';
                 };
                 reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Team Member photo URL preview
+    if (teamMemberPhotoUrlInput) {
+        teamMemberPhotoUrlInput.addEventListener('input', function(e) {
+            var url = e.target.value.trim();
+            if (url) {
+                document.getElementById('teamMemberPhotoPreviewImg').src = url;
+                document.getElementById('teamMemberPhotoPreview').style.display = 'block';
+            } else {
+                document.getElementById('teamMemberPhotoPreview').style.display = 'none';
             }
         });
     }
@@ -1220,6 +1236,7 @@ function setupAdminInteractions(currentUser) {
             var order = parseInt(document.getElementById('teamMemberOrder').value) || 0;
             var isActive = document.getElementById('teamMemberIsActive').checked;
             var photoFile = document.getElementById('teamMemberPhoto').files[0];
+            var photoUrlInput = document.getElementById('teamMemberPhotoUrlInput').value.trim();
             var existingPhotoUrl = document.getElementById('teamMemberPhotoUrl').value;
 
             if (!name || !role || !bio) {
@@ -1237,8 +1254,12 @@ function setupAdminInteractions(currentUser) {
             };
 
             try {
-                // Upload photo if a new file is selected
-                if (photoFile) {
+                // Priority: URL input > file upload > existing photo
+                if (photoUrlInput) {
+                    // Use URL input directly
+                    teamMemberData.photo = photoUrlInput;
+                } else if (photoFile) {
+                    // Upload photo if a new file is selected
                     var formData = new FormData();
                     formData.append('image', photoFile);
 
