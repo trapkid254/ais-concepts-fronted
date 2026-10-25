@@ -4463,6 +4463,7 @@ window.editCarouselItem = function(id) {
             var modalTitle = carouselModal.querySelector('h2');
 
             if (document.getElementById('carouselImage')) document.getElementById('carouselImage').value = item.image || '';
+            if (document.getElementById('carouselImageUrl')) document.getElementById('carouselImageUrl').value = item.image || '';
             if (document.getElementById('carouselCategory')) document.getElementById('carouselCategory').value = item.category || '';
             if (document.getElementById('carouselTitle')) document.getElementById('carouselTitle').value = item.title || '';
             if (document.getElementById('carouselDescription')) document.getElementById('carouselDescription').value = item.description || '';
@@ -4471,6 +4472,16 @@ window.editCarouselItem = function(id) {
             if (document.getElementById('carouselIsActive')) document.getElementById('carouselIsActive').checked = item.isActive;
             if (editIdField) editIdField.value = String(item._id);
             if (modalTitle) modalTitle.textContent = 'Edit Carousel Image';
+
+            // Show image preview if exists
+            var photoPreview = document.getElementById('carouselImagePreview');
+            var photoPreviewImg = document.getElementById('carouselImagePreviewImg');
+            if (item.image) {
+                photoPreviewImg.src = item.image;
+                photoPreview.style.display = 'block';
+            } else {
+                photoPreview.style.display = 'none';
+            }
 
             if (carouselModal) carouselModal.classList.add('open');
         });
@@ -5511,14 +5522,48 @@ async function loadAdminDashboard() {
     var carouselForm = document.getElementById('adminCarouselForm');
     if (addCarouselBtn && carouselModal) addCarouselBtn.addEventListener('click', function () {
         if (carouselForm) carouselForm.reset();
+        document.getElementById('carouselImageUrl').value = '';
+        document.getElementById('carouselImagePreview').style.display = 'none';
         carouselModal.classList.add('open');
     });
     document.querySelectorAll('[data-close="adminCarouselModal"]').forEach(function (el) { el.addEventListener('click', function () { if (carouselModal) carouselModal.classList.remove('open'); }); });
     if (carouselModal) carouselModal.addEventListener('click', function (e) { if (e.target === carouselModal) carouselModal.classList.remove('open'); });
+
+    // Carousel image file preview
+    var carouselImageFileInput = document.getElementById('carouselImageFile');
+    if (carouselImageFileInput) {
+        carouselImageFileInput.addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('carouselImagePreviewImg').src = e.target.result;
+                    document.getElementById('carouselImagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Carousel image URL preview
+    var carouselImageUrlInput = document.getElementById('carouselImage');
+    if (carouselImageUrlInput) {
+        carouselImageUrlInput.addEventListener('input', function(e) {
+            var url = e.target.value.trim();
+            if (url) {
+                document.getElementById('carouselImagePreviewImg').src = url;
+                document.getElementById('carouselImagePreview').style.display = 'block';
+            } else {
+                document.getElementById('carouselImagePreview').style.display = 'none';
+            }
+        });
+    }
     if (carouselForm) {
-        carouselForm.addEventListener('submit', function (e) {
+        carouselForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-            var image = document.getElementById('carouselImage').value;
+            var imageFile = document.getElementById('carouselImageFile').files[0];
+            var imageUrlInput = document.getElementById('carouselImage').value.trim();
+            var existingImageUrl = document.getElementById('carouselImageUrl').value;
             var category = document.getElementById('carouselCategory').value;
             var title = document.getElementById('carouselTitle').value;
             var description = document.getElementById('carouselDescription').value;
@@ -5531,7 +5576,6 @@ async function loadAdminDashboard() {
             var token = sessionStorage.getItem('authToken');
 
             var data = {
-                image: image,
                 category: category,
                 title: title,
                 description: description,
@@ -5540,29 +5584,62 @@ async function loadAdminDashboard() {
                 isActive: isActive
             };
 
-            var url = editId ? (window.API_BASE || '') + '/api/admin/hero-carousel/' + editId : (window.API_BASE || '') + '/api/admin/hero-carousel';
-            var method = editId ? 'PUT' : 'POST';
+            try {
+                // Priority: URL input > file upload > existing image
+                if (imageUrlInput) {
+                    data.image = imageUrlInput;
+                } else if (imageFile) {
+                    var formData = new FormData();
+                    formData.append('image', imageFile);
 
-            fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(data)
-            })
-            .then(function(response) {
+                    var uploadResponse = await fetch(window.API_BASE + '/api/upload-image', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        var uploadError = await uploadResponse.json();
+                        var errorMsg = uploadError.error || 'Failed to upload image';
+                        var errorDetails = uploadError.details ? '\n\nDetails: ' + uploadError.details : '';
+                        var suggestion = '\n\nTip: You can paste an image URL directly in the "Image URL" field below the file upload instead.';
+                        throw new Error(errorMsg + errorDetails + suggestion);
+                    }
+
+                    var uploadResult = await uploadResponse.json();
+                    data.image = uploadResult.url;
+                } else if (existingImageUrl) {
+                    data.image = existingImageUrl;
+                }
+
+                var url = editId ? (window.API_BASE || '') + '/api/admin/hero-carousel/' + editId : (window.API_BASE || '') + '/api/admin/hero-carousel';
+                var method = editId ? 'PUT' : 'POST';
+
+                var response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(data)
+                });
+
                 if (response.ok) {
                     carouselForm.reset();
                     if (editIdField) editIdField.value = '';
                     if (modalTitle) modalTitle.textContent = 'Add Carousel Image';
                     carouselModal.classList.remove('open');
+                    document.getElementById('carouselImagePreview').style.display = 'none';
                     renderAdminCarousel();
                 } else {
                     alert('Could not save carousel image.');
                 }
-            })
-            .catch(function() { alert('Could not save carousel image.'); });
+            } catch (error) {
+                console.error('Error saving carousel image:', error);
+                alert('Could not save carousel image: ' + error.message);
+            }
         });
     }
 
