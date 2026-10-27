@@ -429,17 +429,17 @@ document.addEventListener('DOMContentLoaded', function() {
             splashLogo.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`;
             splashLogo.style.opacity = '1';
 
-            // Fade out splash background
+            // Fade out splash background AFTER logo reaches navbar (800ms animation duration)
             setTimeout(function() {
                 splash.classList.add('splash-hide');
-            }, 400);
+            }, 800);
 
-            // Hide splash after animation completes
+            // Hide splash after fade completes
             setTimeout(function() {
                 splash.style.display = 'none';
                 // Show navbar logo
                 navbarLogo.style.opacity = '1';
-            }, 800);
+            }, 1100);
         }
 
         // Wait for window load or timeout to prevent getting stuck
