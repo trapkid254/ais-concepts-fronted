@@ -368,7 +368,12 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ===== SPLASH INTRO: only when landing on home (not when navigating from about/careers/etc) ===== */
     (function() {
         const splash = document.getElementById('splashIntro');
-        if (!splash) return;
+        const splashLogo = document.getElementById('splashLogo');
+        const navbar = document.getElementById('navbar');
+        const navbarLogo = navbar ? navbar.querySelector('.logo-img') : null;
+
+        if (!splash || !splashLogo || !navbarLogo) return;
+
         const path = window.location.pathname;
         const isHome = path === '/' || path === '' || /\/home\/?$/i.test(path) || /\/index\.html$/i.test(path);
         const referrer = document.referrer || '';
@@ -380,29 +385,81 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Show splash and start animation
+        // Check for reduced motion preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Show splash
         splash.style.display = 'flex';
-        const bar = document.getElementById('splashLoadingBar');
-        const pctEl = document.getElementById('splashLoadingPct');
-        const duration = 3500;
-        const start = performance.now();
-        function tick(now) {
-            const elapsed = now - start;
-            const pct = Math.min(100, Math.floor((elapsed / duration) * 100));
-            if (pctEl) pctEl.textContent = pct + '%';
-            if (bar) bar.style.width = pct + '%';
-            if (bar) bar.style.marginLeft = (-pct / 2) + '%';
-            if (elapsed < duration) requestAnimationFrame(tick);
-            else {
-                if (pctEl) pctEl.textContent = '100%';
-                if (bar) { bar.style.width = '100%'; bar.style.marginLeft = '-50%'; }
+
+        // Function to get element position
+        function getElementPosition(element) {
+            const rect = element.getBoundingClientRect();
+            return {
+                top: rect.top + window.scrollY,
+                left: rect.left + window.scrollX,
+                width: rect.width,
+                height: rect.height
+            };
+        }
+
+        // Wait for page to be ready (DOM + images)
+        function startTransition() {
+            if (prefersReducedMotion) {
+                // Skip animation for reduced motion
                 splash.classList.add('splash-hide');
                 setTimeout(function() {
                     splash.style.display = 'none';
-                }, 400);
+                }, 300);
+                return;
             }
+
+            // Get navbar logo position
+            const navbarPos = getElementPosition(navbarLogo);
+            const navbarLogoImg = navbarLogo;
+            const navbarLogoHeight = navbarLogoImg.offsetHeight || 60;
+            const navbarLogoWidth = navbarLogoImg.offsetWidth || 200;
+
+            // Calculate destination transform
+            const currentRect = splashLogo.getBoundingClientRect();
+            const deltaX = navbarPos.left - currentRect.left;
+            const deltaY = navbarPos.top - currentRect.top;
+            const scale = navbarLogoHeight / 220; // 220 is initial splash logo height
+
+            // Apply transition to move logo to navbar
+            splashLogo.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`;
+            splashLogo.style.opacity = '1';
+
+            // Fade out splash background
+            setTimeout(function() {
+                splash.classList.add('splash-hide');
+            }, 400);
+
+            // Hide splash after animation completes
+            setTimeout(function() {
+                splash.style.display = 'none';
+                // Show navbar logo
+                navbarLogo.style.opacity = '1';
+            }, 800);
         }
-        requestAnimationFrame(tick);
+
+        // Wait for window load or timeout to prevent getting stuck
+        let loaded = false;
+        const maxWait = 3000; // 3 seconds max wait
+
+        window.addEventListener('load', function() {
+            if (!loaded) {
+                loaded = true;
+                setTimeout(startTransition, 200); // Small delay for smoother transition
+            }
+        });
+
+        // Fallback timeout in case load event doesn't fire
+        setTimeout(function() {
+            if (!loaded) {
+                loaded = true;
+                startTransition();
+            }
+        }, maxWait);
     })();
 
     /* ===== HERO VIDEO + SOM-style scroll (fixed layer fades & lifts; content slides over) ===== */
