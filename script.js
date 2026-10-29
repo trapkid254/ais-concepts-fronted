@@ -413,33 +413,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Get navbar logo position
-            const navbarPos = getElementPosition(navbarLogo);
-            const navbarLogoImg = navbarLogo;
-            const navbarLogoHeight = navbarLogoImg.offsetHeight || 60;
-            const navbarLogoWidth = navbarLogoImg.offsetWidth || 200;
+            // Ensure navbar is visible before calculating position
+            navbar.style.visibility = 'visible';
+            navbar.style.opacity = '1';
 
-            // Calculate destination transform
-            const currentRect = splashLogo.getBoundingClientRect();
-            const deltaX = navbarPos.left - currentRect.left;
-            const deltaY = navbarPos.top - currentRect.top;
-            const scale = navbarLogoHeight / 220; // 220 is initial splash logo height
-
-            // Apply transition to move logo to navbar
-            splashLogo.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`;
-            splashLogo.style.opacity = '1';
-
-            // Fade out splash background AFTER logo reaches navbar (800ms animation duration)
+            // Get navbar logo position after a small delay to ensure layout is complete
             setTimeout(function() {
-                splash.classList.add('splash-hide');
-            }, 800);
+                const navbarPos = getElementPosition(navbarLogo);
+                const navbarLogoImg = navbarLogo;
+                const navbarLogoHeight = navbarLogoImg.offsetHeight || 60;
+                const navbarLogoWidth = navbarLogoImg.offsetWidth || 200;
 
-            // Hide splash after fade completes
-            setTimeout(function() {
-                splash.style.display = 'none';
-                // Show navbar logo
-                navbarLogo.style.opacity = '1';
-            }, 1100);
+                // Calculate destination transform
+                const currentRect = splashLogo.getBoundingClientRect();
+                const splashCenterX = currentRect.left + currentRect.width / 2;
+                const splashCenterY = currentRect.top + currentRect.height / 2;
+                const navbarCenterX = navbarPos.left + navbarPos.width / 2;
+                const navbarCenterY = navbarPos.top + navbarPos.height / 2;
+
+                const deltaX = navbarCenterX - splashCenterX;
+                const deltaY = navbarCenterY - splashCenterY;
+                const scale = navbarLogoHeight / 220; // 220 is initial splash logo height
+
+                // Apply transition to move logo to navbar
+                splashLogo.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scale})`;
+                splashLogo.style.opacity = '1';
+
+                // Fade out splash background AFTER logo reaches navbar (800ms animation duration)
+                setTimeout(function() {
+                    splash.classList.add('splash-hide');
+                }, 800);
+
+                // Hide splash after fade completes
+                setTimeout(function() {
+                    splash.style.display = 'none';
+                    // Show navbar logo
+                    navbarLogo.style.opacity = '1';
+                }, 1100);
+            }, 100);
         }
 
         // Wait for window load or timeout to prevent getting stuck
