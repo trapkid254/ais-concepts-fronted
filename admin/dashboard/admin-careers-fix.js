@@ -223,15 +223,20 @@
             });
     }
 
-    document.addEventListener('DOMContentLoaded', function(){
-        loadCareerApplications();
-    });
-
-    // Re-load applications when careers section is shown
+    // The main portal renderer owns the initial Careers fetch. This repair script
+    // only handles actions so its loader cannot race and replace stable table rows.
     document.addEventListener('click', function(e){
-        var link = e.target.closest('.sidebar-nav a[data-section="admin-careers"]');
-        if (link) {
-            setTimeout(loadCareerApplications, 100);
+        var action = e.target.closest('[data-career-action]');
+        if (action && action.closest('#adminCareersBody')) {
+            e.preventDefault();
+            var id = action.getAttribute('data-id');
+            if (action.getAttribute('data-career-action') === 'view') openCareerView(id);
+            if (action.getAttribute('data-career-action') === 'delete' && confirm('Delete this application?')) {
+                fetch((window.API_BASE||'') + '/api/admin/career-applications/' + encodeURIComponent(id), {
+                    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('authToken') }
+                }).then(function(r){ if (!r.ok) throw new Error('Could not delete application'); action.closest('tr').remove(); }).catch(function(err){ alert(err.message || 'Could not delete application'); });
+            }
+            return;
         }
     });
 })();

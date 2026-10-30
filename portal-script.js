@@ -4962,6 +4962,7 @@ async function loadAdminDashboard() {
         apps = getStored('careerApplications', []); 
     }
     careersBody.innerHTML = apps.length ? apps.map(function (a) {
+        var id = escapeAttr(String(a.id || a._id || ''));
         return '<tr>' +
             '<td>' + escapeHtml(a.name || '') + '</td>' +
             '<td>' + escapeHtml(a.email || '') + '</td>' +
@@ -4969,8 +4970,9 @@ async function loadAdminDashboard() {
             '<td>' + escapeHtml(a.campus || '-') + '</td>' +
             '<td>' + escapeHtml(a.yearOfStudy || '-') + '</td>' +
             '<td>' + (a.date ? new Date(a.date).toLocaleDateString() : '') + '</td>' +
+            '<td class="career-actions"><button type="button" class="btn btn-sm btn-secondary" data-career-action="view" data-id="' + id + '"><i class="fas fa-eye"></i> View</button> <button type="button" class="btn btn-sm btn-danger" data-career-action="delete" data-id="' + id + '"><i class="fas fa-trash"></i> Delete</button></td>' +
             '</tr>';
-    }).join('') : '<tr><td colspan="6">No applications yet.</td></tr>';
+    }).join('') : '<tr><td colspan="7">No applications yet.</td></tr>';
 
     var totalUsersEl = document.getElementById('totalUsers');
     // Filter to show only admin, employees, and foreman (exclude clients)

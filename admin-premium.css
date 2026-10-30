@@ -278,6 +278,61 @@ body > .modal .modal-content .modal-footer { position: sticky; bottom: 0; z-inde
   .financial-modal-body { max-height: calc(100vh - 140px); overflow-y: auto; }
 }
 
+/* Careers table stability */
+#admin-careers .data-table { table-layout: fixed; }
+#admin-careers .career-actions { white-space: nowrap; }
+#admin-careers .career-actions .btn { min-height: 34px !important; height: 34px; margin: 0 3px; }
+#adminCareersBody td { vertical-align: middle; }
+
+/* Professional About CMS and team roster */
+#admin-content .about-cms-card { padding: 24px !important; }
+#admin-content .about-cms-card > h3 { margin-bottom: 6px !important; font-size: 18px !important; }
+#admin-content .about-cms-card > .section-sub { margin-bottom: 18px; }
+#adminAboutContentForm { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.about-cms-section-editor { min-width: 0; padding: 18px !important; border: 1px solid var(--admin-border); border-radius: 12px; background: #f8fafc; }
+.about-cms-section-editor h4 { margin-bottom: 14px !important; font-size: 15px; color: var(--admin-text); }
+.about-cms-section-editor label { display: block; margin-top: 12px; }
+.about-cms-section-editor textarea { width: 100%; }
+.about-cms-image-preview { width: 100%; height: 150px; object-fit: cover; margin-top: 12px; border-radius: 10px; border: 1px solid var(--admin-border); }
+#adminAboutContentForm > .btn { grid-column: 1 / -1; justify-self: start; }
+#adminAboutTeamRoster { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.about-admin-team-member { min-width: 0; display: flex; flex-direction: column; padding: 14px; border: 1px solid var(--admin-border); border-radius: 12px; background: #fff; box-shadow: 0 5px 16px rgba(15,23,42,.04); }
+.about-admin-team-preview { width: 100%; height: 170px; object-fit: cover; border-radius: 10px; background: #eef2f4; }
+.about-admin-team-preview[hidden] { display: none; }
+.about-admin-team-fields { min-width: 0; margin-top: 12px; }
+.about-admin-team-fields label { font-size: 12px; }
+.about-admin-team-fields input { width: 100%; }
+.about-admin-team-fields input[type="file"] { padding: 8px; font-size: 12px; }
+.about-admin-team-role { margin: 4px 0 10px; color: var(--admin-muted) !important; font-size: 12px; }
+.about-admin-team-fields .btn { width: 100%; margin-top: 10px; }
+
+/* Ensure long modal content scrolls while actions remain reachable */
+.portal-container .modal-content,
+body > .modal .modal-content { display: flex !important; flex-direction: column !important; }
+.portal-container .modal-content:not(.modal-professional):not(:has(> form)),
+body > .modal .modal-content:not(.modal-professional):not(:has(> form)) { overflow-y: auto !important; }
+.portal-container .modal-content > form,
+body > .modal .modal-content > form { flex: 1 1 auto; min-height: 0; overflow-y: auto !important; }
+.portal-container .modal-content:not(.modal-professional) > *:not(.close-modal):not(h2),
+body > .modal .modal-content:not(.modal-professional) > *:not(.close-modal):not(h2) { flex-shrink: 0; }
+.portal-container .modal-content > form > .modal-footer,
+.portal-container .modal-content > .modal-footer,
+body > .modal .modal-content > form > .modal-footer,
+body > .modal .modal-content > .modal-footer { position: sticky; bottom: 0; background: #fff; }
+.portal-container .modal-content .modal-actions,
+body > .modal .modal-content .modal-actions { position: sticky; bottom: 0; z-index: 4; }
+.portal-container .modal-content > form .modal-footer,
+body > .modal .modal-content > form .modal-footer { margin-top: auto; }
+
+@media (max-width: 1000px) {
+  #adminAboutTeamRoster { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 768px) {
+  #adminAboutContentForm { grid-template-columns: 1fr; }
+  #adminAboutTeamRoster { grid-template-columns: 1fr; }
+  #admin-content .about-cms-card { padding: 16px !important; }
+}
+
 /* Keep the administration workspace consistent in both website themes */
 .portal-container .main-content, .main-content { background: #f5f7fa !important; }
 .portal-container .top-bar, .top-bar { background: rgba(255,255,255,.96) !important; }
