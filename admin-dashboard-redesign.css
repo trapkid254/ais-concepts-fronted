@@ -369,11 +369,11 @@ body {
 /* ===== Content Sections ===== */
 .portal-section {
     padding: 32px;
-    display: none;
+    display: none !important;
 }
 
 .portal-section.active {
-    display: block;
+    display: block !important;
 }
 
 /* ===== Stats Grid ===== */
